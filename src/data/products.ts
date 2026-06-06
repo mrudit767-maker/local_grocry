@@ -12,25 +12,30 @@ export interface Product {
   reviews: number;
   inStock: boolean;
   description: string;
+  updatedAt?: number;
+  storeId?: string;
+  images?: string[];
+  customWeights?: string[];
 }
 
 export const CATEGORIES = [
-  { id: 'all', name: 'All', emoji: '🛒', color: 'from-green-500 to-emerald-600' },
-  { id: 'rice-atta', name: 'Rice & Atta', emoji: '🌾', color: 'from-amber-500 to-yellow-600' },
-  { id: 'oils-ghee', name: 'Oils & Ghee', emoji: '🫙', color: 'from-yellow-500 to-orange-500' },
-  { id: 'dal-pulses', name: 'Dal & Pulses', emoji: '🫘', color: 'from-orange-500 to-red-500' },
-  { id: 'spices', name: 'Spices & Masala', emoji: '🌶️', color: 'from-red-500 to-pink-500' },
-  { id: 'biscuits-snacks', name: 'Biscuits & Snacks', emoji: '🍪', color: 'from-purple-500 to-indigo-500' },
-  { id: 'beverages', name: 'Beverages', emoji: '☕', color: 'from-blue-500 to-cyan-500' },
-  { id: 'dairy', name: 'Dairy & Eggs', emoji: '🥛', color: 'from-sky-400 to-blue-500' },
-  { id: 'fruits-veggies', name: 'Fruits & Veggies', emoji: '🥦', color: 'from-green-400 to-teal-500' },
-  { id: 'personal-care', name: 'Personal Care', emoji: '🧴', color: 'from-pink-400 to-rose-500' },
-  { id: 'cleaning', name: 'Cleaning', emoji: '🧹', color: 'from-teal-400 to-cyan-600' },
-  { id: 'baby-care', name: 'Baby Care', emoji: '👶', color: 'from-rose-400 to-pink-600' },
-  { id: 'frozen', name: 'Frozen Foods', emoji: '🧊', color: 'from-indigo-400 to-blue-600' },
-  { id: 'instant-food', name: 'Instant Food', emoji: '🍜', color: 'from-orange-400 to-amber-600' },
-  { id: 'bread-bakery', name: 'Bread & Bakery', emoji: '🍞', color: 'from-yellow-400 to-amber-500' },
-  { id: 'sweets', name: 'Sweets & Mithai', emoji: '🍬', color: 'from-pink-500 to-purple-500' },
+  { id: 'all', name: 'All', emoji: '🛒', color: 'from-green-500 to-emerald-600', image: 'https://images.unsplash.com/photo-1542838132-92c53300491e?auto=compress&cs=tinysrgb&w=120&h=120&fit=crop' },
+  { id: 'rice-atta', name: 'Rice & Atta', emoji: '🌾', color: 'from-amber-500 to-yellow-600', image: 'https://images.unsplash.com/photo-1586201375761-83865001e31c?auto=compress&cs=tinysrgb&w=120&h=120&fit=crop' },
+  { id: 'oils-ghee', name: 'Oils & Ghee', emoji: '🫙', color: 'from-yellow-500 to-orange-500', image: 'https://images.unsplash.com/photo-1474979266404-7eaacbcd87c5?auto=compress&cs=tinysrgb&w=120&h=120&fit=crop' },
+  { id: 'dal-pulses', name: 'Dal & Pulses', emoji: '🫘', color: 'from-orange-500 to-red-500', image: 'https://images.unsplash.com/photo-1547050605-2f8653ac5a0d?auto=compress&cs=tinysrgb&w=120&h=120&fit=crop' },
+  { id: 'spices', name: 'Spices & Masala', emoji: '🌶️', color: 'from-red-500 to-pink-500', image: 'https://images.unsplash.com/photo-1596040033229-a9821ebd058d?auto=compress&cs=tinysrgb&w=120&h=120&fit=crop' },
+  { id: 'biscuits-snacks', name: 'Biscuits & Snacks', emoji: '🍪', color: 'from-purple-500 to-indigo-500', image: 'https://images.unsplash.com/photo-1590080875515-8a3a8dc5735e?auto=compress&cs=tinysrgb&w=120&h=120&fit=crop' },
+  { id: 'beverages', name: 'Beverages', emoji: '☕', color: 'from-blue-500 to-cyan-500', image: 'https://images.unsplash.com/photo-1544787219-7f47ccb76574?auto=compress&cs=tinysrgb&w=120&h=120&fit=crop' },
+  { id: 'dairy', name: 'Dairy & Eggs', emoji: '🥛', color: 'from-sky-400 to-blue-500', image: 'https://images.unsplash.com/photo-1550583724-b2692b85b150?auto=compress&cs=tinysrgb&w=120&h=120&fit=crop' },
+  { id: 'fruits-veggies', name: 'Fruits & Veggies', emoji: '🥦', color: 'from-green-400 to-teal-500', image: 'https://images.unsplash.com/photo-1610832958506-ee5633619141?auto=compress&cs=tinysrgb&w=120&h=120&fit=crop' },
+  { id: 'personal-care', name: 'Personal Care', emoji: '🧴', color: 'from-pink-400 to-rose-500', image: 'https://images.unsplash.com/photo-1556228720-195a672e8a03?auto=compress&cs=tinysrgb&w=120&h=120&fit=crop' },
+  { id: 'cleaning', name: 'Cleaning', emoji: '🧹', color: 'from-teal-400 to-cyan-600', image: 'https://images.unsplash.com/photo-1581578731548-c64695cc6952?auto=compress&cs=tinysrgb&w=120&h=120&fit=crop' },
+  { id: 'baby-care', name: 'Baby Care', emoji: '👶', color: 'from-rose-400 to-pink-600', image: 'https://images.unsplash.com/photo-1519689680058-324335c77eba?auto=compress&cs=tinysrgb&w=120&h=120&fit=crop' },
+  { id: 'frozen', name: 'Frozen Foods', emoji: '🧊', color: 'from-indigo-400 to-blue-600', image: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=compress&cs=tinysrgb&w=120&h=120&fit=crop' },
+  { id: 'instant-food', name: 'Instant Food', emoji: '🍜', color: 'from-orange-400 to-amber-600', image: 'https://images.unsplash.com/photo-1612966608967-312ba599102e?auto=compress&cs=tinysrgb&w=120&h=120&fit=crop' },
+  { id: 'bread-bakery', name: 'Bread & Bakery', emoji: '🍞', color: 'from-yellow-400 to-amber-500', image: 'https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=compress&cs=tinysrgb&w=120&h=120&fit=crop' },
+  { id: 'sweets', name: 'Sweets & Mithai', emoji: '🍬', color: 'from-pink-500 to-purple-500', image: 'https://images.unsplash.com/photo-1587314168485-3236d6710814?auto=compress&cs=tinysrgb&w=120&h=120&fit=crop' },
+  { id: 'stationery', name: 'Stationery', emoji: '✏️', color: 'from-blue-600 to-indigo-600', image: 'https://images.unsplash.com/photo-1456513080510-7bf3a84b82f8?auto=compress&cs=tinysrgb&w=120&h=120&fit=crop' },
 ];
 
 function getPlaceholderImage(productName: string, category: string): string {
@@ -50,6 +55,8 @@ function getPlaceholderImage(productName: string, category: string): string {
     'instant-food': ['f97316', 'ea580c'],
     'bread-bakery': ['eab308', 'ca8a04'],
     'sweets': ['a855f7', '9333ea'],
+    'stationery': ['2563eb', '1d4ed8'],
+    'stationary': ['2563eb', '1d4ed8'],
   };
   const [bg] = colors[category] || ['16a34a', '15803d'];
   const initials = productName.split(' ').slice(0, 2).map(w => w[0]).join('').toUpperCase();
@@ -356,6 +363,28 @@ const rawProducts = [
   { name: 'Brown Sugar', category: 'sweets', subcategory: 'Sugar', price: 89, mrp: 110, unit: '500 g', badge: 'Healthy' },
   { name: 'Jaggery (Gud)', category: 'sweets', subcategory: 'Natural Sweetener', price: 79, mrp: 99, unit: '500 g', badge: 'Organic' },
   { name: 'Mishri (Rock Sugar)', category: 'sweets', subcategory: 'Sugar', price: 69, mrp: 89, unit: '250 g' },
+
+  // STATIONERY
+  { name: 'Classmate Notebook (Single Line, 172 Pages)', category: 'stationery', subcategory: 'Notebooks', price: 60, mrp: 65, unit: '1 pc', badge: 'Popular' },
+  { name: 'Reynolds Gel Pen (Blue, Pack of 5)', category: 'stationery', subcategory: 'Pens & Markers', price: 50, mrp: 50, unit: '1 Pack', badge: 'Best Seller' },
+  { name: 'Nataraj 621 Pencils (Pack of 10)', category: 'stationery', subcategory: 'Pencils', price: 45, mrp: 50, unit: '1 Pack', badge: 'Popular' },
+  { name: 'Apsara Platinum Kit', category: 'stationery', subcategory: 'Stationery Kits', price: 99, mrp: 110, unit: '1 Kit', badge: 'Value Pack' },
+  { name: 'Fevicol MR Squeezy Glue (85 g)', category: 'stationery', subcategory: 'Adhesives', price: 40, mrp: 45, unit: '1 pc' },
+  { name: 'Doms Color Pencils (Pack of 12)', category: 'stationery', subcategory: 'Art Supplies', price: 60, mrp: 70, unit: '1 Pack', badge: 'Kids Choice' },
+  { name: 'Camlin Kokuyo Exam Pad', category: 'stationery', subcategory: 'Writing Pads', price: 80, mrp: 90, unit: '1 pc' },
+  { name: 'Parker Vector Roller Ball Pen (Blue)', category: 'stationery', subcategory: 'Premium Pens', price: 299, mrp: 349, unit: '1 pc', badge: 'Premium' },
+  
+  // TRENDING NOW & BUY AGAIN PRODUCTS
+  { name: 'Basmati Rice', category: 'rice-atta', subcategory: 'Basmati Rice', price: 180, mrp: 200, unit: '1 kg', badge: 'Best Seller' },
+  { name: 'Fortune Sunflower Oil', category: 'oils-ghee', subcategory: 'Sunflower Oil', price: 112, mrp: 132, unit: '1 L', badge: 'Popular' },
+  { name: 'Toor Dal', category: 'dal-pulses', subcategory: 'Dal', price: 140, mrp: 147, unit: '1 kg', badge: 'Best Seller' },
+  { name: 'Maggi Noodles (12 pack)', category: 'instant-food', subcategory: 'Noodles', price: 48, mrp: 60, unit: '12 pack', badge: 'Value Pack' },
+  { name: 'Amul Butter', category: 'dairy', subcategory: 'Butter', price: 55, mrp: 61, unit: '100 g', badge: 'Best Seller' },
+  { name: 'Brooke Bond Tea', category: 'beverages', subcategory: 'Tea', price: 95, mrp: 108, unit: '250 g', badge: 'Popular' },
+  { name: 'Amul Dahi (Curd)', category: 'dairy', subcategory: 'Curd', price: 45, mrp: 53, unit: '400 g', badge: 'Popular' },
+  { name: 'Tata Salt', category: 'rice-atta', subcategory: 'Salt', price: 28, mrp: 30, unit: '1 kg', badge: 'Daily' },
+  { name: 'Britannia Biscuits', category: 'biscuits-snacks', subcategory: 'Biscuits', price: 20, mrp: 22, unit: '1 pc', badge: 'Popular' },
+  { name: 'Red Label Tea', category: 'beverages', subcategory: 'Tea', price: 175, mrp: 219, unit: '250 g', badge: 'Best Seller' },
 ];
 
 let productId = 1;

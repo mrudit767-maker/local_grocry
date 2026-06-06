@@ -1,9 +1,12 @@
-import { CheckCircle, Package, Clock, MessageCircle, ArrowRight } from 'lucide-react';
+import { useState } from 'react';
+import { CheckCircle, Package, Clock, MessageCircle, ArrowRight, FileText } from 'lucide-react';
 import { useStore } from '../store/useStore';
+import OrderInvoiceModal from '../components/OrderInvoiceModal';
 
 export default function OrderSuccessPage() {
   const { orders, checkoutOrderId, setCurrentPage, darkMode, storeSettings } = useStore();
   const order = orders.find(o => o.id === checkoutOrderId) || orders[0];
+  const [showInvoice, setShowInvoice] = useState(false);
 
   return (
     <div className={`min-h-screen flex items-center justify-center px-4 py-12 ${darkMode ? 'bg-gray-950' : 'bg-gray-50'}`}>
@@ -83,15 +86,23 @@ export default function OrderSuccessPage() {
 
         {/* Actions */}
         <div className="space-y-3">
+          {order && (
+            <button
+              onClick={() => setShowInvoice(true)}
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3.5 rounded-xl font-bold flex items-center justify-center gap-2 transition-all cursor-pointer shadow-md"
+            >
+              <FileText size={18} /> Download / Print Invoice
+            </button>
+          )}
           <button
             onClick={() => setCurrentPage('orders')}
-            className="w-full bg-green-600 hover:bg-green-700 text-white py-3.5 rounded-xl font-bold flex items-center justify-center gap-2 transition-all"
+            className="w-full bg-green-600 hover:bg-green-700 text-white py-3.5 rounded-xl font-bold flex items-center justify-center gap-2 transition-all cursor-pointer"
           >
             Track My Order <ArrowRight size={18} />
           </button>
           <button
             onClick={() => setCurrentPage('home')}
-            className={`w-full py-3.5 rounded-xl font-bold border transition-all ${darkMode ? 'border-gray-700 text-gray-300 hover:bg-gray-800' : 'border-gray-300 text-gray-700 hover:bg-gray-50'}`}
+            className={`w-full py-3.5 rounded-xl font-bold border transition-all cursor-pointer ${darkMode ? 'border-gray-700 text-gray-300 hover:bg-gray-800' : 'border-gray-300 text-gray-700 hover:bg-gray-50'}`}
           >
             Continue Shopping
           </button>
@@ -104,6 +115,13 @@ export default function OrderSuccessPage() {
             <MessageCircle size={16} /> Confirm via WhatsApp
           </a>
         </div>
+
+        {showInvoice && order && (
+          <OrderInvoiceModal
+            order={order}
+            onClose={() => setShowInvoice(false)}
+          />
+        )}
       </div>
     </div>
   );

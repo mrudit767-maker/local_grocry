@@ -1,12 +1,12 @@
 import { useState } from 'react';
-import { Search, ChevronLeft, Package, CheckCircle, Truck, Clock, XCircle, Phone, MessageCircle, ChefHat } from 'lucide-react';
+import { Search, ChevronLeft, Package, CheckCircle, Truck, Clock, XCircle, Phone, MessageCircle, ChefHat, ShieldCheck } from 'lucide-react';
 import { useStore } from '../store/useStore';
 
 const STATUS_STEPS = [
-  { key: 'confirmed', label: 'Order Confirmed', icon: CheckCircle, desc: 'Your order has been received and confirmed', color: 'text-blue-600', bg: 'bg-blue-100' },
-  { key: 'preparing', label: 'Being Prepared', icon: ChefHat, desc: 'We are packing your items with care', color: 'text-orange-600', bg: 'bg-orange-100' },
-  { key: 'out_for_delivery', label: 'Out for Delivery', icon: Truck, desc: 'Your order is on the way to you!', color: 'text-purple-600', bg: 'bg-purple-100' },
-  { key: 'delivered', label: 'Delivered', icon: CheckCircle, desc: 'Order delivered successfully. Enjoy!', color: 'text-green-600', bg: 'bg-green-100' },
+  { key: 'confirmed', label: 'Order Confirmed', icon: CheckCircle, desc: 'Your order has been received and confirmed', color: 'text-green-600', bg: 'bg-green-100 dark:bg-green-950/20' },
+  { key: 'preparing', label: 'Packing Items', icon: ChefHat, desc: 'Our store hero is packing your fresh items with care', color: 'text-orange-600', bg: 'bg-orange-100 dark:bg-orange-950/20' },
+  { key: 'out_for_delivery', label: 'Out for Delivery', icon: Truck, desc: 'Your delivery partner is riding to your location', color: 'text-purple-600', bg: 'bg-purple-100 dark:bg-purple-950/20' },
+  { key: 'delivered', label: 'Delivered', icon: CheckCircle, desc: 'Order delivered successfully. Thank you!', color: 'text-emerald-600', bg: 'bg-emerald-100 dark:bg-emerald-950/20' },
 ];
 
 const STATUS_ORDER = ['pending', 'confirmed', 'preparing', 'out_for_delivery', 'delivered'];
@@ -32,178 +32,205 @@ export default function TrackOrderPage() {
   const currentStatusIndex = foundOrder ? STATUS_ORDER.indexOf(foundOrder.status) : -1;
 
   return (
-    <div className={`min-h-screen ${darkMode ? 'bg-gray-950' : 'bg-gray-50'}`}>
-      {/* Hero */}
-      <div className="bg-gradient-to-r from-indigo-700 via-purple-600 to-pink-600 text-white py-8 px-4">
-        <div className="max-w-2xl mx-auto">
+    <div className={`min-h-screen ${darkMode ? 'bg-gray-950 text-white' : 'bg-gray-50 text-gray-800'}`}>
+      
+      {/* Visual Header */}
+      <div className="bg-gradient-to-r from-green-600 via-green-700 to-emerald-800 text-white py-10 px-4">
+        <div className="max-w-2xl mx-auto space-y-4">
           <button
             onClick={() => setCurrentPage('home')}
-            className="flex items-center gap-2 text-indigo-100 hover:text-white mb-4 text-sm font-medium transition-colors"
+            className="flex items-center gap-1.5 text-green-100 hover:text-white text-xs font-bold transition-all cursor-pointer"
           >
-            <ChevronLeft size={16} /> Back to Home
+            <ChevronLeft size={14} /> Back to Home
           </button>
-          <div className="flex items-center gap-3 mb-2">
-            <div className="w-10 h-10 bg-white/20 rounded-2xl flex items-center justify-center">
-              <Package size={22} />
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 bg-white/20 backdrop-blur-md rounded-2xl flex items-center justify-center text-white shadow">
+              <Package size={24} className="animate-bounce" />
             </div>
-            <h1 className="text-3xl font-black">Track Your Order</h1>
+            <div>
+              <h1 className="text-2xl font-black">Live Order Tracking</h1>
+              <p className="text-green-100 text-xs font-semibold">Track your Apna Kirana delivery real-time</p>
+            </div>
           </div>
-          <p className="text-indigo-100 text-sm">Enter your Order ID and mobile number to get real-time delivery updates</p>
         </div>
       </div>
 
       <div className="max-w-2xl mx-auto px-4 py-8 space-y-6">
-
-        {/* Search Form */}
-        <div className={`rounded-3xl border p-6 shadow-lg ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
-          <h2 className={`font-bold text-base mb-5 ${darkMode ? 'text-white' : 'text-gray-900'}`}>🔍 Enter Order Details</h2>
-          <div className="space-y-4">
+        
+        {/* Search Panel */}
+        <div className={`p-6 rounded-3xl border shadow-premium ${
+          darkMode ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-200/60'
+        }`}>
+          <h2 className="text-sm font-extrabold flex items-center gap-2 mb-4">
+            🔍 Enter Tracking Details
+          </h2>
+          <div className="grid sm:grid-cols-2 gap-4">
             <div>
-              <label className={`block text-sm font-semibold mb-1.5 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Order ID *</label>
+              <label className="block text-[11px] font-bold text-gray-400 mb-1.5">Order ID *</label>
               <input
                 type="text"
                 value={orderId}
                 onChange={e => { setOrderId(e.target.value.toUpperCase()); setSearched(false); }}
-                placeholder="e.g. ORD1748234567890"
-                className={`w-full px-4 py-3 rounded-xl border text-sm font-mono outline-none focus:ring-2 focus:ring-indigo-500 ${
-                  darkMode ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' : 'bg-gray-50 border-gray-300'
+                placeholder="ORD178000..."
+                className={`w-full px-4 py-3 rounded-xl border text-xs font-mono font-bold outline-none focus:ring-2 focus:ring-green-500 ${
+                  darkMode ? 'bg-gray-800 border-gray-700 placeholder-gray-500' : 'bg-gray-50 border-gray-300 placeholder-gray-400'
                 }`}
               />
-              <p className="text-xs text-gray-400 mt-1">You can find your Order ID in the order confirmation page or SMS</p>
             </div>
             <div>
-              <label className={`block text-sm font-semibold mb-1.5 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Mobile Number *</label>
+              <label className="block text-[11px] font-bold text-gray-400 mb-1.5">Mobile Number *</label>
               <input
                 type="tel"
                 value={phone}
                 onChange={e => { setPhone(e.target.value); setSearched(false); }}
                 onKeyDown={e => e.key === 'Enter' && handleSearch()}
-                placeholder="10-digit mobile number"
-                className={`w-full px-4 py-3 rounded-xl border text-sm outline-none focus:ring-2 focus:ring-indigo-500 ${
-                  darkMode ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' : 'bg-gray-50 border-gray-300'
+                placeholder="10-digit number"
+                className={`w-full px-4 py-3 rounded-xl border text-xs outline-none focus:ring-2 focus:ring-green-500 ${
+                  darkMode ? 'bg-gray-800 border-gray-700 placeholder-gray-500' : 'bg-gray-50 border-gray-300 placeholder-gray-400'
                 }`}
               />
             </div>
-            <button
-              onClick={handleSearch}
-              disabled={!orderId.trim() || !phone.trim()}
-              className="w-full flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed text-white py-3.5 rounded-xl font-bold transition-all shadow-md"
-            >
-              <Search size={18} /> Track Order
-            </button>
           </div>
+          <button
+            onClick={handleSearch}
+            disabled={!orderId.trim() || !phone.trim()}
+            className="w-full mt-4 flex items-center justify-center gap-2 bg-green-600 hover:bg-green-700 disabled:opacity-50 text-white py-3.5 rounded-2xl font-bold text-sm shadow-md transition-all cursor-pointer"
+          >
+            <Search size={16} /> Track Order Status
+          </button>
         </div>
 
-        {/* Results */}
+        {/* Not found State */}
         {searched && !foundOrder && (
-          <div className={`rounded-3xl border p-8 text-center shadow-lg ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
-            <div className="text-5xl mb-4">😕</div>
-            <h3 className={`font-bold text-lg mb-2 ${darkMode ? 'text-white' : 'text-gray-900'}`}>Order Not Found</h3>
-            <p className={`text-sm mb-5 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-              No order found with this Order ID and mobile number. Please double-check and try again.
-            </p>
+          <div className={`p-8 rounded-3xl border text-center shadow-premium ${
+            darkMode ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-200'
+          }`}>
+            <span className="text-5xl mb-4 block">🔍</span>
+            <h3 className="text-base font-extrabold mb-1">Order Details Not Found</h3>
+            <p className="text-gray-500 text-xs px-6 mb-6">Double check your Order ID and mobile number or contact customer care to sync your offline details.</p>
             <a
-              href={`https://wa.me/${storeSettings.whatsapp}?text=Hi! I need help tracking my order: ${orderId}`}
+              href={`https://wa.me/${storeSettings.whatsapp}?text=Hi! I am tracking Order: ${orderId} but it says not found.`}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-5 py-2.5 rounded-xl font-semibold text-sm transition-all"
+              className="inline-flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-5 py-2.5 rounded-xl font-bold text-xs shadow-md transition-all"
             >
-              <MessageCircle size={16} /> Contact us on WhatsApp
+              <MessageCircle size={14} /> Contact support on WhatsApp
             </a>
           </div>
         )}
 
+        {/* Found State */}
         {foundOrder && (
-          <>
-            {/* Order Header */}
-            <div className={`rounded-3xl border p-6 shadow-lg ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
-              <div className="flex items-start justify-between mb-4">
-                <div>
-                  <p className={`text-xs font-bold uppercase tracking-wide mb-1 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Order ID</p>
-                  <p className={`font-mono font-black text-lg text-indigo-600`}>{foundOrder.id}</p>
-                  <p className={`text-xs mt-1 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                    Placed on {new Date(foundOrder.createdAt).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' })}
+          <div className="space-y-6">
+            
+            {/* Summary Header */}
+            <div className={`p-6 rounded-3xl border shadow-premium ${
+              darkMode ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-200/60'
+            }`}>
+              <div className="flex justify-between items-start flex-wrap gap-4">
+                <div className="space-y-1">
+                  <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Active Order</span>
+                  <h3 className="font-mono text-base font-black text-green-600">{foundOrder.id}</h3>
+                  <p className="text-[10px] text-gray-500 font-semibold">
+                    Placed on: {new Date(foundOrder.createdAt).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' })}
                   </p>
                 </div>
                 <div className="text-right">
-                  <p className="text-2xl font-black text-green-600">₹{foundOrder.total}</p>
-                  <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{foundOrder.items.length} items</p>
-                  <span className={`text-xs px-2 py-0.5 rounded-full font-medium mt-1 inline-block ${
-                    foundOrder.paymentStatus === 'paid' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'
+                  <p className="text-xl font-black text-green-600">₹{foundOrder.total}</p>
+                  <p className="text-[10px] text-gray-500 font-semibold">{foundOrder.items.length} items</p>
+                  <span className={`inline-block text-[9px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full mt-1.5 ${
+                    foundOrder.paymentStatus === 'paid' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-850'
                   }`}>
-                    {foundOrder.paymentStatus === 'paid' ? '✓ Paid' : '⏳ COD'}
+                    {foundOrder.paymentStatus === 'paid' ? 'Paid' : 'Cash on Delivery (COD)'}
                   </span>
                 </div>
               </div>
 
-              {/* Cancelled Special Case */}
+              {foundOrder.deliverySlot && (
+                <div className="mt-4 pt-4 border-t border-dashed dark:border-gray-800 flex items-center gap-2 text-xs font-semibold text-green-600 bg-green-50/50 dark:bg-green-950/20 px-3 py-2 rounded-xl">
+                  <span>🕒 Scheduled delivery slot: <strong>{foundOrder.deliverySlot}</strong></span>
+                </div>
+              )}
+
+              {/* Status overrides */}
               {foundOrder.status === 'cancelled' && (
-                <div className="flex items-center gap-3 p-4 bg-red-50 rounded-2xl border border-red-100">
+                <div className="mt-4 flex items-center gap-3 p-4 bg-red-50 dark:bg-red-950/20 rounded-2xl border border-red-200 dark:border-red-900/50">
                   <XCircle className="text-red-500 shrink-0" size={22} />
                   <div>
-                    <p className="font-bold text-red-700 text-sm">Order Cancelled</p>
-                    <p className="text-red-500 text-xs">This order has been cancelled. Please contact us for refund queries.</p>
+                    <p className="font-bold text-red-700 text-xs dark:text-red-400">Order Cancelled</p>
+                    <p className="text-red-500 text-[10px] dark:text-red-405">This order has been cancelled. Please contact us on WhatsApp for refund inquiries.</p>
                   </div>
                 </div>
               )}
 
-              {/* Pending */}
               {foundOrder.status === 'pending' && (
-                <div className="flex items-center gap-3 p-4 bg-yellow-50 rounded-2xl border border-yellow-100">
+                <div className="mt-4 flex items-center gap-3 p-4 bg-yellow-50 dark:bg-yellow-950/20 rounded-2xl border border-yellow-250 dark:border-yellow-900/50">
                   <Clock className="text-yellow-600 shrink-0" size={22} />
                   <div>
-                    <p className="font-bold text-yellow-700 text-sm">Order Received — Awaiting Confirmation</p>
-                    <p className="text-yellow-600 text-xs">We'll confirm your order shortly. Usually within 5–10 minutes.</p>
+                    <p className="font-bold text-yellow-700 text-xs dark:text-yellow-400">Awaiting Store Confirmation</p>
+                    <p className="text-yellow-600 text-[10px] dark:text-yellow-405">We have received your order details and are confirming with the nearest store branch.</p>
                   </div>
                 </div>
               )}
             </div>
 
-            {/* Status Timeline */}
+            {/* LIVE VERTICAL PROGRESS TIMELINE */}
             {foundOrder.status !== 'cancelled' && foundOrder.status !== 'pending' && (
-              <div className={`rounded-3xl border p-6 shadow-lg ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
-                <h3 className={`font-black text-base mb-6 ${darkMode ? 'text-white' : 'text-gray-900'}`}>📦 Delivery Status</h3>
-                <div className="space-y-0">
+              <div className={`p-6 rounded-3xl border shadow-premium ${
+                darkMode ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-200/60'
+              }`}>
+                <h3 className="text-xs font-black uppercase tracking-wider text-gray-400 mb-6">🚚 Live Tracking Timeline</h3>
+                
+                <div className="relative pl-2">
                   {STATUS_STEPS.map((step, idx) => {
-                    const stepStatusIndex = STATUS_ORDER.indexOf(step.key);
-                    const isDone = currentStatusIndex >= stepStatusIndex;
-                    const isCurrent = STATUS_ORDER[currentStatusIndex] === step.key;
+                    const stepIndex = STATUS_ORDER.indexOf(step.key);
+                    const isCompleted = currentStatusIndex >= stepIndex;
+                    const isActive = STATUS_ORDER[currentStatusIndex] === step.key;
                     const Icon = step.icon;
 
                     return (
-                      <div key={step.key} className="flex gap-4">
-                        {/* Icon + Line */}
-                        <div className="flex flex-col items-center">
-                          <div className={`w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 transition-all ${
-                            isDone
-                              ? isCurrent
-                                ? `${step.bg} ring-4 ring-offset-2 ${darkMode ? 'ring-offset-gray-800' : 'ring-offset-white'} ring-green-200`
-                                : 'bg-green-100'
-                              : darkMode ? 'bg-gray-700' : 'bg-gray-100'
+                      <div key={step.key} className="flex gap-4 relative">
+                        {/* Bullet / Connector */}
+                        <div className="flex flex-col items-center shrink-0">
+                          <div className={`w-8 h-8 rounded-full flex items-center justify-center transition-all ${
+                            isCompleted
+                              ? isActive
+                                ? 'bg-green-600 text-white ring-4 ring-green-100 dark:ring-green-950/40 font-bold scale-110 shadow-md'
+                                : 'bg-green-100 text-green-700 dark:bg-green-950/20 dark:text-green-400'
+                              : 'bg-gray-100 dark:bg-gray-800 text-gray-400'
                           }`}>
-                            <Icon
-                              size={20}
-                              className={isDone ? (isCurrent ? step.color : 'text-green-600') : darkMode ? 'text-gray-500' : 'text-gray-400'}
-                            />
+                            {isCompleted && !isActive ? '✓' : <Icon size={15} />}
                           </div>
                           {idx < STATUS_STEPS.length - 1 && (
-                            <div className={`w-0.5 h-8 mt-1 rounded-full ${isDone ? 'bg-green-400' : darkMode ? 'bg-gray-700' : 'bg-gray-200'}`} />
+                            <div className={`w-0.5 h-12 my-1 rounded-full ${
+                              isCompleted && currentStatusIndex > stepIndex ? 'bg-green-500' : 'bg-gray-200 dark:bg-gray-800'
+                            }`} />
                           )}
                         </div>
 
-                        {/* Content */}
-                        <div className="pb-6">
-                          <p className={`font-bold text-sm ${isDone ? (darkMode ? 'text-white' : 'text-gray-900') : darkMode ? 'text-gray-500' : 'text-gray-400'}`}>
-                            {step.label}
-                            {isCurrent && <span className="ml-2 text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-bold animate-pulse">● Current</span>}
-                          </p>
-                          <p className={`text-xs mt-0.5 ${isDone ? (darkMode ? 'text-gray-400' : 'text-gray-500') : darkMode ? 'text-gray-600' : 'text-gray-300'}`}>
+                        {/* Text Content */}
+                        <div className="pb-8 flex-1">
+                          <div className="flex items-center gap-2">
+                            <span className={`text-xs font-extrabold ${
+                              isCompleted ? (darkMode ? 'text-white' : 'text-gray-900') : 'text-gray-400'
+                            }`}>
+                              {step.label}
+                            </span>
+                            {isActive && (
+                              <span className="text-[8px] bg-green-100 text-green-700 dark:bg-green-950/30 dark:text-green-400 px-2 py-0.5 rounded-full font-black uppercase animate-pulse">
+                                Live Now
+                              </span>
+                            )}
+                          </div>
+                          <p className={`text-[10px] font-semibold mt-0.5 ${
+                            isCompleted ? (darkMode ? 'text-gray-400' : 'text-gray-500') : 'text-gray-550'
+                          }`}>
                             {step.desc}
                           </p>
-                          {isDone && (
-                            <p className="text-xs text-green-600 font-medium mt-0.5">
-                              {new Date(foundOrder.updatedAt).toLocaleString('en-IN', { timeStyle: 'short', dateStyle: 'short' })}
-                            </p>
+                          {isCompleted && (
+                            <span className="text-[9px] text-green-600 block mt-1 font-semibold">
+                              Updated: {new Date(foundOrder.updatedAt).toLocaleTimeString('en-IN', { timeStyle: 'short' })}
+                            </span>
                           )}
                         </div>
                       </div>
@@ -213,61 +240,110 @@ export default function TrackOrderPage() {
               </div>
             )}
 
+            {/* Delivery Partner Details (Out for Delivery state) */}
+            {foundOrder.status === 'out_for_delivery' && (
+              <div className={`p-6 rounded-3xl border shadow-premium ${
+                darkMode ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-200/60'
+              } space-y-4`}>
+                <h3 className="text-xs font-black uppercase tracking-wider text-gray-450">🚴 Delivery Partner Details</h3>
+                <div className="flex gap-4 items-center">
+                  <img 
+                    src="https://images.pexels.com/photos/220453/pexels-photo-220453.jpeg?auto=compress&cs=tinysrgb&fit=crop&h=100&w=100" 
+                    alt="Delivery Hero" 
+                    className="w-12 h-12 rounded-2xl object-cover border bg-gray-50"
+                  />
+                  <div className="flex-1 space-y-1">
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-xs font-extrabold">Ramesh Kumar</span>
+                      <span className="text-[8px] font-bold bg-green-100 text-green-700 dark:bg-green-950/30 dark:text-green-400 px-1.5 py-0.5 rounded-full flex items-center gap-0.5">
+                        <ShieldCheck size={9} /> Healthy
+                      </span>
+                    </div>
+                    <p className="text-[10px] text-gray-500">Activa (MP 04 XY 7890) • Temp: 97.8°F</p>
+                  </div>
+                  <div className="flex gap-2">
+                    <a
+                      href="tel:+919876543210"
+                      className="p-2.5 rounded-xl bg-green-50 text-green-600 dark:bg-green-950/20 dark:text-green-400 hover:scale-105 transition-all"
+                    >
+                      <Phone size={15} />
+                    </a>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Map Link / Coordinate Pin Info */}
+            {foundOrder.locationUrl && (
+              <div className={`p-5 rounded-3xl border ${
+                darkMode ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-200/60'
+              } space-y-2`}>
+                <h3 className="text-xs font-black uppercase tracking-wider text-gray-450">📍 GPS Navigation Linked</h3>
+                <p className="text-[10px] text-gray-500 leading-relaxed font-semibold">
+                  Your device GPS coordinates have been loaded directly into the delivery driver's navigator app to guarantee precision routing.
+                </p>
+                <a 
+                  href={foundOrder.locationUrl} 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="text-xs text-green-600 hover:underline font-bold inline-block"
+                >
+                  View linked location on Google Maps →
+                </a>
+              </div>
+            )}
+
             {/* Order Items */}
-            <div className={`rounded-3xl border p-6 shadow-lg ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
-              <h3 className={`font-black text-base mb-4 ${darkMode ? 'text-white' : 'text-gray-900'}`}>🛒 Order Items</h3>
-              <div className="space-y-3">
+            <div className={`p-6 rounded-3xl border shadow-premium ${
+              darkMode ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-200/60'
+            }`}>
+              <h3 className="text-xs font-black uppercase tracking-wider text-gray-400 mb-4">🛒 Order Content</h3>
+              <div className="space-y-2.5 max-h-60 overflow-y-auto pr-1">
                 {foundOrder.items.map(item => (
-                  <div key={item.product.id} className={`flex items-center gap-3 p-3 rounded-2xl ${darkMode ? 'bg-gray-700' : 'bg-gray-50'}`}>
-                    <img
-                      src={item.product.image}
-                      alt={item.product.name}
-                      className="w-12 h-12 rounded-xl object-cover bg-white"
-                      onError={e => { (e.target as HTMLImageElement).src = `https://placehold.co/48x48/16a34a/ffffff?text=${item.product.name[0]}`; }}
+                  <div key={item.product.id} className={`flex items-center gap-3 p-3 rounded-2xl ${darkMode ? 'bg-gray-800' : 'bg-gray-50'}`}>
+                    <img 
+                      src={item.product.image} 
+                      alt={item.product.name} 
+                      className="w-10 h-10 rounded-xl object-cover bg-white border"
+                      onError={e => { (e.target as HTMLImageElement).src = `https://placehold.co/40x40/16a34a/ffffff?text=${item.product.name[0]}`; }}
                     />
                     <div className="flex-1">
-                      <p className={`font-semibold text-sm ${darkMode ? 'text-white' : 'text-gray-900'}`}>{item.product.name}</p>
-                      <p className="text-xs text-gray-500">{item.product.unit} × {item.quantity}</p>
+                      <p className="text-xs font-bold leading-tight">{item.product.name}</p>
+                      <p className="text-[10px] text-gray-500 mt-0.5">{item.product.unit} • Qty: {item.quantity}</p>
                     </div>
-                    <p className="font-bold text-green-600 text-sm">₹{item.product.price * item.quantity}</p>
+                    <p className="text-xs font-black text-green-600">₹{item.product.price * item.quantity}</p>
                   </div>
                 ))}
               </div>
-              <div className={`mt-4 pt-4 border-t flex justify-between font-black ${darkMode ? 'border-gray-700 text-white' : 'border-gray-100 text-gray-900'}`}>
-                <span>Total</span>
-                <span className="text-green-600">₹{foundOrder.total}</span>
+              <div className="mt-4 pt-4 border-t dark:border-gray-800 flex justify-between font-black text-xs">
+                <span>Total Amount Paid</span>
+                <span className="text-green-600 text-sm">₹{foundOrder.total}</span>
               </div>
             </div>
 
-            {/* Delivery Address */}
-            <div className={`rounded-3xl border p-5 ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
-              <h3 className={`font-bold text-sm mb-3 ${darkMode ? 'text-white' : 'text-gray-900'}`}>📍 Delivering To</h3>
-              <p className={`font-semibold text-sm ${darkMode ? 'text-gray-200' : 'text-gray-900'}`}>{foundOrder.customer.name}</p>
-              <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>{foundOrder.customer.address}</p>
-              <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>{foundOrder.customer.city} — {foundOrder.customer.pincode}</p>
-            </div>
-
-            {/* Help CTA */}
+            {/* Support Options */}
             <div className="grid grid-cols-2 gap-3">
               <a
                 href={`tel:${storeSettings.phone.replace(/\s/g, '')}`}
-                className={`flex items-center justify-center gap-2 py-3.5 rounded-2xl font-semibold text-sm border transition-all hover:scale-[1.02] ${
-                  darkMode ? 'border-gray-600 text-gray-300 bg-gray-800 hover:bg-gray-700' : 'border-gray-200 text-gray-700 bg-white hover:bg-gray-50'
+                className={`flex items-center justify-center gap-1.5 py-3.5 rounded-2xl font-bold text-xs border transition-all hover:scale-[1.02] cursor-pointer ${
+                  darkMode ? 'border-gray-700 text-gray-300 bg-gray-900 hover:bg-gray-800' : 'border-gray-200 text-gray-700 bg-white hover:bg-gray-50'
                 }`}
               >
-                <Phone size={16} /> Call Store
+                <Phone size={13} /> Call Store Branch
               </a>
               <a
-                href={`https://wa.me/${storeSettings.whatsapp}?text=Hi! I need help with my order ${foundOrder.id}`}
+                href={`https://wa.me/${storeSettings.whatsapp}?text=Hi! I need help with my Apna Kirana order ${foundOrder.id}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center justify-center gap-2 py-3.5 rounded-2xl font-semibold text-sm bg-green-600 hover:bg-green-700 text-white transition-all hover:scale-[1.02] shadow-md"
+                className="flex items-center justify-center gap-1.5 py-3.5 rounded-2xl font-bold text-xs bg-green-600 hover:bg-green-700 text-white transition-all hover:scale-[1.02] shadow-sm cursor-pointer"
               >
-                <MessageCircle size={16} /> WhatsApp Help
+                <MessageCircle size={13} /> Help on WhatsApp
               </a>
             </div>
-          </>
+
+          </div>
         )}
+
       </div>
     </div>
   );

@@ -1,7 +1,9 @@
-import { Package, Clock, CheckCircle, XCircle, Truck, ChefHat, ChevronDown, ChevronUp } from 'lucide-react';
+import { Package, Clock, CheckCircle, XCircle, Truck, ChefHat, ChevronDown, ChevronUp, FileText } from 'lucide-react';
 import { useState } from 'react';
 import { useStore } from '../store/useStore';
 import { Order } from '../store/useStore';
+import OrderInvoiceModal from '../components/OrderInvoiceModal';
+import OrderFeedbackModal from '../components/OrderFeedbackModal';
 
 const STATUS_CONFIG: Record<Order['status'], { label: string; color: string; icon: React.ComponentType<{ size?: number; className?: string }> }> = {
   pending: { label: 'Pending', color: 'text-yellow-600 bg-yellow-100', icon: Clock },
@@ -12,7 +14,7 @@ const STATUS_CONFIG: Record<Order['status'], { label: string; color: string; ico
   cancelled: { label: 'Cancelled', color: 'text-red-600 bg-red-100', icon: XCircle },
 };
 
-function OrderCard({ order }: { order: Order }) {
+function OrderCard({ order, onViewInvoice, onGiveFeedback }: { order: Order; onViewInvoice: (order: Order) => void; onGiveFeedback: (order: Order) => void }) {
   const { darkMode } = useStore();
   const [expanded, setExpanded] = useState(false);
   const status = STATUS_CONFIG[order.status];
@@ -54,7 +56,7 @@ function OrderCard({ order }: { order: Order }) {
             </p>
             <p className="text-green-600 font-bold">₹{order.total}</p>
           </div>
-          <button onClick={() => setExpanded(!expanded)} className={`p-2 rounded-lg ${darkMode ? 'hover:bg-gray-700 text-gray-400' : 'hover:bg-gray-100 text-gray-500'}`}>
+          <button onClick={() => setExpanded(!expanded)} className={`p-2 rounded-lg ${darkMode ? 'hover:bg-gray-700 text-gray-400' : 'hover:bg-gray-100 text-gray-500'} cursor-pointer`}>
             {expanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
           </button>
         </div>
@@ -79,14 +81,14 @@ function OrderCard({ order }: { order: Order }) {
           {/* Delivery Address */}
           <div>
             <p className={`text-xs font-bold mb-1 uppercase tracking-wide ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Delivery Address</p>
-            <p className={`text-xs ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>{order.customer.name} • {order.customer.phone}</p>
-            <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{order.customer.address}, {order.customer.pincode}</p>
+            <p className={`text-xs ${darkMode ? 'text-gray-300' : 'text-gray-650'}`}>{order.customer.name} • {order.customer.phone}</p>
+            <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-550'}`}>{order.customer.address}, {order.customer.pincode}</p>
           </div>
 
           {/* Payment */}
           <div>
             <p className={`text-xs font-bold mb-1 uppercase tracking-wide ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Payment</p>
-            <p className={`text-xs ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+            <p className={`text-xs ${darkMode ? 'text-gray-300' : 'text-gray-650'}`}>
               {order.paymentMethod === 'cod' ? 'Cash on Delivery' : order.paymentMethod.toUpperCase()} •{' '}
               <span className={order.paymentStatus === 'paid' ? 'text-green-600' : 'text-yellow-600'}>
                 {order.paymentStatus === 'paid' ? 'Paid' : 'Pending'}
@@ -117,6 +119,43 @@ function OrderCard({ order }: { order: Order }) {
               })}
             </div>
           </div>
+
+          {/* Invoice Download & Feedback */}
+          <div className="pt-2 border-t dark:border-gray-800 flex flex-col sm:flex-row gap-2">
+            <button
+              onClick={() => onViewInvoice(order)}
+              className="flex-1 flex items-center justify-center gap-1.5 bg-green-50 hover:bg-green-100 dark:bg-green-950/20 text-green-700 dark:text-green-400 text-xs font-bold px-4 py-2.5 rounded-xl border border-green-250/30 cursor-pointer shadow-sm"
+            >
+              <FileText size={14} /> Download / Print Invoice
+            </button>
+            
+            {order.status === 'delivered' && (
+              <div className="flex-1">
+                {order.feedback ? (
+                  <div className={`p-2.5 rounded-xl border flex items-start gap-2 text-xs font-bold ${
+                    darkMode ? 'bg-green-950/20 border-green-900/30 text-green-450' : 'bg-green-50 border-green-150 text-green-700'
+                  }`}>
+                    <span className="text-yellow-400 text-sm leading-none">★</span>
+                    <div className="flex-1 min-w-0">
+                      <p className="leading-none">Rated: {order.feedback.rating}/5</p>
+                      {order.feedback.comment && (
+                        <p className="text-[10px] opacity-80 italic mt-0.5 truncate">
+                          "{order.feedback.comment}"
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => onGiveFeedback(order)}
+                    className="w-full flex items-center justify-center gap-1.5 bg-yellow-50 hover:bg-yellow-100 dark:bg-yellow-950/20 text-yellow-700 dark:text-yellow-400 text-xs font-black px-4 py-2.5 rounded-xl border border-yellow-200/50 cursor-pointer shadow-sm animate-pulse"
+                  >
+                    ⭐ Share Feedback
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
         </div>
       )}
     </div>
@@ -125,6 +164,8 @@ function OrderCard({ order }: { order: Order }) {
 
 export default function OrdersPage() {
   const { orders, setCurrentPage, darkMode } = useStore();
+  const [selectedInvoiceOrder, setSelectedInvoiceOrder] = useState<Order | null>(null);
+  const [feedbackOrder, setFeedbackOrder] = useState<Order | null>(null);
 
   return (
     <div className={`min-h-screen ${darkMode ? 'bg-gray-950' : 'bg-gray-50'} py-6`}>
@@ -141,14 +182,35 @@ export default function OrdersPage() {
             <div className="text-6xl mb-4">📭</div>
             <h3 className={`text-xl font-bold mb-2 ${darkMode ? 'text-white' : 'text-gray-900'}`}>No orders yet</h3>
             <p className="text-gray-500 mb-6">Start shopping and your orders will appear here.</p>
-            <button onClick={() => setCurrentPage('products')} className="bg-green-600 text-white px-6 py-3 rounded-xl font-bold hover:bg-green-700 transition-all">
+            <button onClick={() => setCurrentPage('products')} className="bg-green-600 text-white px-6 py-3 rounded-xl font-bold hover:bg-green-700 transition-all cursor-pointer">
               Start Shopping →
             </button>
           </div>
         ) : (
           <div className="space-y-4">
-            {orders.map(order => <OrderCard key={order.id} order={order} />)}
+            {orders.map(order => (
+              <OrderCard 
+                key={order.id} 
+                order={order} 
+                onViewInvoice={(ord) => setSelectedInvoiceOrder(ord)} 
+                onGiveFeedback={(ord) => setFeedbackOrder(ord)}
+              />
+            ))}
           </div>
+        )}
+
+        {selectedInvoiceOrder && (
+          <OrderInvoiceModal
+            order={selectedInvoiceOrder}
+            onClose={() => setSelectedInvoiceOrder(null)}
+          />
+        )}
+
+        {feedbackOrder && (
+          <OrderFeedbackModal
+            order={feedbackOrder}
+            onClose={() => setFeedbackOrder(null)}
+          />
         )}
       </div>
     </div>

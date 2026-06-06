@@ -4,11 +4,11 @@ import { useStore } from '../store/useStore';
 export default function CartSidebar() {
   const {
     cart, cartOpen, toggleCart, updateQuantity, removeFromCart,
-    getCartTotal, clearCart, darkMode, setCurrentPage
+    getCartTotal, clearCart, darkMode, setCurrentPage, storeSettings
   } = useStore();
 
   const subtotal = getCartTotal();
-  const deliveryFee = subtotal >= 299 ? 0 : 49;
+  const deliveryFee = subtotal >= storeSettings.freeDeliveryAbove ? 0 : storeSettings.deliveryFee;
   const total = subtotal + deliveryFee;
 
   if (!cartOpen) return null;
@@ -55,17 +55,17 @@ export default function CartSidebar() {
         </div>
 
         {/* Free delivery banner */}
-        {subtotal > 0 && subtotal < 299 && (
+        {subtotal > 0 && subtotal < storeSettings.freeDeliveryAbove && (
           <div className="bg-gradient-to-r from-green-50 to-emerald-50 border-b border-green-100 px-4 py-2">
             <p className="text-green-700 text-xs font-medium flex items-center gap-1">
               <Tag size={12} />
-              Add ₹{299 - subtotal} more for FREE delivery!
+              Add ₹{storeSettings.freeDeliveryAbove - subtotal} more for FREE delivery!
               <span className="ml-1 font-bold">🚀</span>
             </p>
             <div className="mt-1.5 h-1.5 rounded-full bg-green-200 overflow-hidden">
               <div
                 className="h-full bg-green-500 rounded-full transition-all"
-                style={{ width: `${(subtotal / 299) * 100}%` }}
+                style={{ width: `${(subtotal / storeSettings.freeDeliveryAbove) * 100}%` }}
               />
             </div>
           </div>
@@ -85,7 +85,7 @@ export default function CartSidebar() {
                 <p className="text-gray-500 text-sm mt-1">Add some groceries to get started!</p>
               </div>
               <button
-                onClick={() => { setCurrentPage('products'); toggleCart(); }}
+                onClick={() => { setCurrentPage('products'); }}
                 className="bg-green-600 text-white px-6 py-2.5 rounded-xl font-semibold hover:bg-green-700 transition-colors"
               >
                 Shop Now
@@ -165,13 +165,13 @@ export default function CartSidebar() {
               </div>
             </div>
             <button
-              onClick={() => { setCurrentPage('checkout'); toggleCart(); }}
+              onClick={() => { setCurrentPage('checkout'); }}
               className="w-full bg-green-600 hover:bg-green-700 text-white py-3.5 rounded-xl font-bold text-base transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2"
             >
               Proceed to Checkout →
             </button>
             <button
-              onClick={() => { setCurrentPage('products'); toggleCart(); }}
+              onClick={() => { setCurrentPage('products'); }}
               className={`w-full py-2.5 rounded-xl font-medium text-sm transition-all ${darkMode ? 'text-gray-400 hover:bg-gray-800' : 'text-gray-600 hover:bg-gray-50'}`}
             >
               Continue Shopping

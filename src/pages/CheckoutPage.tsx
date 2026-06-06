@@ -1,8 +1,9 @@
 import { useState } from 'react';
-import { ChevronLeft, CreditCard, Smartphone, Banknote, Shield, CheckCircle, AlertCircle } from 'lucide-react';
+import { ChevronLeft, CreditCard, Smartphone, Banknote, Shield, CheckCircle, AlertCircle, Lock } from 'lucide-react';
 import { useStore } from '../store/useStore';
 import toast from 'react-hot-toast';
 import { saveOrderToSheet, formatOrderForSheet } from '../utils/googleSheets';
+import upiQrImage from '../assets/upi_qr.png';
 
 type PaymentMethod = 'cod' | 'upi' | 'razorpay';
 
@@ -10,18 +11,70 @@ export default function CheckoutPage() {
   const { cart, getCartTotal, clearCart, placeOrder, setCurrentPage, darkMode, storeSettings, currentCustomer } = useStore();
   const [step, setStep] = useState(1);
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('cod');
+  const [deliverySlot, setDeliverySlot] = useState('10 AM – 12 PM');
   const [loading, setLoading] = useState(false);
   const [form, setForm] = useState({
     name: currentCustomer?.name || '',
     phone: currentCustomer?.phone ? currentCustomer.phone.replace('+91 ', '') : '',
-    email: '',
+    email: currentCustomer?.email || '',
     address: currentCustomer?.address || '',
     city: currentCustomer?.city || 'Bhopal',
     pincode: currentCustomer?.pincode || '',
     landmark: '',
   });
-  const [upiId, setUpiId] = useState('');
+
+  const [upiRefNo, setUpiRefNo] = useState('');
+  const [qrType, setQrType] = useState<'dynamic' | 'static'>('dynamic');
   const [errors, setErrors] = useState<Record<string, string>>({});
+  
+  // Razorpay Simulation State
+  const [showRazorpayModal, setShowRazorpayModal] = useState(false);
+  const [razorpayPaying, setRazorpayPaying] = useState(false);
+  const [razorpaySuccess, setRazorpaySuccess] = useState(false);
+  const [razorpayCard, setRazorpayCard] = useState({
+    number: '4321 8765 2341 9087',
+    expiry: '12/28',
+    cvv: '123',
+    name: currentCustomer?.name || 'Rahul Sharma'
+  });
+  
+  const [gpsLoading, setGpsLoading] = useState(false);
+  const [locationUrl, setLocationUrl] = useState<string | undefined>(undefined);
+
+  const shareLocation = () => {
+    if (!navigator.geolocation) {
+      toast.error('Geolocation is not supported by your browser');
+      return;
+    }
+    setGpsLoading(true);
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const { latitude, longitude } = position.coords;
+        const url = `https://www.google.com/maps?q=${latitude},${longitude}`;
+        setLocationUrl(url);
+        setGpsLoading(false);
+        toast.success('GPS Location Linked Successfully! 📍');
+      },
+      (error) => {
+        setGpsLoading(false);
+        console.error('GPS error:', error);
+        switch (error.code) {
+          case error.PERMISSION_DENIED:
+            toast.error('Location permission denied. Please allow location access in your browser.');
+            break;
+          case error.POSITION_UNAVAILABLE:
+            toast.error('Location information is unavailable.');
+            break;
+          case error.TIMEOUT:
+            toast.error('Location request timed out.');
+            break;
+          default:
+            toast.error('An unknown error occurred while fetching location.');
+        }
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+    );
+  };
 
   const subtotal = getCartTotal();
   const deliveryFee = subtotal >= storeSettings.freeDeliveryAbove ? 0 : storeSettings.deliveryFee;
@@ -31,7 +84,13 @@ export default function CheckoutPage() {
   const validate = () => {
     const newErrors: Record<string, string> = {};
     if (!form.name.trim()) newErrors.name = 'Name is required';
-    if (!form.phone.match(/^[6-9]\d{9}$/)) newErrors.phone = 'Enter valid 10-digit mobile number';
+    
+    // Clean phone number of spaces/hyphens/country code prefix for matching 10 digits
+    const cleanedPhone = form.phone.replace(/[\s-+]/g, '').slice(-10);
+    if (!cleanedPhone.match(/^[6-9]\d{9}$/)) {
+      newErrors.phone = 'Enter valid 10-digit mobile number';
+    }
+    
     if (!form.address.trim()) newErrors.address = 'Address is required';
     if (!form.city.trim()) newErrors.city = 'City is required';
     if (!form.pincode.match(/^\d{6}$/)) newErrors.pincode = 'Enter valid 6-digit pincode';
@@ -39,23 +98,27 @@ export default function CheckoutPage() {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handlePlaceOrder = async () => {
-    if (!validate()) return;
+  const handlePlaceOrder = async (isRazorpayPaid: boolean = false) => {
+    if (!validate()) {
+      toast.error('Please fix the errors in your delivery information.');
+      setStep(1); // Redirect back to Delivery step so they can see validation errors
+      return;
+    }
+
+    if (paymentMethod === 'razorpay' && !isRazorpayPaid) {
+      setShowRazorpayModal(true);
+      return;
+    }
 
     setLoading(true);
     try {
-      if (paymentMethod === 'razorpay') {
-        // Simulate Razorpay flow
-        await new Promise(r => setTimeout(r, 1500));
-        toast.success('Payment gateway integration pending. Placing as COD.', { duration: 3000 });
-      } else if (paymentMethod === 'upi') {
-        if (!upiId.includes('@')) {
-          toast.error('Please enter a valid UPI ID');
+      if (paymentMethod === 'upi') {
+        if (!upiRefNo.match(/^\d{12}$/)) {
+          toast.error('Please enter a valid 12-digit UPI Ref Number (UTR)');
           setLoading(false);
           return;
         }
         await new Promise(r => setTimeout(r, 1000));
-        toast.success(`UPI payment request sent to ${upiId}`, { duration: 3000 });
       }
 
       placeOrder({
@@ -63,6 +126,7 @@ export default function CheckoutPage() {
         customer: {
           name: form.name,
           phone: form.phone,
+          email: form.email,
           address: `${form.address}, ${form.landmark ? form.landmark + ', ' : ''}${form.city}`,
           city: form.city,
           pincode: form.pincode,
@@ -73,6 +137,9 @@ export default function CheckoutPage() {
         paymentMethod,
         paymentStatus: paymentMethod === 'cod' ? 'pending' : 'paid',
         status: 'confirmed',
+        upiRefNo: paymentMethod === 'upi' ? upiRefNo : undefined,
+        locationUrl,
+        deliverySlot,
       });
 
       // Sync to Google Sheets (fire-and-forget, never blocks checkout)
@@ -86,9 +153,11 @@ export default function CheckoutPage() {
             pincode: form.pincode,
           },
           items: cart,
-          paymentMethod,
+          paymentMethod: paymentMethod === 'upi' ? `UPI (UTR: ${upiRefNo})` : paymentMethod === 'razorpay' ? 'Razorpay (Card)' : paymentMethod,
           status: 'confirmed',
           createdAt: new Date().toISOString(),
+          locationUrl,
+          deliverySlot,
         });
         saveOrderToSheet(storeSettings.googleSheetWebhookUrl, sheetData)
           .then(result => { if (result.success) console.log('✅ Order synced to Google Sheet'); })
@@ -98,12 +167,45 @@ export default function CheckoutPage() {
       clearCart();
       setCurrentPage('order-success');
       toast.success('Order placed successfully! 🎉');
-    } catch {
-      toast.error('Something went wrong. Please try again.');
+    } catch (err) {
+      console.error('Order placement error:', err);
+      toast.error(`Something went wrong: ${err instanceof Error ? err.message : String(err)}`);
     } finally {
       setLoading(false);
     }
   };
+
+  if (!currentCustomer) {
+    return (
+      <div className={`min-h-screen flex items-center justify-center px-4 ${darkMode ? 'bg-gray-950' : 'bg-gray-50'}`}>
+        <div className={`w-full max-w-md p-8 rounded-3xl border shadow-xl text-center ${
+          darkMode ? 'bg-gray-900 border-gray-800 text-white' : 'bg-white border-gray-200 text-gray-800'
+        }`}>
+          <div className="w-16 h-16 bg-red-100 dark:bg-red-950/20 text-red-600 dark:text-red-400 rounded-full flex items-center justify-center mx-auto mb-4">
+            <Lock size={28} />
+          </div>
+          <h2 className="text-xl font-black mb-2">Login Required</h2>
+          <p className="text-gray-500 dark:text-gray-400 text-xs mb-6 leading-relaxed">
+            Please log in or register an account before placing your order. This ensures accurate express delivery routing and saves your order history.
+          </p>
+          <button 
+            onClick={() => setCurrentPage('customer-login')} 
+            className="w-full bg-green-600 hover:bg-green-700 text-white py-3.5 rounded-xl font-bold transition-all shadow-md flex items-center justify-center gap-1.5 cursor-pointer"
+          >
+            Sign In / Register
+          </button>
+          <button 
+            onClick={() => setCurrentPage('products')} 
+            className={`w-full mt-2.5 py-2.5 rounded-xl text-xs font-semibold hover:underline ${
+              darkMode ? 'text-gray-400' : 'text-gray-500'
+            }`}
+          >
+            ← Back to Products
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   if (cart.length === 0) {
     return (
@@ -157,7 +259,32 @@ export default function CheckoutPage() {
             {/* Step 1: Delivery */}
             {step === 1 && (
               <div className={`p-6 rounded-2xl border ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
-                <h2 className={`text-lg font-bold mb-5 ${darkMode ? 'text-white' : 'text-gray-900'}`}>📍 Delivery Information</h2>
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5 border-b border-gray-150 dark:border-gray-700 pb-4">
+                  <h2 className={`text-lg font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>📍 Delivery Information</h2>
+                  <button
+                    type="button"
+                    onClick={shareLocation}
+                    disabled={gpsLoading}
+                    className={`text-xs px-3.5 py-2 rounded-xl font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
+                      locationUrl
+                        ? 'bg-green-150 text-green-700 dark:bg-green-950/30 dark:text-green-400 border border-green-300 dark:border-green-800'
+                        : 'bg-green-600 hover:bg-green-700 text-white shadow-md hover:shadow-lg'
+                    }`}
+                  >
+                    {gpsLoading ? (
+                      <><div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" /> Fetching...</>
+                    ) : locationUrl ? (
+                      '✓ GPS Location Linked'
+                    ) : (
+                      '📍 Share GPS Location'
+                    )}
+                  </button>
+                </div>
+                {locationUrl && (
+                  <div className="mb-4 p-3 bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-900/50 rounded-xl flex items-center gap-2 text-xs font-semibold text-green-800 dark:text-green-400 animate-fadeIn">
+                    <span>📍 GPS coordinates successfully linked! Drivers will navigate directly to your device location.</span>
+                  </div>
+                )}
                 <div className="grid sm:grid-cols-2 gap-4">
                   {[
                     { key: 'name', label: 'Full Name *', placeholder: 'e.g. Rahul Sharma', type: 'text', full: false },
@@ -191,9 +318,40 @@ export default function CheckoutPage() {
                     </div>
                   ))}
                 </div>
+
+                {/* Delivery Slots selector */}
+                <div className="mt-6 border-t border-gray-200 dark:border-gray-700 pt-5">
+                  <label className={`block text-xs font-bold uppercase tracking-wider mb-3 ${darkMode ? 'text-gray-300' : 'text-gray-500'}`}>
+                    🕒 Preferred Delivery Slot *
+                  </label>
+                  <div className="grid grid-cols-2 gap-3">
+                    {[
+                      { id: '10 AM – 12 PM', label: '☀️ Morning (10 AM - 12 PM)' },
+                      { id: '12 PM – 2 PM', label: '☀️ Noon (12 PM - 2 PM)' },
+                      { id: '2 PM – 4 PM', label: '⛅ Afternoon (2 PM - 4 PM)' },
+                      { id: '6 PM – 8 PM', label: '🌙 Evening (6 PM - 8 PM)' },
+                    ].map(slot => (
+                      <button
+                        key={slot.id}
+                        type="button"
+                        onClick={() => setDeliverySlot(slot.id)}
+                        className={`p-3.5 rounded-2xl border text-left transition-all cursor-pointer ${
+                          deliverySlot === slot.id
+                            ? 'border-green-600 bg-green-50 text-green-700 dark:bg-green-950/20 dark:text-green-400 font-extrabold shadow-sm'
+                            : darkMode
+                            ? 'border-gray-700 hover:border-gray-600 bg-gray-900 text-gray-300'
+                            : 'border-gray-200 hover:border-gray-350 bg-white text-gray-700'
+                        }`}
+                      >
+                        <span className="text-xs">{slot.label}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
                 <button
                   onClick={() => { if (validate()) setStep(2); }}
-                  className="mt-6 w-full bg-green-600 hover:bg-green-700 text-white py-3.5 rounded-xl font-bold transition-all"
+                  className="mt-6 w-full bg-green-600 hover:bg-green-700 text-white py-3.5 rounded-xl font-bold transition-all cursor-pointer"
                 >
                   Continue to Payment →
                 </button>
@@ -238,23 +396,107 @@ export default function CheckoutPage() {
                   ))}
                 </div>
 
-                {paymentMethod === 'upi' && (
-                  <div className="mt-4 p-4 bg-blue-50 rounded-xl border border-blue-100">
-                    <label className="block text-sm font-semibold text-blue-800 mb-2">Enter UPI ID</label>
-                    <input
-                      type="text"
-                      value={upiId}
-                      onChange={e => setUpiId(e.target.value)}
-                      placeholder="yourname@upi, 9876543210@paytm"
-                      className="w-full px-4 py-2.5 rounded-xl border border-blue-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                    <div className="flex gap-2 mt-3 flex-wrap">
-                      {['GPay', 'PhonePe', 'Paytm', 'BHIM'].map(app => (
-                        <span key={app} className="px-3 py-1 bg-white border border-blue-200 rounded-full text-xs font-medium text-blue-700">{app}</span>
-                      ))}
+                {paymentMethod === 'upi' && (() => {
+                  const shopUpi = storeSettings.shopUpiId || 'paytmqr7247md@ptys';
+                  const upiUrl = `upi://pay?pa=${shopUpi}&pn=${encodeURIComponent(storeSettings.shopName)}&am=${total}&cu=INR&tn=${encodeURIComponent('Order-' + form.phone.slice(-4) + '-' + Date.now().toString().slice(-4))}`;
+                  const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(upiUrl)}`;
+                  
+                  return (
+                    <div className="mt-4 p-5 bg-blue-50/50 dark:bg-gray-700/30 rounded-2xl border border-blue-100/50 dark:border-gray-600/50 space-y-4">
+                      {/* QR Code Tab Selector */}
+                      <div className="flex bg-blue-100/30 dark:bg-gray-800/50 p-1 rounded-xl border border-blue-200/30 dark:border-gray-700">
+                        <button
+                          type="button"
+                          onClick={() => setQrType('dynamic')}
+                          className={`flex-1 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                            qrType === 'dynamic'
+                              ? 'bg-blue-600 text-white shadow-sm'
+                              : 'text-blue-700 dark:text-blue-350 hover:bg-blue-100/50 dark:hover:bg-gray-700/50'
+                          }`}
+                        >
+                          ⚡ Auto-Amount QR
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setQrType('static')}
+                          className={`flex-1 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                            qrType === 'static'
+                              ? 'bg-blue-600 text-white shadow-sm'
+                              : 'text-blue-700 dark:text-blue-355 hover:bg-blue-100/50 dark:hover:bg-gray-700/50'
+                          }`}
+                        >
+                          🏪 Store Official QR
+                        </button>
+                      </div>
+
+                      {qrType === 'dynamic' ? (
+                        <div className="text-center space-y-2">
+                          <p className="text-xs font-bold uppercase tracking-wider text-blue-800 dark:text-blue-300">
+                            Scan to Pay: ₹{total}
+                          </p>
+                          
+                          {/* Dynamic QR Code */}
+                          <div className="inline-block p-3 bg-white rounded-2xl border-2 border-dashed border-blue-200 shadow-sm">
+                            <img 
+                              src={qrCodeUrl} 
+                              alt="Scan UPI QR Code to Pay" 
+                              className="w-40 h-40 object-contain mx-auto"
+                              onError={(e) => {
+                                (e.target as HTMLElement).style.display = 'none';
+                              }}
+                            />
+                          </div>
+                          <p className="text-[10px] text-gray-500">Scan using GPay, PhonePe, Paytm, BHIM</p>
+                        </div>
+                      ) : (
+                        <div className="text-center space-y-2">
+                          <p className="text-xs font-bold uppercase tracking-wider text-blue-800 dark:text-blue-300">
+                            Anil Sahu (Paytm accepted)
+                          </p>
+                          
+                          {/* Static QR Code Image */}
+                          <div className="inline-block p-2 bg-white rounded-2xl border-2 border-dashed border-blue-200 shadow-sm">
+                            <img 
+                              src={upiQrImage} 
+                              alt="Paytm Official QR Code" 
+                              className="max-w-[180px] h-auto object-contain mx-auto rounded-lg"
+                            />
+                          </div>
+                          <p className="text-[10px] text-gray-500">UPI ID: {shopUpi}</p>
+                        </div>
+                      )}
+
+                      {/* Mobile Launch Button */}
+                      <div className="sm:hidden text-center">
+                        <p className="text-xs text-gray-450 mb-1.5">— OR —</p>
+                        <a 
+                          href={upiUrl}
+                          className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white py-3 px-4 rounded-xl font-bold text-sm shadow-md transition-all"
+                        >
+                          📱 Pay via UPI App
+                        </a>
+                      </div>
+
+                      {/* Ref / UTR Entry */}
+                      <div className="pt-3 border-t border-dashed border-blue-200/50 dark:border-gray-600/50">
+                        <label className="block text-xs font-bold text-blue-900 dark:text-blue-300 mb-1.5">
+                          12-digit UPI Transaction Ref No. (UTR) *
+                        </label>
+                        <input
+                          type="text"
+                          maxLength={12}
+                          value={upiRefNo}
+                          onChange={e => setUpiRefNo(e.target.value.replace(/\D/g, ''))}
+                          placeholder="e.g. 306512345678"
+                          className="w-full px-4 py-3 rounded-xl border border-blue-200 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />
+                        <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-1">
+                          ⚠️ Order is processed only after verifying the 12-digit UTR from your bank message/UPI app receipt.
+                        </p>
+                      </div>
                     </div>
-                  </div>
-                )}
+                  );
+                })()}
 
                 {paymentMethod === 'razorpay' && (
                   <div className="mt-4 p-4 bg-purple-50 rounded-xl border border-purple-100">
@@ -304,8 +546,9 @@ export default function CheckoutPage() {
                   <p className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>{form.name}</p>
                   <p className="text-gray-500 text-sm">{form.phone}</p>
                   <p className="text-gray-500 text-sm">{form.address}, {form.city} - {form.pincode}</p>
-                  <p className={`text-sm mt-2 font-medium ${darkMode ? 'text-white' : 'text-gray-900'}`}>
-                    Payment: {paymentMethod === 'cod' ? '💵 Cash on Delivery' : paymentMethod === 'upi' ? `📱 UPI (${upiId})` : '💳 Card (Razorpay)'}
+                  <p className="text-green-600 text-xs font-bold mt-1.5 flex items-center gap-1">🕒 Delivery Slot: {deliverySlot}</p>
+                  <p className={`text-sm mt-3 font-medium ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                    Payment: {paymentMethod === 'cod' ? '💵 Cash on Delivery' : paymentMethod === 'upi' ? `📱 UPI (UTR: ${upiRefNo})` : '💳 Card (Razorpay)'}
                   </p>
                 </div>
 
@@ -314,7 +557,7 @@ export default function CheckoutPage() {
                     ← Back
                   </button>
                   <button
-                    onClick={handlePlaceOrder}
+                    onClick={() => handlePlaceOrder()}
                     disabled={loading}
                     className="flex-1 bg-green-600 hover:bg-green-700 disabled:opacity-70 text-white py-3.5 rounded-xl font-bold transition-all flex items-center justify-center gap-2"
                   >
@@ -365,6 +608,161 @@ export default function CheckoutPage() {
           </div>
         </div>
       </div>
+
+      {/* Razorpay Simulation Modal */}
+      {showRazorpayModal && (
+        <div className="fixed inset-0 bg-black/65 z-50 flex items-center justify-center p-4 backdrop-blur-sm transition-all duration-300">
+          <div className={`w-full max-w-md rounded-3xl overflow-hidden shadow-2xl border ${
+            darkMode ? 'bg-gray-900 border-gray-800 text-white' : 'bg-white border-gray-200 text-gray-800'
+          } animate-fade-up`}>
+            {/* Merchant info header */}
+            <div className="bg-gradient-to-r from-blue-600 to-indigo-700 text-white p-5 flex items-center justify-between">
+              <div>
+                <p className="text-[10px] uppercase font-bold tracking-widest opacity-80">Payment Request</p>
+                <h3 className="text-base font-black">{storeSettings.shopName}</h3>
+                <p className="text-[10px] mt-0.5 opacity-90">📞 {storeSettings.phone}</p>
+              </div>
+              <div className="text-right">
+                <span className="text-[10px] block opacity-80">Amount Payable</span>
+                <span className="text-xl font-black">₹{total}</span>
+              </div>
+            </div>
+
+            {/* Razorpay Brand Tag */}
+            <div className="bg-gray-50 dark:bg-gray-800 px-5 py-2.5 flex items-center justify-between border-b dark:border-gray-700">
+              <div className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-405 font-bold">
+                <Lock size={12} className="text-blue-600" />
+                <span>Razorpay Secure Checkout</span>
+              </div>
+              <span className="text-[9px] font-extrabold uppercase tracking-wide bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-400 px-2 py-0.5 rounded">TEST MODE</span>
+            </div>
+
+            <div className="p-5 space-y-4">
+              {razorpayPaying ? (
+                <div className="py-12 flex flex-col items-center justify-center text-center space-y-4">
+                  {razorpaySuccess ? (
+                    <>
+                      <div className="w-16 h-16 bg-green-100 dark:bg-green-950/40 rounded-full flex items-center justify-center text-green-600 border-2 border-green-300 dark:border-green-800">
+                        <CheckCircle size={36} className="animate-bounce" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-extrabold text-green-600">Payment Successful!</p>
+                        <p className="text-[10px] text-gray-500 mt-1">Generating order details...</p>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
+                      <div>
+                        <p className="text-sm font-extrabold">Simulating Secure Handshake</p>
+                        <p className="text-[10px] text-gray-500 mt-1">Connecting to 3D Secure bank interface...</p>
+                      </div>
+                    </>
+                  )}
+                </div>
+              ) : (
+                <form onSubmit={(e) => {
+                  e.preventDefault();
+                  // Trigger payment process
+                  setRazorpayPaying(true);
+                  setTimeout(() => {
+                    setRazorpaySuccess(true);
+                    setTimeout(() => {
+                      setShowRazorpayModal(false);
+                      setRazorpayPaying(false);
+                      setRazorpaySuccess(false);
+                      handlePlaceOrder(true); // Place order as paid!
+                    }, 1200);
+                  }, 2000);
+                }} className="space-y-4">
+                  <div className="space-y-1">
+                    <label className="block text-[11px] font-bold text-gray-400 uppercase">Card Number</label>
+                    <div className="relative">
+                      <input
+                        type="text"
+                        required
+                        value={razorpayCard.number}
+                        onChange={e => setRazorpayCard(c => ({ ...c, number: e.target.value }))}
+                        className={`w-full pl-10 pr-4 py-2.5 rounded-xl border text-xs outline-none font-semibold ${
+                          darkMode ? 'bg-gray-800 border-gray-700' : 'bg-gray-50 border-gray-300'
+                        }`}
+                      />
+                      <CreditCard className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" size={14} />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-1">
+                      <label className="block text-[11px] font-bold text-gray-400 uppercase">Expiry Date</label>
+                      <input
+                        type="text"
+                        required
+                        placeholder="MM/YY"
+                        value={razorpayCard.expiry}
+                        onChange={e => setRazorpayCard(c => ({ ...c, expiry: e.target.value }))}
+                        className={`w-full px-4 py-2.5 rounded-xl border text-xs outline-none font-semibold ${
+                          darkMode ? 'bg-gray-800 border-gray-700' : 'bg-gray-50 border-gray-300'
+                        }`}
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="block text-[11px] font-bold text-gray-400 uppercase">CVV</label>
+                      <input
+                        type="password"
+                        required
+                        maxLength={3}
+                        value={razorpayCard.cvv}
+                        onChange={e => setRazorpayCard(c => ({ ...c, cvv: e.target.value }))}
+                        className={`w-full px-4 py-2.5 rounded-xl border text-xs outline-none font-semibold ${
+                          darkMode ? 'bg-gray-800 border-gray-700' : 'bg-gray-50 border-gray-300'
+                        }`}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="block text-[11px] font-bold text-gray-400 uppercase">Cardholder Name</label>
+                    <input
+                      type="text"
+                      required
+                      value={razorpayCard.name}
+                      onChange={e => setRazorpayCard(c => ({ ...c, name: e.target.value }))}
+                      className={`w-full px-4 py-2.5 rounded-xl border text-xs outline-none font-semibold ${
+                        darkMode ? 'bg-gray-800 border-gray-700' : 'bg-gray-50 border-gray-300'
+                      }`}
+                    />
+                  </div>
+
+                  <div className="pt-2">
+                    <button
+                      type="submit"
+                      className="w-full py-3.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-sm shadow-md transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+                    >
+                      <Lock size={14} /> Pay ₹{total}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setShowRazorpayModal(false)}
+                      className={`w-full mt-2.5 py-2.5 rounded-xl text-xs font-semibold hover:underline ${
+                        darkMode ? 'text-gray-400' : 'text-gray-500'
+                      }`}
+                    >
+                      Cancel Payment
+                    </button>
+                  </div>
+                </form>
+              )}
+            </div>
+            
+            {/* Trust footer badges */}
+            <div className="bg-gray-50 dark:bg-gray-900/50 p-4 border-t dark:border-gray-800 flex justify-center gap-4 text-[10px] text-gray-400 font-bold">
+              <span>🔒 256-BIT SSL Encryption</span>
+              <span>•</span>
+              <span>💳 PCI-DSS Compliant</span>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
