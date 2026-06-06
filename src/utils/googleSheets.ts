@@ -229,7 +229,9 @@ export function formatOrderForSheet(order: {
  *         inStock: String(row[10]).toLowerCase() === 'true',
  *         subcategory: row[11] ? String(row[11]) : String(row[2]),
  *         storeId: row[12] ? String(row[12]) : 'main',
- *         updatedAt: row[13] ? Number(row[13]) : undefined
+ *         updatedAt: row[13] ? Number(row[13]) : undefined,
+ *         images: row[14] ? String(row[14]).split(',').map(function(s){return s.trim();}).filter(Boolean) : [],
+ *         customWeights: row[15] ? String(row[15]).split(',').map(function(s){return s.trim();}).filter(Boolean) : []
  *       });
  *     }
  *     return ContentService.createTextOutput(JSON.stringify(products))
@@ -411,14 +413,16 @@ export function formatOrderForSheet(order: {
  *       var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Products') 
  *                   || SpreadsheetApp.getActiveSpreadsheet().insertSheet('Products');
  *       sheet.clearContents();
- *       sheet.appendRow(['id', 'name', 'category', 'price', 'mrp', 'unit', 'image', 'badge', 'rating', 'description', 'inStock', 'subcategory', 'storeId', 'updatedAt']);
- *       sheet.getRange("A1:N1").setFontWeight("bold");
+ *       sheet.appendRow(['id', 'name', 'category', 'price', 'mrp', 'unit', 'image', 'badge', 'rating', 'description', 'inStock', 'subcategory', 'storeId', 'updatedAt', 'images', 'customWeights']);
+ *       sheet.getRange("A1:P1").setFontWeight("bold");
  *       
  *       var list = data.products;
  *       for (var i = 0; i < list.length; i++) {
  *         var p = list[i];
  *         sheet.appendRow([
- *           p.id, p.name, p.category, p.price, p.mrp, p.unit, p.image, p.badge || '', p.rating || 4, p.description || '', p.inStock, p.subcategory || '', p.storeId || 'main', p.updatedAt || ''
+ *           p.id, p.name, p.category, p.price, p.mrp, p.unit, p.image, p.badge || '', p.rating || 4, p.description || '', p.inStock, p.subcategory || '', p.storeId || 'main', p.updatedAt || '',
+ *           p.images ? (Array.isArray(p.images) ? p.images.join(', ') : String(p.images)) : '',
+ *           p.customWeights ? (Array.isArray(p.customWeights) ? p.customWeights.join(', ') : String(p.customWeights)) : ''
  *         ]);
  *       }
  *       return ContentService.createTextOutput(JSON.stringify({status:'success'}))
