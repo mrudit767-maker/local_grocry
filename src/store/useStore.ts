@@ -4,6 +4,21 @@ import { Product, PRODUCTS, CATEGORIES } from '../data/products';
 import { saveProductsToSheet, fetchProductsFromSheet, saveSettingsToSheet, fetchSettingsFromSheet } from '../utils/googleSheets';
 import toast from 'react-hot-toast';
 
+const syncProductsWithFeedback = async (url: string, products: Product[]) => {
+  const toastId = toast.loading('Syncing products catalog with Google Sheets... ⏳');
+  try {
+    const success = await saveProductsToSheet(url, products);
+    if (success) {
+      toast.success('✅ Products catalog successfully synced with Google Sheets!', { id: toastId });
+    } else {
+      toast.error('❌ Failed to sync catalog. Please check your Google Sheets webhook or Apps Script version.', { id: toastId, duration: 6000 });
+    }
+  } catch (err) {
+    console.error('Failed to sync products to Google Sheet:', err);
+    toast.error('❌ Network error syncing products catalog with Google Sheets.', { id: toastId });
+  }
+};
+
 export interface CartItem {
   product: Product;
   quantity: number;
@@ -185,6 +200,7 @@ export interface StoreState {
 
   // Store Settings
   storeSettings: StoreSettings;
+  isAppsScriptOutdated: boolean;
 
   // UI
   currentPage: 'home' | 'products' | 'cart' | 'checkout' | 'orders' | 'admin' | 'order-success' | 'location' | 'track-order' | 'customer-login' | 'wishlist' | 'subscriptions';
@@ -351,7 +367,8 @@ export const useStore = create<StoreState>()(
       currentPage: 'home',
       checkoutOrderId: null,
       selectedProductId: null,
-      storeSettings: DEFAULT_SETTINGS,
+       storeSettings: DEFAULT_SETTINGS,
+      isAppsScriptOutdated: false,
       currentCustomer: null,
       stockRequests: [],
       customerNotifications: [],
@@ -436,7 +453,7 @@ export const useStore = create<StoreState>()(
         set({ products: updated });
         const url = get().storeSettings.googleSheetProductsWebhookUrl || get().storeSettings.googleSheetWebhookUrl;
         if (url) {
-          saveProductsToSheet(url, updated).catch(err => console.error('Failed to sync added product:', err));
+          syncProductsWithFeedback(url, updated);
         }
       },
 
@@ -489,7 +506,7 @@ export const useStore = create<StoreState>()(
 
         const url = get().storeSettings.googleSheetProductsWebhookUrl || get().storeSettings.googleSheetWebhookUrl;
         if (url) {
-          saveProductsToSheet(url, updated).catch(err => console.error('Failed to sync updated product:', err));
+          syncProductsWithFeedback(url, updated);
         }
       },
 
@@ -532,7 +549,7 @@ export const useStore = create<StoreState>()(
         set({ products: updated });
         const url = get().storeSettings.googleSheetProductsWebhookUrl || get().storeSettings.googleSheetWebhookUrl;
         if (url) {
-          saveProductsToSheet(url, updated).catch(err => console.error('Failed to sync deleted product:', err));
+          syncProductsWithFeedback(url, updated);
         }
       },
 
@@ -671,6 +688,11 @@ export const useStore = create<StoreState>()(
         try {
           const fetched = await fetchProductsFromSheet(url);
           if (fetched && fetched.length > 0) {
+            // Check if Apps Script is outdated by checking if the fetched products have 'images' or 'customWeights' property
+            const firstProd = fetched[0];
+            const isOutdated = !('images' in firstProd) || !('customWeights' in firstProd);
+            set({ isAppsScriptOutdated: isOutdated });
+
             const localProducts = get().products || [];
             
             // 1. Create a map of fetched products by ID, resolving duplicates by ID/Name

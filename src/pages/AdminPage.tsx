@@ -79,7 +79,8 @@ const handleImageUpload = async (file: File, callback: (base64: string) => void)
 
   const toastId = toast.loading('Optimizing & compressing image... ⏳');
   try {
-    const compressedBase64 = await compressImage(file, 800, 800, 0.75);
+    // Compress to 300x300, 0.5 quality to easily fit under Google Sheets 50,000 char cell limit
+    const compressedBase64 = await compressImage(file, 300, 300, 0.5);
     callback(compressedBase64);
     toast.success('Image optimized & uploaded successfully! 📸', { id: toastId });
   } catch (err) {
@@ -107,14 +108,17 @@ const handleImagePaste = (e: React.ClipboardEvent<HTMLInputElement>, callback: (
 const handleMultipleImagesUpload = async (files: FileList | null, callback: (base64Array: string[]) => void) => {
   if (!files || files.length === 0) return;
   
-  const toastId = toast.loading(`Uploading & optimizing ${files.length} images... ⏳`);
+  // Slice to max 4 files to prevent exceeding cell size limit
+  const filesToUpload = Array.from(files).slice(0, 4);
+  const toastId = toast.loading(`Uploading & optimizing ${filesToUpload.length} images... ⏳`);
   const uploadedUrls: string[] = [];
   
   try {
-    for (let i = 0; i < files.length; i++) {
-      const file = files[i];
+    for (let i = 0; i < filesToUpload.length; i++) {
+      const file = filesToUpload[i];
       if (file.type.startsWith('image/')) {
-        const compressedBase64 = await compressImage(file, 800, 800, 0.75);
+        // Compress heavily to fit multiple images in one cell
+        const compressedBase64 = await compressImage(file, 250, 250, 0.5);
         uploadedUrls.push(compressedBase64);
       }
     }
@@ -441,8 +445,8 @@ function ProductsManager({ branchFilter, setBranchFilter }: { branchFilter: stri
       rating: (p.rating ?? '4.0').toString(),
       inStock: !!p.inStock,
       storeId: p.storeId || 'main',
-      images: p.images ? p.images.join(', ') : '',
-      customWeights: p.customWeights ? p.customWeights.join(', ') : '',
+      images: Array.isArray(p.images) ? p.images.join(', ') : (typeof p.images === 'string' ? p.images : ''),
+      customWeights: Array.isArray(p.customWeights) ? p.customWeights.join(', ') : (typeof p.customWeights === 'string' ? p.customWeights : ''),
     });
   };
 
@@ -777,7 +781,9 @@ function ProductsManager({ branchFilter, setBranchFilter }: { branchFilter: stri
                             const current = editForm.images ? editForm.images.trim() : '';
                             const added = base64Array.join(', ');
                             const combined = current ? `${current}, ${added}` : added;
-                            setEditForm(f => ({ ...f, images: combined }));
+                            // Enforce max 4 images
+                            const imagesList = combined.split(',').map(s => s.trim()).filter(Boolean).slice(0, 4);
+                            setEditForm(f => ({ ...f, images: imagesList.join(', ') }));
                           });
                         }}
                       />
@@ -1039,7 +1045,9 @@ function ProductsManager({ branchFilter, setBranchFilter }: { branchFilter: stri
                         const current = newProduct.images ? newProduct.images.trim() : '';
                         const added = base64Array.join(', ');
                         const combined = current ? `${current}, ${added}` : added;
-                        setNewProduct(p => ({ ...p, images: combined }));
+                        // Enforce max 4 images
+                        const imagesList = combined.split(',').map(s => s.trim()).filter(Boolean).slice(0, 4);
+                        setNewProduct(p => ({ ...p, images: imagesList.join(', ') }));
                       });
                     }}
                   />
@@ -3319,7 +3327,7 @@ function StockRequestsManager() {
 }
 
 export default function AdminPage() {
-  const { adminLoggedIn, adminLogout, setAdminView, setCurrentPage, darkMode, orders, stockRequests = [] } = useStore();
+  const { adminLoggedIn, adminLogout, setAdminView, setCurrentPage, darkMode, orders, stockRequests = [], isAppsScriptOutdated } = useStore();
   const [activeTab, setActiveTab] = useState('dashboard');
   const [branchFilter, setBranchFilter] = useState('all');
 
@@ -3359,6 +3367,22 @@ export default function AdminPage() {
             <LogOut size={15} /> Logout
           </button>
         </div>
+
+        {/* Outdated Apps Script Warning Banner */}
+        {isAppsScriptOutdated && (
+          <div className="mb-6 p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-800 dark:text-amber-300 flex items-start gap-3 shadow-sm">
+            <span className="text-xl">⚠️</span>
+            <div className="flex-1 text-xs md:text-sm">
+              <p className="font-bold mb-1">Google Sheets Webhook Script is Outdated!</p>
+              <p className="opacity-90">
+                Multiple Images and Custom Weight/Quantity Variants will <b>not save correctly</b> because your Google Sheet is running an older Webhook Script.
+              </p>
+              <p className="mt-1 font-semibold">
+                How to fix: Go to the <button onClick={() => { setActiveTab('settings'); setAdminView('settings'); }} className="underline font-bold text-amber-600 dark:text-amber-400 focus:outline-none bg-transparent border-none p-0 cursor-pointer">Settings</button> tab, copy the latest <b>Google Apps Script Webhook Code</b>, paste it in your Google Sheet's Apps Script editor, and then <b>Deploy as Web App (New Version)</b>.
+              </p>
+            </div>
+          </div>
+        )}
 
         {/* Nav Tabs */}
         <div className={`flex gap-1 mb-6 p-1 rounded-2xl overflow-x-auto ${darkMode ? 'bg-gray-800' : 'bg-gray-200'}`}>

@@ -62,7 +62,7 @@ export default function ProductDetailsModal({ productId, onClose }: Props) {
     }
   };
 
-  const weightOptions = product.customWeights && product.customWeights.length > 0 
+  const weightOptions = Array.isArray(product.customWeights) && product.customWeights.length > 0 
     ? product.customWeights 
     : getWeightOptions();
 
@@ -163,7 +163,7 @@ export default function ProductDetailsModal({ productId, onClose }: Props) {
   const catColor = getCategoryColor();
 
   // Image Gallery list (custom images if set, else fallback to main image + 3 generated mockups)
-  const images = product.images && product.images.length > 0
+  const images = Array.isArray(product.images) && product.images.length > 0
     ? product.images
     : [
         product.image,
@@ -273,7 +273,8 @@ export default function ProductDetailsModal({ productId, onClose }: Props) {
                 className="w-full h-full object-contain transition-all duration-300 transform hover:scale-105"
                 onError={(e) => {
                   const target = e.target as HTMLImageElement;
-                  target.src = product.image;
+                  const initials = product.name.split(' ').slice(0, 2).map(w => w[0]).join('').toUpperCase();
+                  target.src = `https://placehold.co/600x600/${catColor}/ffffff?text=${encodeURIComponent(initials)}`;
                 }}
               />
               
@@ -318,7 +319,16 @@ export default function ProductDetailsModal({ productId, onClose }: Props) {
                       : 'border-transparent hover:border-gray-300 opacity-70 hover:opacity-100'
                   }`}
                 >
-                  <img src={img} alt="thumbnail" className="w-full h-full object-contain" />
+                  <img 
+                    src={img} 
+                    alt="thumbnail" 
+                    className="w-full h-full object-contain" 
+                    onError={(e) => {
+                      const target = e.target as HTMLImageElement;
+                      const initials = product.name.split(' ').slice(0, 2).map(w => w[0]).join('').toUpperCase();
+                      target.src = `https://placehold.co/200x200/${catColor}/ffffff?text=${encodeURIComponent(initials)}`;
+                    }}
+                  />
                 </button>
               ))}
             </div>
