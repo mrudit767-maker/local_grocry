@@ -30,7 +30,6 @@ export default function ProductDetailsModal({ productId, onClose }: Props) {
   // State
   const [selectedPack, setSelectedPack] = useState<number>(1);
   const [selectedWeight, setSelectedWeight] = useState<string>('');
-  const [activeImageIdx, setActiveImageIdx] = useState<number>(0);
   const [showNotifyModal, setShowNotifyModal] = useState(false);
   const isWishlisted = wishlistIds.includes(product.id);
 
@@ -162,16 +161,6 @@ export default function ProductDetailsModal({ productId, onClose }: Props) {
 
   const catColor = getCategoryColor();
 
-  // Image Gallery list (custom images if set, else fallback to main image + 3 generated mockups)
-  const images = Array.isArray(product.images) && product.images.length > 0
-    ? product.images
-    : [
-        product.image,
-        `https://placehold.co/600x600/${catColor}/ffffff?text=${encodeURIComponent((product.name || '').replace(/\s+/g, '+'))}+-+Ingredients`,
-        `https://placehold.co/600x600/${catColor}/ffffff?text=${encodeURIComponent((product.name || '').replace(/\s+/g, '+'))}+-+Product+Details`,
-        `https://placehold.co/600x600/${catColor}/ffffff?text=${encodeURIComponent((product.name || '').replace(/\s+/g, '+'))}+-+Quality+Assured`
-      ];
-
   // Helper to generate a unique variant ID for the cart
   const getVariantCartId = () => {
     const weightStr = (selectedWeight || '').replace(/\s+/g, '');
@@ -261,14 +250,14 @@ export default function ProductDetailsModal({ productId, onClose }: Props) {
         {/* Responsive Layout Grid */}
         <div className="grid grid-cols-1 md:grid-cols-12 gap-0">
           
-          {/* Left Column: Image Gallery (Grid-cols 5) */}
+          {/* Left Column: Single Product Image (Grid-cols 5) */}
           <div className={`md:col-span-5 p-6 flex flex-col gap-4 border-r ${darkMode ? 'border-gray-900 bg-gray-900/10' : 'border-gray-100 bg-gray-50/20'}`}>
             {/* Main Image View */}
             <div className={`relative aspect-square rounded-2xl overflow-hidden border flex items-center justify-center p-6 ${
               darkMode ? 'bg-gray-900/50 border-gray-800' : 'bg-white border-gray-150'
             }`}>
               <img 
-                src={images[activeImageIdx]} 
+                src={product.image} 
                 alt={product.name} 
                 className="w-full h-full object-contain transition-all duration-300 transform hover:scale-105"
                 onError={(e) => {
@@ -305,32 +294,6 @@ export default function ProductDetailsModal({ productId, onClose }: Props) {
               >
                 <Heart size={16} fill={isWishlisted ? "currentColor" : "none"} />
               </button>
-            </div>
-
-            {/* Thumbnails Row */}
-            <div className="flex gap-2.5 overflow-x-auto pb-1 justify-start">
-              {images.map((img, idx) => (
-                <button
-                  key={idx}
-                  onClick={() => setActiveImageIdx(idx)}
-                  className={`w-18 h-18 rounded-xl border-2 overflow-hidden flex items-center justify-center p-1.5 bg-white transition-all cursor-pointer ${
-                    activeImageIdx === idx 
-                      ? 'border-green-600 scale-[1.03]' 
-                      : 'border-transparent hover:border-gray-300 opacity-70 hover:opacity-100'
-                  }`}
-                >
-                  <img 
-                    src={img} 
-                    alt="thumbnail" 
-                    className="w-full h-full object-contain" 
-                    onError={(e) => {
-                      const target = e.target as HTMLImageElement;
-                      const initials = product.name.split(' ').slice(0, 2).map(w => w[0]).join('').toUpperCase();
-                      target.src = `https://placehold.co/200x200/${catColor}/ffffff?text=${encodeURIComponent(initials)}`;
-                    }}
-                  />
-                </button>
-              ))}
             </div>
 
             {/* Quality Seals */}
