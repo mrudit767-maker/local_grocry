@@ -159,12 +159,10 @@ export default function App() {
   }, [categories, products, addCategory, bulkAddProducts]);
 
   useEffect(() => {
-    const url = storeSettings.googleSheetProductsWebhookUrl || storeSettings.googleSheetWebhookUrl;
-    if (url) {
-      fetchProducts();
-      fetchSettings();
-    }
-  }, [storeSettings.googleSheetWebhookUrl, storeSettings.googleSheetProductsWebhookUrl]);
+    fetchProducts();
+    fetchSettings();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <div className={`${darkMode ? 'dark bg-gray-950' : 'bg-gray-50'} min-h-screen`}>

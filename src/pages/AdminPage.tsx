@@ -3327,7 +3327,7 @@ function StockRequestsManager() {
 }
 
 export default function AdminPage() {
-  const { adminLoggedIn, adminLogout, setAdminView, setCurrentPage, darkMode, orders, stockRequests = [], isAppsScriptOutdated } = useStore();
+  const { adminLoggedIn, adminLogout, setAdminView, setCurrentPage, darkMode, orders, stockRequests = [], isAppsScriptOutdated, fetchProducts, fetchSettings } = useStore();
   const [activeTab, setActiveTab] = useState('dashboard');
   const [branchFilter, setBranchFilter] = useState('all');
 
@@ -3360,12 +3360,29 @@ export default function AdminPage() {
               <p className="text-gray-500 text-sm">Krishna Kirana Management</p>
             </div>
           </div>
-          <button
-            onClick={() => { adminLogout(); toast.success('Logged out successfully'); }}
-            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-red-600 hover:bg-red-700 text-white text-sm font-semibold transition-all"
-          >
-            <LogOut size={15} /> Logout
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={async () => {
+                const toastId = toast.loading('Syncing latest data from Google Sheets... ⏳');
+                try {
+                  await fetchProducts();
+                  await fetchSettings();
+                  toast.success('✅ Store updated from Google Sheets!', { id: toastId });
+                } catch (err) {
+                  toast.error('❌ Failed to sync from Google Sheets.', { id: toastId });
+                }
+              }}
+              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-green-600 hover:bg-green-700 text-white text-sm font-semibold transition-all cursor-pointer"
+            >
+              <RefreshCw size={15} /> Sync Sheets
+            </button>
+            <button
+              onClick={() => { adminLogout(); toast.success('Logged out successfully'); }}
+              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-red-600 hover:bg-red-700 text-white text-sm font-semibold transition-all cursor-pointer"
+            >
+              <LogOut size={15} /> Logout
+            </button>
+          </div>
         </div>
 
         {/* Outdated Apps Script Warning Banner */}

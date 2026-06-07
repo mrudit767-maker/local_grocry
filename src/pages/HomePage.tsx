@@ -139,6 +139,10 @@ export default function HomePage() {
     .filter(p => p.category?.toLowerCase() === 'fruits-veggies' && p.subcategory?.toLowerCase() === 'fruits')
     .slice(0, 15);
 
+  const iceCreamProducts = [...products]
+    .filter(p => p.category?.toLowerCase() === 'frozen' || p.subcategory?.toLowerCase() === 'ice cream')
+    .slice(0, 15);
+
   const handleCategoryClick = (catId: string) => {
     console.log('handleCategoryClick called with:', catId);
     setSelectedCategory(catId);
@@ -617,6 +621,73 @@ export default function HomePage() {
 
               <div className="flex gap-4 overflow-x-auto scrollbar-hide py-1.5 scroll-smooth">
                 {fruitProducts.map(product => (
+                  <div key={product.id} className="w-44 sm:w-48 shrink-0 hover:scale-102 transition-transform duration-305 animate-fade-up">
+                    <ProductCard product={product} />
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Ice Cream & Frozen Foods Section */}
+        <section className={`py-12 ${darkMode ? 'bg-gray-950/60' : 'bg-[#FFF8F0]/30'}`}>
+          <div className="max-w-7xl mx-auto px-4 space-y-8">
+            {/* Ice Cream Banner Card */}
+            <div className="relative rounded-3xl overflow-hidden text-white bg-gradient-to-br from-cyan-600 via-blue-750 to-indigo-950 p-8 sm:p-10 shadow-premium relative animate-fade-up">
+              <div className="absolute top-0 right-0 w-80 h-80 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none" />
+              <div className="absolute -bottom-20 -left-20 w-80 h-80 bg-blue-500/10 rounded-full blur-3xl pointer-events-none" />
+              
+              <div className="relative z-10 grid md:grid-cols-2 gap-6 items-center">
+                <div className="space-y-4">
+                  <span className="inline-flex items-center gap-1 px-3 py-1 bg-gradient-to-r from-cyan-500 to-blue-500 text-white rounded-full text-[10px] font-black uppercase tracking-wider shadow-sm">
+                    🍦 Cool & Creamy Delights
+                  </span>
+                  <h2 className="text-2xl sm:text-3xl md:text-4xl font-black text-white leading-tight font-poppins">
+                    Ice Creams & Frozen Desserts <br/>
+                    <span className="bg-gradient-to-r from-cyan-300 to-blue-300 bg-clip-text text-transparent">Delivered Frozen in 30 Mins</span>
+                  </h2>
+                  <p className="text-cyan-100 text-xs sm:text-sm font-semibold max-w-md leading-relaxed">
+                    Indulge in your favorite flavors of Amul, Kwality Wall's, Havmor, and kulfis. Also stocking McCain french fries, frozen peas, and corn. Delivered in specialized insulated bags to stay perfectly frozen!
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => { setSelectedCategory('frozen'); setCurrentPage('products'); }}
+                    className="bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white font-extrabold px-6 py-3 rounded-xl transition-all hover:scale-102 cursor-pointer border-none outline-none text-xs"
+                  >
+                    View All Ice Creams
+                  </button>
+                </div>
+                <div className="relative aspect-video rounded-2xl overflow-hidden border border-white/10 shadow-lg hidden md:block max-w-[340px] ml-auto">
+                  <img
+                    src="https://images.unsplash.com/photo-1563805042-7684c019e1cb?auto=compress&cs=tinysrgb&w=600&h=350&fit=crop"
+                    alt="Ice Cream Delights"
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Ice Cream Products Row */}
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className={`text-base font-black uppercase tracking-wider font-poppins ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                    🍨 Best Selling Ice Creams & Frozen Foods
+                  </h3>
+                  <p className="text-gray-400 text-xs font-semibold">Vanilla, chocolate, butterscotch, french fries & more</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => { setSelectedCategory('frozen'); setCurrentPage('products'); }}
+                  className="text-cyan-600 dark:text-cyan-400 text-xs font-bold hover:underline flex items-center gap-1 cursor-pointer bg-transparent border-none outline-none p-0"
+                >
+                  View All <ArrowRight size={12} />
+                </button>
+              </div>
+
+              <div className="flex gap-4 overflow-x-auto scrollbar-hide py-1.5 scroll-smooth">
+                {iceCreamProducts.map(product => (
                   <div key={product.id} className="w-44 sm:w-48 shrink-0 hover:scale-102 transition-transform duration-305 animate-fade-up">
                     <ProductCard product={product} />
                   </div>

@@ -600,7 +600,8 @@ export const useStore = create<StoreState>()(
         set({ storeSettings: updated });
         const url = updated.googleSheetProductsWebhookUrl || updated.googleSheetWebhookUrl;
         if (url) {
-          saveSettingsToSheet(url, updated).catch(err => console.error('Failed to sync settings:', err));
+          const payload = { ...updated, banners: get().banners };
+          saveSettingsToSheet(url, payload).catch(err => console.error('Failed to sync settings:', err));
         }
       },
 
@@ -666,20 +667,34 @@ export const useStore = create<StoreState>()(
 
       addBanner: (banner) => {
         const id = `banner_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
-        set((s) => ({ banners: [...(s.banners || []), { ...banner, id }] }));
+        const updated = [...(get().banners || []), { ...banner, id }];
+        set({ banners: updated });
         toast.success('Banner added successfully! 📢');
+        const url = get().storeSettings.googleSheetProductsWebhookUrl || get().storeSettings.googleSheetWebhookUrl;
+        if (url) {
+          const payload = { ...get().storeSettings, banners: updated };
+          saveSettingsToSheet(url, payload).catch(err => console.error('Failed to sync banners:', err));
+        }
       },
       updateBanner: (id, updates) => {
-        set((s) => ({
-          banners: (s.banners || []).map((b) => (b.id === id ? { ...b, ...updates } : b)),
-        }));
+        const updated = (get().banners || []).map((b) => (b.id === id ? { ...b, ...updates } : b));
+        set({ banners: updated });
         toast.success('Banner updated! ✏️');
+        const url = get().storeSettings.googleSheetProductsWebhookUrl || get().storeSettings.googleSheetWebhookUrl;
+        if (url) {
+          const payload = { ...get().storeSettings, banners: updated };
+          saveSettingsToSheet(url, payload).catch(err => console.error('Failed to sync banners:', err));
+        }
       },
       deleteBanner: (id) => {
-        set((s) => ({
-          banners: (s.banners || []).filter((b) => b.id !== id),
-        }));
+        const updated = (get().banners || []).filter((b) => b.id !== id);
+        set({ banners: updated });
         toast.success('Banner deleted! 🗑️');
+        const url = get().storeSettings.googleSheetProductsWebhookUrl || get().storeSettings.googleSheetWebhookUrl;
+        if (url) {
+          const payload = { ...get().storeSettings, banners: updated };
+          saveSettingsToSheet(url, payload).catch(err => console.error('Failed to sync banners:', err));
+        }
       },
 
       fetchProducts: async () => {
@@ -768,7 +783,11 @@ export const useStore = create<StoreState>()(
         if (!url) return;
         const settings = await fetchSettingsFromSheet(url);
         if (settings) {
-          set((s) => ({ storeSettings: { ...s.storeSettings, ...settings } }));
+          if (settings.banners && Array.isArray(settings.banners)) {
+            set({ banners: settings.banners });
+          }
+          const { banners, ...restSettings } = settings as any;
+          set((s) => ({ storeSettings: { ...s.storeSettings, ...restSettings } }));
         }
       },
     }),
