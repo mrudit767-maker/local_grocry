@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { User, Phone, MapPin, Navigation, ArrowRight, LogIn, ChevronLeft, ShieldCheck } from 'lucide-react';
 import { useStore } from '../store/useStore';
-import { saveCustomerToSheet } from '../utils/googleSheets';
+import { saveCustomerToSheet, fetchCustomerFromSheet } from '../utils/googleSheets';
 import toast from 'react-hot-toast';
 
 export default function CustomerLoginPage() {
@@ -43,6 +43,16 @@ export default function CustomerLoginPage() {
   // Pending login details
   const [pendingLoginPhone, setPendingLoginPhone] = useState('');
   const [pendingLoginEmail, setPendingLoginEmail] = useState('');
+
+  // Fetched profile from Google Sheets
+  const [fetchedCustomerProfile, setFetchedCustomerProfile] = useState<{
+    name: string;
+    phone: string;
+    email?: string;
+    address: string;
+    city: string;
+    pincode: string;
+  } | null>(null);
 
   // Countdown timer for OTP resend
   useEffect(() => {
@@ -130,62 +140,91 @@ export default function CustomerLoginPage() {
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!loginEmail.trim() || !loginEmail.includes('@')) {
-      toast.error('Please enter a valid email address');
+    const input = loginEmail.trim();
+    if (!input) {
+      toast.error('Please enter a valid email address or phone number');
       return;
     }
 
+    const isEmail = input.includes('@');
+    // If it's not email, it must be a phone number
+    if (!isEmail) {
+      const cleanPhone = input.replace(/\D/g, '');
+      if (cleanPhone.length < 10) {
+        toast.error('Please enter a valid email address or 10-digit phone number');
+        return;
+      }
+    }
+
     setLoading(true);
-    setTimeout(() => {
-      const code = Math.floor(1000 + Math.random() * 9000).toString();
-      setGeneratedOtp(code);
-      setPendingLoginPhone('');
-      setPendingLoginEmail(loginEmail.trim());
-      setPendingAction('login');
-      setOtpMode(true);
-      setResendTimer(30);
-      setOtpVal('');
-      setLoading(false);
-      
-      toast.success(`OTP Sent to ${loginEmail.trim()}...`);
-      setTimeout(() => {
-        sendOtpSms('', loginEmail.trim(), code);
-      }, 800);
-    }, 800);
+    setFetchedCustomerProfile(null); // Clear previous
+
+    const code = Math.floor(1000 + Math.random() * 9000).toString();
+    setGeneratedOtp(code);
+    
+    const targetEmail = isEmail ? input : '';
+    // Format phone clean for SMS dispatch if it's 10 digits
+    const targetPhone = !isEmail ? (input.startsWith('+91') ? input : `+91 ${input.replace(/\D/g, '').slice(-10)}`) : '';
+    
+    setPendingLoginPhone(targetPhone);
+    setPendingLoginEmail(targetEmail);
+    setPendingAction('login');
+    setOtpMode(true);
+    setResendTimer(30);
+    setOtpVal('');
+    
+    // In background, fetch customer profile from Google Sheets immediately
+    if (storeSettings.googleSheetWebhookUrl) {
+      fetchCustomerFromSheet(storeSettings.googleSheetWebhookUrl, input)
+        .then(profile => {
+          if (profile) {
+            setFetchedCustomerProfile({
+              name: profile.customerName,
+              phone: profile.phone,
+              email: profile.email,
+              address: profile.address,
+              city: profile.city,
+              pincode: profile.pincode,
+            });
+            console.log('Customer profile pre-loaded from sheet:', profile);
+          }
+        })
+        .catch(err => console.error('Failed to pre-fetch customer details:', err));
+    }
+    
+    setLoading(false);
+    toast.success(`OTP Sent to ${input}...`);
+    sendOtpSms(targetPhone, targetEmail, code);
   };
 
   const handleRegister = (e: React.FormEvent) => {
     e.preventDefault();
     if (!regName.trim()) return toast.error('Name is required');
-    if (!regPhone || regPhone.length < 10) return toast.error('Please enter a valid 10-digit phone number');
+    if (!regPhone || regPhone.replace(/\D/g, '').length < 10) return toast.error('Please enter a valid 10-digit phone number');
     if (!regEmail.trim() || !regEmail.includes('@')) return toast.error('Please enter a valid email address');
     if (!regAddress.trim()) return toast.error('Address is required');
-    if (!regPincode || regPincode.length < 6) return toast.error('Please enter a valid 6-digit pincode');
+    if (!regPincode || regPincode.replace(/\D/g, '').length < 6) return toast.error('Please enter a valid 6-digit pincode');
 
     setLoading(true);
-    setTimeout(() => {
-      const code = Math.floor(1000 + Math.random() * 9000).toString();
-      const formattedPhone = regPhone.startsWith('+91') ? regPhone : `+91 ${regPhone.trim()}`;
-      setGeneratedOtp(code);
-      setPendingRegData({
-        name: regName.trim(),
-        phone: formattedPhone,
-        email: regEmail.trim(),
-        address: regAddress.trim(),
-        city: regCity.trim(),
-        pincode: regPincode.trim(),
-      });
-      setPendingAction('register');
-      setOtpMode(true);
-      setResendTimer(30);
-      setOtpVal('');
-      setLoading(false);
-      
-      toast.success(`OTP Sent to ${formattedPhone} and ${regEmail.trim()}...`);
-      setTimeout(() => {
-        sendOtpSms(formattedPhone, regEmail.trim(), code);
-      }, 800);
-    }, 800);
+    const code = Math.floor(1000 + Math.random() * 9000).toString();
+    const formattedPhone = regPhone.startsWith('+91') ? regPhone : `+91 ${regPhone.trim()}`;
+    setGeneratedOtp(code);
+    setPendingRegData({
+      name: regName.trim(),
+      phone: formattedPhone,
+      email: regEmail.trim(),
+      address: regAddress.trim(),
+      city: regCity.trim(),
+      pincode: regPincode.trim(),
+    });
+    setPendingAction('register');
+    setOtpMode(true);
+    setResendTimer(30);
+    setOtpVal('');
+    setLoading(false);
+    
+    toast.success(`OTP Sent to ${formattedPhone} and ${regEmail.trim()}...`);
+    sendOtpSms(formattedPhone, regEmail.trim(), code);
   };
 
   const handleVerifyOtp = async (e: React.FormEvent) => {
@@ -198,33 +237,49 @@ export default function CustomerLoginPage() {
     setLoading(true);
     
     if (pendingAction === 'login') {
-      const pastOrder = orders.find(o => o.customer.email?.trim().toLowerCase() === pendingLoginEmail.trim().toLowerCase());
-      if (pastOrder) {
-        customerLogin({
-          name: pastOrder.customer.name,
-          phone: pastOrder.customer.phone || '',
-          email: pendingLoginEmail,
-          address: pastOrder.customer.address,
-          city: pastOrder.customer.city,
-          pincode: pastOrder.customer.pincode,
-        });
-        toast.success(`OTP Verified! Welcome back, ${pastOrder.customer.name}! 🎉`);
+      // 1. Try to use fetched customer profile details from Google Sheets
+      if (fetchedCustomerProfile) {
+        customerLogin(fetchedCustomerProfile);
+        toast.success(`OTP Verified! Welcome back, ${fetchedCustomerProfile.name}! 🎉`);
       } else {
-        customerLogin({
-          name: 'Valued Customer',
-          phone: '',
-          email: pendingLoginEmail,
-          address: '',
-          city: 'Bhopal',
-          pincode: '',
+        // 2. Fallback: Try to find past orders matching email or phone
+        const cleanPendingPhone = pendingLoginPhone.replace(/[\s-+]/g, '').slice(-10);
+        const pastOrder = orders.find(o => {
+          const matchEmail = pendingLoginEmail && o.customer.email?.trim().toLowerCase() === pendingLoginEmail.trim().toLowerCase();
+          const oPhoneClean = o.customer.phone ? o.customer.phone.replace(/[\s-+]/g, '').slice(-10) : '';
+          const matchPhone = cleanPendingPhone && oPhoneClean === cleanPendingPhone;
+          return matchEmail || matchPhone;
         });
-        toast.success('OTP Verified! Logged in successfully!');
-        toast('Go to checkout or edit profile to complete your address.', { icon: '📝' });
+
+        if (pastOrder) {
+          customerLogin({
+            name: pastOrder.customer.name,
+            phone: pastOrder.customer.phone || pendingLoginPhone || '',
+            email: pendingLoginEmail || pastOrder.customer.email || '',
+            address: pastOrder.customer.address,
+            city: pastOrder.customer.city,
+            pincode: pastOrder.customer.pincode,
+          });
+          toast.success(`OTP Verified! Welcome back, ${pastOrder.customer.name}! 🎉`);
+        } else {
+          // 3. Last fallback: Log in as default customer
+          customerLogin({
+            name: 'Valued Customer',
+            phone: pendingLoginPhone || '',
+            email: pendingLoginEmail || '',
+            address: '',
+            city: 'Bhopal',
+            pincode: '',
+          });
+          toast.success('OTP Verified! Logged in successfully!');
+          toast('Go to checkout or edit profile to complete your address.', { icon: '📝' });
+        }
       }
       setCurrentPage('home');
     } else if (pendingAction === 'register' && pendingRegData) {
       if (storeSettings.googleSheetWebhookUrl) {
-        await saveCustomerToSheet(storeSettings.googleSheetWebhookUrl, {
+        // Run in background without blocking to make verification instant
+        saveCustomerToSheet(storeSettings.googleSheetWebhookUrl, {
           dateRegistered: new Date().toLocaleDateString('en-IN'),
           customerName: pendingRegData.name,
           phone: pendingRegData.phone,
@@ -232,7 +287,7 @@ export default function CustomerLoginPage() {
           address: pendingRegData.address,
           city: pendingRegData.city,
           pincode: pendingRegData.pincode,
-        });
+        }).catch(err => console.error('Failed to save customer in background:', err));
       }
       customerLogin(pendingRegData);
       toast.success(`OTP Verified! Welcome, ${pendingRegData.name}! 🛍️`);
@@ -407,17 +462,17 @@ export default function CustomerLoginPage() {
             </form>
           ) : activeTab === 'login' ? (
             <form onSubmit={handleLogin} className="space-y-4">
-              {/* Email Address */}
+              {/* Email or Phone Number */}
               <div>
                 <label className={`block text-xs font-bold uppercase tracking-wider mb-1.5 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                  Email Address
+                  Email Address or Phone Number
                 </label>
                 <div className="relative">
                   <input
-                    type="email"
+                    type="text"
                     value={loginEmail}
                     onChange={e => setLoginEmail(e.target.value)}
-                    placeholder="Enter your email address"
+                    placeholder="e.g. 9893495231 or customer@example.com"
                     required
                     className={`w-full px-4 py-3 rounded-xl border text-sm outline-none transition-all ${
                       darkMode

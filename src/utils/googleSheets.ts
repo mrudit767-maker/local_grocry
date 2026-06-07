@@ -160,6 +160,34 @@ export async function fetchSettingsFromSheet(
   }
 }
 
+// 6.5. Fetch Customer Profile (GET)
+export async function fetchCustomerFromSheet(
+  webhookUrl: string,
+  identifier: string
+): Promise<CustomerSheetData | null> {
+  if (!webhookUrl || !webhookUrl.startsWith('https://script.google.com') || !identifier) return null;
+  try {
+    const res = await fetch(`${webhookUrl}?action=getCustomer&identifier=${encodeURIComponent(identifier)}`);
+    if (!res.ok) return null;
+    const data = await res.json();
+    if (data && typeof data === 'object') {
+      return {
+        dateRegistered: '',
+        customerName: data.name || '',
+        phone: data.phone || '',
+        email: data.email || '',
+        address: data.address || '',
+        city: data.city || '',
+        pincode: data.pincode || '',
+      };
+    }
+    return null;
+  } catch (error) {
+    console.error('Failed to fetch customer from Google Sheet:', error);
+    return null;
+  }
+}
+
 export function formatOrderForSheet(order: {
   customer: { name: string; phone: string; email?: string; address: string; city: string; pincode: string };
   items: { product: { name: string; price: number; unit: string }; quantity: number }[];
@@ -257,6 +285,42 @@ export function formatOrderForSheet(order: {
  *       }
  *     }
  *     return ContentService.createTextOutput(JSON.stringify(settings))
+ *       .setMimeType(ContentService.MimeType.JSON);
+ *   }
+ *   
+ *   // ACTION 3: Get customer profile by email or phone
+ *   if (action === 'getCustomer') {
+ *     var identifier = e.parameter.identifier;
+ *     if (!identifier) {
+ *       return ContentService.createTextOutput(JSON.stringify(null))
+ *         .setMimeType(ContentService.MimeType.JSON);
+ *     }
+ *     identifier = String(identifier).trim().toLowerCase();
+ *     var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Customers');
+ *     if (!sheet) {
+ *       return ContentService.createTextOutput(JSON.stringify(null))
+ *         .setMimeType(ContentService.MimeType.JSON);
+ *     }
+ *     var values = sheet.getDataRange().getValues();
+ *     for (var i = values.length - 1; i >= 1; i--) {
+ *       var row = values[i];
+ *       if (!row[1] && !row[2] && !row[3]) continue;
+ *       var phoneClean = String(row[2] || '').replace(/[\s-+]/g, '').slice(-10);
+ *       var emailClean = String(row[3] || '').trim().toLowerCase();
+ *       var idClean = identifier.replace(/[\s-+]/g, '').slice(-10);
+ *       if ((emailClean && emailClean === identifier) || (phoneClean && phoneClean === idClean)) {
+ *         return ContentService.createTextOutput(JSON.stringify({
+ *           name: String(row[1] || ''),
+ *           phone: String(row[2] || ''),
+ *           email: String(row[3] || ''),
+ *           address: String(row[4] || ''),
+ *           city: String(row[5] || ''),
+ *           pincode: String(row[6] || '')
+ *         }))
+ *         .setMimeType(ContentService.MimeType.JSON);
+ *       }
+ *     }
+ *     return ContentService.createTextOutput(JSON.stringify(null))
  *       .setMimeType(ContentService.MimeType.JSON);
  *   }
  *   

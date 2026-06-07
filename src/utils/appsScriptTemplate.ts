@@ -82,6 +82,46 @@ function doGet(e) {
     return ContentService.createTextOutput(JSON.stringify(settings))
       .setMimeType(ContentService.MimeType.JSON);
   }
+
+  // ACTION 3: Get customer profile by email or phone
+  if (action === 'getCustomer') {
+    var identifier = e.parameter.identifier;
+    if (!identifier) {
+      return ContentService.createTextOutput(JSON.stringify(null))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+    identifier = String(identifier).trim().toLowerCase();
+    
+    var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Customers');
+    if (!sheet) {
+      return ContentService.createTextOutput(JSON.stringify(null))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+    var values = sheet.getDataRange().getValues();
+    // Search from bottom to top (most recent registered details first)
+    for (var i = values.length - 1; i >= 1; i--) {
+      var row = values[i];
+      if (!row[1] && !row[2] && !row[3]) continue;
+      
+      var phoneClean = String(row[2] || '').replace(/[\s-+]/g, '').slice(-10);
+      var emailClean = String(row[3] || '').trim().toLowerCase();
+      var idClean = identifier.replace(/[\s-+]/g, '').slice(-10);
+      
+      if ((emailClean && emailClean === identifier) || (phoneClean && phoneClean === idClean)) {
+        return ContentService.createTextOutput(JSON.stringify({
+          name: String(row[1] || ''),
+          phone: String(row[2] || ''),
+          email: String(row[3] || ''),
+          address: String(row[4] || ''),
+          city: String(row[5] || ''),
+          pincode: String(row[6] || '')
+        }))
+        .setMimeType(ContentService.MimeType.JSON);
+      }
+    }
+    return ContentService.createTextOutput(JSON.stringify(null))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
   
   return ContentService.createTextOutput("Invalid Action");
 }
