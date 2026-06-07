@@ -27,42 +27,54 @@ const compressImage = (file: File, maxWidth: number, maxHeight: number, quality:
     const reader = new FileReader();
     reader.readAsDataURL(file);
     reader.onload = (event) => {
+      const originalBase64 = event.target?.result as string;
       const img = new Image();
-      img.src = event.target?.result as string;
       img.onload = () => {
-        const canvas = document.createElement('canvas');
-        let width = img.width;
-        let height = img.height;
+        try {
+          const canvas = document.createElement('canvas');
+          let width = img.width;
+          let height = img.height;
 
-        // Calculate new dimensions to fit within maxWidth/maxHeight
-        if (width > height) {
-          if (width > maxWidth) {
-            height = Math.round((height * maxWidth) / width);
-            width = maxWidth;
+          // Calculate new dimensions to fit within maxWidth/maxHeight
+          if (width > height) {
+            if (width > maxWidth) {
+              height = Math.round((height * maxWidth) / width);
+              width = maxWidth;
+            }
+          } else {
+            if (height > maxHeight) {
+              width = Math.round((width * maxHeight) / height);
+              height = maxHeight;
+            }
           }
-        } else {
-          if (height > maxHeight) {
-            width = Math.round((width * maxHeight) / height);
-            height = maxHeight;
+
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          if (!ctx) {
+            resolve(originalBase64); // fallback to original
+            return;
           }
-        }
 
-        canvas.width = width;
-        canvas.height = height;
-        const ctx = canvas.getContext('2d');
-        if (!ctx) {
-          resolve(event.target?.result as string); // fallback to original
-          return;
+          ctx.drawImage(img, 0, 0, width, height);
+          // Compress as JPEG
+          const dataUrl = canvas.toDataURL('image/jpeg', quality);
+          resolve(dataUrl);
+        } catch (canvasErr) {
+          console.warn('Canvas compression failed, falling back to original:', canvasErr);
+          resolve(originalBase64);
         }
-
-        ctx.drawImage(img, 0, 0, width, height);
-        // Compress as JPEG
-        const dataUrl = canvas.toDataURL('image/jpeg', quality);
-        resolve(dataUrl);
       };
-      img.onerror = (err) => reject(err);
+      img.onerror = (err) => {
+        console.warn('Image loading failed, falling back to original base64:', err);
+        resolve(originalBase64); // fallback to original base64 if rendering fails
+      };
+      img.src = originalBase64;
     };
-    reader.onerror = (err) => reject(err);
+    reader.onerror = (err) => {
+      console.warn('FileReader failed, falling back to empty string or rejecting:', err);
+      reject(err);
+    };
   });
 };
 
