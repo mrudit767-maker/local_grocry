@@ -24,10 +24,26 @@ const STATUS_COLORS: Record<Order['status'], string> = {
 
 const compressImage = (file: File, maxWidth: number, maxHeight: number, quality: number): Promise<string> => {
   return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.readAsDataURL(file);
-    reader.onload = (event) => {
-      const originalBase64 = event.target?.result as string;
+    let objectUrl: string | null = null;
+    try {
+      objectUrl = URL.createObjectURL(file);
+    } catch (e) {
+      console.warn('URL.createObjectURL failed:', e);
+    }
+
+    const fallbackWithFileReader = () => {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        resolve(event.target?.result as string || '');
+      };
+      reader.onerror = (err) => {
+        console.warn('FileReader failed, rejecting:', err);
+        reject(err);
+      };
+      reader.readAsDataURL(file);
+    };
+
+    if (objectUrl) {
       const img = new Image();
       img.onload = () => {
         try {
@@ -52,29 +68,31 @@ const compressImage = (file: File, maxWidth: number, maxHeight: number, quality:
           canvas.height = height;
           const ctx = canvas.getContext('2d');
           if (!ctx) {
-            resolve(originalBase64); // fallback to original
+            fallbackWithFileReader();
             return;
           }
 
           ctx.drawImage(img, 0, 0, width, height);
-          // Compress as JPEG
           const dataUrl = canvas.toDataURL('image/jpeg', quality);
           resolve(dataUrl);
         } catch (canvasErr) {
-          console.warn('Canvas compression failed, falling back to original:', canvasErr);
-          resolve(originalBase64);
+          console.warn('Canvas processing failed, falling back to FileReader:', canvasErr);
+          fallbackWithFileReader();
+        } finally {
+          if (objectUrl) URL.revokeObjectURL(objectUrl);
         }
       };
+      
       img.onerror = (err) => {
-        console.warn('Image loading failed, falling back to original base64:', err);
-        resolve(originalBase64); // fallback to original base64 if rendering fails
+        console.warn('Image loading from object URL failed, falling back to FileReader:', err);
+        if (objectUrl) URL.revokeObjectURL(objectUrl);
+        fallbackWithFileReader();
       };
-      img.src = originalBase64;
-    };
-    reader.onerror = (err) => {
-      console.warn('FileReader failed, falling back to empty string or rejecting:', err);
-      reject(err);
-    };
+      
+      img.src = objectUrl;
+    } else {
+      fallbackWithFileReader();
+    }
   });
 };
 
