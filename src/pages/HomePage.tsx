@@ -235,105 +235,107 @@ export default function HomePage() {
         </section>
 
         {/* 4. IMAGE CAROUSEL/SLIDER */}
-        <section className={`py-8 ${darkMode ? 'bg-gray-950/60' : 'bg-[#FFF8F0]/40'}`}>
-          <div className="max-w-7xl mx-auto px-4">
-            <div className="relative group overflow-hidden rounded-3xl border border-gray-150 dark:border-gray-855 shadow-premium animate-fade-up">
-              <div className="relative h-48 sm:h-56 md:h-72 overflow-hidden">
-                {banners.map((slide, i) => (
-                  <div
-                    key={slide.id}
-                    className={`absolute inset-0 transition-all duration-700 ease-in-out ${
-                      i === currentPromoSlide 
-                        ? 'opacity-100 translate-x-0 z-10 pointer-events-auto' 
-                        : i < currentPromoSlide 
-                        ? 'opacity-0 -translate-x-full pointer-events-none' 
-                        : 'opacity-0 translate-x-full pointer-events-none'
-                    }`}
-                  >
-                    {slide.image && (
-                      <img
-                        src={slide.image}
-                        alt={slide.title}
-                        className="absolute inset-0 w-full h-full object-cover"
-                      />
-                    )}
-                    <div className={`absolute inset-0 bg-gradient-to-r ${slide.bg || 'from-green-600 to-emerald-800'} opacity-85 dark:opacity-90`} />
+        {banners && banners.length > 0 && (
+          <section className={`py-8 ${darkMode ? 'bg-gray-950/60' : 'bg-[#FFF8F0]/40'}`}>
+            <div className="max-w-7xl mx-auto px-4">
+              <div className="relative group overflow-hidden rounded-3xl border border-gray-150 dark:border-gray-855 shadow-premium animate-fade-up">
+                <div className="relative h-48 sm:h-56 md:h-72 overflow-hidden">
+                  {banners.map((slide, i) => (
+                    <div
+                      key={slide.id}
+                      className={`absolute inset-0 transition-all duration-700 ease-in-out ${
+                        i === currentPromoSlide 
+                          ? 'opacity-100 translate-x-0 z-10 pointer-events-auto' 
+                          : i < currentPromoSlide 
+                          ? 'opacity-0 -translate-x-full pointer-events-none' 
+                          : 'opacity-0 translate-x-full pointer-events-none'
+                      }`}
+                    >
+                      {slide.image && (
+                        <img
+                          src={slide.image}
+                          alt={slide.title}
+                          className="absolute inset-0 w-full h-full object-cover"
+                        />
+                      )}
+                      <div className={`absolute inset-0 bg-gradient-to-r ${slide.bg || 'from-green-600 to-emerald-800'} opacity-85 dark:opacity-90`} />
 
-                    <div className="relative z-10 h-full flex items-center px-6 sm:px-16">
-                      <div className="max-w-xl space-y-3 font-poppins">
-                        {slide.badge && (
-                          <span className="inline-block bg-white/20 backdrop-blur-sm text-white text-[9px] font-black uppercase tracking-wider px-3 py-1 rounded-full">
-                            {slide.emoji && <span className="mr-1.5">{slide.emoji}</span>}
-                            {slide.badge}
-                          </span>
-                        )}
-                        <h2 className="text-xl sm:text-2xl md:text-4xl font-black text-white leading-tight whitespace-pre-line">
-                          {slide.title}
-                        </h2>
-                        <p className="text-white/85 text-xs sm:text-base font-semibold">{slide.subtitle}</p>
-                        <button
-                          onClick={() => {
-                            console.log('Promo slide CTA clicked', slide);
-                            if (slide.linkCategory) {
-                              setSelectedCategory(slide.linkCategory);
-                              setCurrentPage('products');
-                            } else if (slide.linkProduct) {
-                              setSelectedProductId(slide.linkProduct);
-                            } else {
-                              setSelectedCategory('all');
-                              setCurrentPage('products');
-                            }
-                          }}
-                          className="bg-[#FF6B35] hover:bg-[#e85d04] text-white font-extrabold px-5 py-2.5 rounded-xl text-xs transition-all hover:scale-105 cursor-pointer shadow-sm border-none outline-none"
-                        >
-                          {slide.cta || 'Shop Now'} →
-                        </button>
+                      <div className="relative z-10 h-full flex items-center px-6 sm:px-16">
+                        <div className="max-w-xl space-y-3 font-poppins">
+                          {slide.badge && (
+                            <span className="inline-block bg-white/20 backdrop-blur-sm text-white text-[9px] font-black uppercase tracking-wider px-3 py-1 rounded-full">
+                              {slide.emoji && <span className="mr-1.5">{slide.emoji}</span>}
+                              {slide.badge}
+                            </span>
+                          )}
+                          <h2 className="text-xl sm:text-2xl md:text-4xl font-black text-white leading-tight whitespace-pre-line">
+                            {slide.title}
+                          </h2>
+                          <p className="text-white/85 text-xs sm:text-base font-semibold">{slide.subtitle}</p>
+                          <button
+                            onClick={() => {
+                              console.log('Promo slide CTA clicked', slide);
+                              if (slide.linkCategory) {
+                                setSelectedCategory(slide.linkCategory);
+                                setCurrentPage('products');
+                              } else if (slide.linkProduct) {
+                                setSelectedProductId(slide.linkProduct);
+                              } else {
+                                setSelectedCategory('all');
+                                setCurrentPage('products');
+                              }
+                            }}
+                            className="bg-[#FF6B35] hover:bg-[#e85d04] text-white font-extrabold px-5 py-2.5 rounded-xl text-xs transition-all hover:scale-105 cursor-pointer shadow-sm border-none outline-none"
+                          >
+                            {slide.cta || 'Shop Now'} →
+                          </button>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  ))}
 
-                {/* Left Arrow Button */}
-                {banners.length > 1 && (
-                  <button
-                    onClick={handlePrevSlide}
-                    className="absolute left-4 top-1/2 -translate-y-1/2 z-20 w-10 h-10 rounded-full bg-black/30 hover:bg-black/50 border border-white/10 text-white flex items-center justify-center shadow-md opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer border-none outline-none"
-                    aria-label="Previous Slide"
-                  >
-                    <ChevronLeft size={20} />
-                  </button>
-                )}
+                  {/* Left Arrow Button */}
+                  {banners.length > 1 && (
+                    <button
+                      onClick={handlePrevSlide}
+                      className="absolute left-4 top-1/2 -translate-y-1/2 z-20 w-10 h-10 rounded-full bg-black/30 hover:bg-black/50 border border-white/10 text-white flex items-center justify-center shadow-md opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer border-none outline-none"
+                      aria-label="Previous Slide"
+                    >
+                      <ChevronLeft size={20} />
+                    </button>
+                  )}
 
-                {/* Right Arrow Button */}
-                {banners.length > 1 && (
-                  <button
-                    onClick={handleNextSlide}
-                    className="absolute right-4 top-1/2 -translate-y-1/2 z-20 w-10 h-10 rounded-full bg-black/30 hover:bg-black/50 border border-white/10 text-white flex items-center justify-center shadow-md opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer border-none outline-none"
-                    aria-label="Next Slide"
-                  >
-                    <ChevronRight size={20} />
-                  </button>
-                )}
+                  {/* Right Arrow Button */}
+                  {banners.length > 1 && (
+                    <button
+                      onClick={handleNextSlide}
+                      className="absolute right-4 top-1/2 -translate-y-1/2 z-20 w-10 h-10 rounded-full bg-black/30 hover:bg-black/50 border border-white/10 text-white flex items-center justify-center shadow-md opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer border-none outline-none"
+                      aria-label="Next Slide"
+                    >
+                      <ChevronRight size={20} />
+                    </button>
+                  )}
 
-                {/* Dots Navigation */}
-                {banners.length > 1 && (
-                  <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2 z-20">
-                    {banners.map((_, i) => (
-                      <button
-                        key={i}
-                        onClick={() => setCurrentPromoSlide(i)}
-                        className={`rounded-full transition-all cursor-pointer border-none outline-none ${
-                          i === currentPromoSlide ? 'w-5 h-1.5 bg-[#FF6B35]' : 'w-1.5 h-1.5 bg-white/40'
-                        }`}
-                        aria-label={`Go to slide ${i + 1}`}
-                      />
-                    ))}
-                  </div>
-                )}
+                  {/* Dots Navigation */}
+                  {banners.length > 1 && (
+                    <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2 z-20">
+                      {banners.map((_, i) => (
+                        <button
+                          key={i}
+                          onClick={() => setCurrentPromoSlide(i)}
+                          className={`rounded-full transition-all cursor-pointer border-none outline-none ${
+                            i === currentPromoSlide ? 'w-5 h-1.5 bg-[#FF6B35]' : 'w-1.5 h-1.5 bg-white/40'
+                          }`}
+                          aria-label={`Go to slide ${i + 1}`}
+                        />
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
-          </div>
-        </section>
+          </section>
+        )}
 
         {/* 5. SHOP BY CATEGORY (Horizontal Scroll) */}
         <section className={`py-12 ${darkMode ? 'bg-gray-950' : 'bg-white'}`}>

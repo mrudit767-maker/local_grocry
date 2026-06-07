@@ -4,6 +4,53 @@ import { Product, PRODUCTS, CATEGORIES } from '../data/products';
 import { saveProductsToSheet, fetchProductsFromSheet, saveSettingsToSheet, fetchSettingsFromSheet } from '../utils/googleSheets';
 import toast from 'react-hot-toast';
 
+const DEFAULT_BANNERS: HomeBanner[] = [
+  {
+    id: 'banner_default_1',
+    title: 'Festival Special Offers',
+    subtitle: '🪔 Up to 50% Off on all Grocery Staples',
+    cta: 'Shop Staples',
+    bg: 'from-[#d00000] via-[#dc2f02] to-[#FF6B35]',
+    emoji: '🪔',
+    badge: 'Festival Special',
+    image: 'https://images.unsplash.com/photo-1589301760014-d929f3979dbc?auto=compress&cs=tinysrgb&w=1000&h=450&fit=crop',
+    linkCategory: 'rice-atta'
+  },
+  {
+    id: 'banner_default_2',
+    title: 'Direct From Farms',
+    subtitle: '🥬 100% Fresh Vegetables & Fruits Daily',
+    cta: 'Shop Fresh',
+    bg: 'from-[#1b4332] via-[#2d6a4f] to-[#2ECC71]',
+    emoji: '🥬',
+    badge: 'Farm Fresh',
+    image: 'https://images.unsplash.com/photo-1542838132-92c53300491e?auto=compress&cs=tinysrgb&w=1000&h=450&fit=crop',
+    linkCategory: 'fruits-veggies'
+  },
+  {
+    id: 'banner_default_3',
+    title: 'Double The Savings',
+    subtitle: '⭐ Buy 1 Get 1 Free on Selected Snacks',
+    cta: 'Get Deal',
+    bg: 'from-[#0077b6] via-[#0096c7] to-[#03045e]',
+    emoji: '⭐',
+    badge: 'Buy 1 Get 1 Free',
+    image: 'https://images.unsplash.com/photo-1590080875515-8a3a8dc5735e?auto=compress&cs=tinysrgb&w=1000&h=450&fit=crop',
+    linkCategory: 'biscuits-snacks'
+  },
+  {
+    id: 'banner_default_4',
+    title: 'Exclusive Welcome Gift',
+    subtitle: '🎁 Free Surprise Gift on First Order Above ₹499',
+    cta: 'Shop Now',
+    bg: 'from-[#7b2cbf] via-[#5a189a] to-[#FF6B35]',
+    emoji: '🎁',
+    badge: 'New Customer Gift',
+    image: 'https://images.unsplash.com/photo-1549465220-1a8b9238cd48?auto=compress&cs=tinysrgb&w=1000&h=450&fit=crop',
+    linkCategory: 'all'
+  }
+];
+
 const syncProductsWithFeedback = async (url: string, products: Product[]) => {
   const toastId = toast.loading('Syncing products catalog with Google Sheets... ⏳');
   try {
@@ -316,52 +363,7 @@ export const useStore = create<StoreState>()(
       wishlistIds: [],
       recentlyViewedIds: [],
       subscriptions: [],
-      banners: [
-        {
-          id: 'banner_default_1',
-          title: 'Festival Special Offers',
-          subtitle: '🪔 Up to 50% Off on all Grocery Staples',
-          cta: 'Shop Staples',
-          bg: 'from-[#d00000] via-[#dc2f02] to-[#FF6B35]',
-          emoji: '🪔',
-          badge: 'Festival Special',
-          image: 'https://images.unsplash.com/photo-1589301760014-d929f3979dbc?auto=compress&cs=tinysrgb&w=1000&h=450&fit=crop',
-          linkCategory: 'rice-atta'
-        },
-        {
-          id: 'banner_default_2',
-          title: 'Direct From Farms',
-          subtitle: '🥬 100% Fresh Vegetables & Fruits Daily',
-          cta: 'Shop Fresh',
-          bg: 'from-[#1b4332] via-[#2d6a4f] to-[#2ECC71]',
-          emoji: '🥬',
-          badge: 'Farm Fresh',
-          image: 'https://images.unsplash.com/photo-1542838132-92c53300491e?auto=compress&cs=tinysrgb&w=1000&h=450&fit=crop',
-          linkCategory: 'fruits-veggies'
-        },
-        {
-          id: 'banner_default_3',
-          title: 'Double The Savings',
-          subtitle: '⭐ Buy 1 Get 1 Free on Selected Snacks',
-          cta: 'Get Deal',
-          bg: 'from-[#0077b6] via-[#0096c7] to-[#03045e]',
-          emoji: '⭐',
-          badge: 'Buy 1 Get 1 Free',
-          image: 'https://images.unsplash.com/photo-1590080875515-8a3a8dc5735e?auto=compress&cs=tinysrgb&w=1000&h=450&fit=crop',
-          linkCategory: 'biscuits-snacks'
-        },
-        {
-          id: 'banner_default_4',
-          title: 'Exclusive Welcome Gift',
-          subtitle: '🎁 Free Surprise Gift on First Order Above ₹499',
-          cta: 'Shop Now',
-          bg: 'from-[#7b2cbf] via-[#5a189a] to-[#FF6B35]',
-          emoji: '🎁',
-          badge: 'New Customer Gift',
-          image: 'https://images.unsplash.com/photo-1549465220-1a8b9238cd48?auto=compress&cs=tinysrgb&w=1000&h=450&fit=crop',
-          linkCategory: 'all'
-        }
-      ],
+      banners: DEFAULT_BANNERS,
       adminLoggedIn: false,
       adminView: 'dashboard',
       currentPage: 'home',
@@ -783,8 +785,10 @@ export const useStore = create<StoreState>()(
         if (!url) return;
         const settings = await fetchSettingsFromSheet(url);
         if (settings) {
-          if (settings.banners && Array.isArray(settings.banners)) {
+          if (settings.banners && Array.isArray(settings.banners) && settings.banners.length > 0) {
             set({ banners: settings.banners });
+          } else if ((!settings.banners || !Array.isArray(settings.banners) || settings.banners.length === 0) && (!get().banners || get().banners.length === 0)) {
+            set({ banners: DEFAULT_BANNERS });
           }
           const { banners, ...restSettings } = settings as any;
           set((s) => ({ storeSettings: { ...s.storeSettings, ...restSettings } }));

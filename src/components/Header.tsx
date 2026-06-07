@@ -386,7 +386,8 @@ export default function Header() {
   };
 
   return (
-    <header className={`sticky top-0 z-50 backdrop-blur-xl ${darkMode ? 'bg-gray-950/90 border-gray-800' : 'bg-white/95 border-gray-150'} border-b transition-all duration-300 shadow-sm`}>
+    <>
+      <header className={`sticky top-0 z-50 backdrop-blur-xl ${darkMode ? 'bg-gray-950/90 border-gray-800' : 'bg-white/95 border-gray-150'} border-b transition-all duration-300 shadow-sm`}>
       {/* Top bar (Desktop only) */}
       <div className="bg-gradient-to-r from-slate-950 via-emerald-950 to-slate-950 text-white text-[11px] py-2 px-4 font-semibold tracking-wider select-none border-b border-white/5 hidden md:block">
         <div className="max-w-7xl mx-auto flex justify-between items-center">
@@ -775,69 +776,71 @@ export default function Header() {
         </div>
       </div>
 
-      {/* Mobile Bottom Navigation Bar */}
-      <div className={`md:hidden fixed bottom-0 left-0 right-0 z-50 border-t backdrop-blur-lg shadow-[0_-4px_24px_rgba(0,0,0,0.06)] transition-all duration-300 ${
-        darkMode ? 'bg-gray-950/90 border-gray-800 text-gray-400' : 'bg-white/95 border-gray-200 text-gray-600'
-      }`}>
-        <div className="flex items-center justify-around py-2">
-          <button
-            onClick={() => setCurrentPage('home')}
-            className={`flex flex-col items-center gap-0.5 transition-all duration-200 cursor-pointer ${
-              currentPage === 'home' ? 'text-emerald-600 dark:text-emerald-400 scale-105' : 'hover:text-emerald-500'
-            }`}
-          >
-            <Home size={18} className={currentPage === 'home' ? 'stroke-[2.5px] text-emerald-600' : 'stroke-[1.8px]'} />
-            <span className="text-[9px] font-bold">Home</span>
-          </button>
-          
-          <button
-            onClick={() => setCurrentPage('products')}
-            className={`flex flex-col items-center gap-0.5 transition-all duration-200 cursor-pointer ${
-              currentPage === 'products' ? 'text-emerald-600 dark:text-emerald-400 scale-105' : 'hover:text-emerald-500'
-            }`}
-          >
-            <LayoutGrid size={18} className={currentPage === 'products' ? 'stroke-[2.5px] text-emerald-600' : 'stroke-[1.8px]'} />
-            <span className="text-[9px] font-bold">Categories</span>
-          </button>
-
-          <button
-            onClick={() => setCurrentPage('subscriptions')}
-            className={`flex flex-col items-center gap-0.5 transition-all duration-200 cursor-pointer ${
-              currentPage === 'subscriptions' ? 'text-emerald-600 dark:text-emerald-400 scale-105' : 'hover:text-emerald-500'
-            }`}
-          >
-            <RefreshCw size={18} className={currentPage === 'subscriptions' ? 'stroke-[2.5px] text-emerald-600' : 'stroke-[1.8px]'} />
-            <span className="text-[9px] font-bold">Sub Packs</span>
-          </button>
-
-          <button
-            onClick={toggleCart}
-            className={`relative flex flex-col items-center gap-0.5 transition-all duration-200 cursor-pointer ${
-              cartCount > 0 ? 'text-emerald-600 dark:text-emerald-400' : 'hover:text-emerald-500'
-            }`}
-          >
-            <div className="relative">
-              <ShoppingBag size={18} className="stroke-[1.8px]" />
-              {cartCount > 0 && (
-                <span className="absolute -top-1.5 -right-2 bg-orange-500 text-white text-[8px] font-black rounded-full h-4 w-4 flex items-center justify-center border border-white dark:border-gray-900 animate-pulse">
-                  {cartCount}
-                </span>
-              )}
-            </div>
-            <span className="text-[9px] font-bold">Cart</span>
-          </button>
-
-          <button
-            onClick={() => setCurrentPage(currentCustomer ? 'orders' : 'customer-login')}
-            className={`flex flex-col items-center gap-0.5 transition-all duration-200 cursor-pointer ${
-              currentPage === 'orders' || currentPage === 'customer-login' ? 'text-emerald-600 dark:text-emerald-400 scale-105' : 'hover:text-emerald-500'
-            }`}
-          >
-            <User size={18} className={currentPage === 'orders' || currentPage === 'customer-login' ? 'stroke-[2.5px] text-emerald-600' : 'stroke-[1.8px]'} />
-            <span className="text-[9px] font-bold">{currentCustomer ? 'Orders' : 'Profile'}</span>
-          </button>
-        </div>
-      </div>
     </header>
-  );
+
+    {/* Mobile Bottom Navigation Bar */}
+    <div className={`md:hidden fixed bottom-0 left-0 right-0 z-50 border-t backdrop-blur-lg shadow-[0_-4px_24px_rgba(0,0,0,0.06)] transition-all duration-300 ${
+      darkMode ? 'bg-gray-950/90 border-gray-800 text-gray-400' : 'bg-white/95 border-gray-200 text-gray-600'
+    }`}>
+      <div className="flex items-center justify-around py-2">
+        <button
+          onClick={() => setCurrentPage('home')}
+          className={`flex flex-col items-center gap-0.5 transition-all duration-200 cursor-pointer ${
+            currentPage === 'home' ? 'text-emerald-600 dark:text-emerald-400 scale-105' : 'hover:text-emerald-500'
+          }`}
+        >
+          <Home size={18} className={currentPage === 'home' ? 'stroke-[2.5px] text-emerald-600' : 'stroke-[1.8px]'} />
+          <span className="text-[9px] font-bold">Home</span>
+        </button>
+        
+        <button
+          onClick={() => setCurrentPage('products')}
+          className={`flex flex-col items-center gap-0.5 transition-all duration-200 cursor-pointer ${
+            currentPage === 'products' ? 'text-emerald-600 dark:text-emerald-400 scale-105' : 'hover:text-emerald-500'
+          }`}
+        >
+          <LayoutGrid size={18} className={currentPage === 'products' ? 'stroke-[2.5px] text-emerald-600' : 'stroke-[1.8px]'} />
+          <span className="text-[9px] font-bold">Categories</span>
+        </button>
+
+        <button
+          onClick={() => setCurrentPage('subscriptions')}
+          className={`flex flex-col items-center gap-0.5 transition-all duration-200 cursor-pointer ${
+            currentPage === 'subscriptions' ? 'text-emerald-600 dark:text-emerald-400 scale-105' : 'hover:text-emerald-500'
+          }`}
+        >
+          <RefreshCw size={18} className={currentPage === 'subscriptions' ? 'stroke-[2.5px] text-emerald-600' : 'stroke-[1.8px]'} />
+          <span className="text-[9px] font-bold">Sub Packs</span>
+        </button>
+
+        <button
+          onClick={toggleCart}
+          className={`relative flex flex-col items-center gap-0.5 transition-all duration-200 cursor-pointer ${
+            getCartItemCount() > 0 ? 'text-emerald-600 dark:text-emerald-400' : 'hover:text-emerald-500'
+          }`}
+        >
+          <div className="relative">
+            <ShoppingBag size={18} className="stroke-[1.8px]" />
+            {getCartItemCount() > 0 && (
+              <span className="absolute -top-1.5 -right-2 bg-orange-500 text-white text-[8px] font-black rounded-full h-4 w-4 flex items-center justify-center border border-white dark:border-gray-900 animate-pulse">
+                {getCartItemCount()}
+              </span>
+            )}
+          </div>
+          <span className="text-[9px] font-bold">Cart</span>
+        </button>
+
+        <button
+          onClick={() => setCurrentPage(currentCustomer ? 'orders' : 'customer-login')}
+          className={`flex flex-col items-center gap-0.5 transition-all duration-200 cursor-pointer ${
+            currentPage === 'orders' || currentPage === 'customer-login' ? 'text-emerald-600 dark:text-emerald-400 scale-105' : 'hover:text-emerald-500'
+          }`}
+        >
+          <User size={18} className={currentPage === 'orders' || currentPage === 'customer-login' ? 'stroke-[2.5px] text-emerald-600' : 'stroke-[1.8px]'} />
+          <span className="text-[9px] font-bold">{currentCustomer ? 'Orders' : 'Profile'}</span>
+        </button>
+      </div>
+    </div>
+  </>
+);
 }
