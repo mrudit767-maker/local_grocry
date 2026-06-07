@@ -23,7 +23,7 @@ export default function App() {
   const {
     currentPage, darkMode, storeSettings, setCurrentPage, fetchProducts, fetchSettings,
     categories, addCategory, products, bulkAddProducts, selectedProductId, setSelectedProductId,
-    setSelectedCategory
+    setSelectedCategory, updateStoreSettings
   } = useStore();
 
   const [activePolicy, setActivePolicy] = useState<'privacy' | 'terms' | 'refund' | null>(null);
@@ -159,6 +159,19 @@ export default function App() {
   }, [categories, products, addCategory, bulkAddProducts]);
 
   useEffect(() => {
+    // Migrate old webhook URLs if they match the old demo URL or are empty
+    const oldDemoUrl = 'https://script.google.com/macros/s/AKfycbzqdrrYG56NKd6pNyGhTlanuTLP3_HO9sD8vL1Fmn98IJLz0KyXzrSIQxFWH4M8by8R/exec';
+    const currentUrl = storeSettings.googleSheetWebhookUrl;
+    const defaultCustomUrl = 'https://script.google.com/macros/s/AKfycbzKMXP4_DT32ePA9rc2YOd9-n2AKOvYi0ID0rcl1aLKAETYjL8eJc33_EacweDFmOELCQ/exec';
+    
+    if (!currentUrl || currentUrl === oldDemoUrl) {
+      updateStoreSettings({
+        googleSheetWebhookUrl: defaultCustomUrl,
+        googleSheetProductsWebhookUrl: defaultCustomUrl
+      });
+      console.log('Migrated old demo webhook URL to the correct custom webhook URL.');
+    }
+
     fetchProducts();
     fetchSettings();
     // eslint-disable-next-line react-hooks/exhaustive-deps

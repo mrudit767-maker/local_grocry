@@ -54,6 +54,16 @@ export default function CustomerLoginPage() {
     pincode: string;
   } | null>(null);
 
+  // Background profile fetch promise
+  const [profilePromise, setProfilePromise] = useState<Promise<{
+    name: string;
+    phone: string;
+    email?: string;
+    address: string;
+    city: string;
+    pincode: string;
+  } | null> | null>(null);
+
   // Countdown timer for OTP resend
   useEffect(() => {
     if (resendTimer <= 0) return;
@@ -103,8 +113,9 @@ export default function CustomerLoginPage() {
       }
     }
 
-    // Trigger toast notification (hide OTP code on screen for production, show for demo)
-    if (isDemoWebhook) {
+    // Trigger toast notification (hide OTP code on screen for production, show for demo/simulated gateway)
+    const showOnScreen = isDemoWebhook || !storeSettings.smsGateway || storeSettings.smsGateway === 'simulated';
+    if (showOnScreen) {
       let toastMsg = `[SMS Gateway] OTP for ${storeSettings.shopName} is: ${code} 📱`;
       if (email) {
         toastMsg += ` & [Email Gateway] Sent to ${email} 📧`;
@@ -175,21 +186,28 @@ export default function CustomerLoginPage() {
     
     // In background, fetch customer profile from Google Sheets immediately
     if (storeSettings.googleSheetWebhookUrl) {
-      fetchCustomerFromSheet(storeSettings.googleSheetWebhookUrl, input)
+      const promise = fetchCustomerFromSheet(storeSettings.googleSheetWebhookUrl, input)
         .then(profile => {
           if (profile) {
-            setFetchedCustomerProfile({
+            const data = {
               name: profile.customerName,
               phone: profile.phone,
               email: profile.email,
               address: profile.address,
               city: profile.city,
               pincode: profile.pincode,
-            });
+            };
+            setFetchedCustomerProfile(data);
             console.log('Customer profile pre-loaded from sheet:', profile);
+            return data;
           }
+          return null;
         })
-        .catch(err => console.error('Failed to pre-fetch customer details:', err));
+        .catch(err => {
+          console.error('Failed to pre-fetch customer details:', err);
+          return null;
+        });
+      setProfilePromise(promise);
     }
     
     setLoading(false);
@@ -237,10 +255,20 @@ export default function CustomerLoginPage() {
     setLoading(true);
     
     if (pendingAction === 'login') {
+      let profile = fetchedCustomerProfile;
+      if (!profile && profilePromise) {
+        try {
+          // Wait for background fetch to complete if user typed OTP extremely fast
+          profile = await profilePromise;
+        } catch (err) {
+          console.error('Error waiting for background profile fetch:', err);
+        }
+      }
+
       // 1. Try to use fetched customer profile details from Google Sheets
-      if (fetchedCustomerProfile) {
-        customerLogin(fetchedCustomerProfile);
-        toast.success(`OTP Verified! Welcome back, ${fetchedCustomerProfile.name}! 🎉`);
+      if (profile) {
+        customerLogin(profile);
+        toast.success(`OTP Verified! Welcome back, ${profile.name}! 🎉`);
       } else {
         // 2. Fallback: Try to find past orders matching email or phone
         const cleanPendingPhone = pendingLoginPhone.replace(/[\s-+]/g, '').slice(-10);
