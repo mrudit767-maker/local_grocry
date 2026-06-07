@@ -2844,9 +2844,22 @@ function BranchesManager({ setActiveTab, setBranchFilter }: { setActiveTab: (t: 
 }
 
 function BannersManager() {
-  const { banners = [], addBanner, updateBanner, deleteBanner, products, categories, darkMode } = useStore();
+  const { banners = [], addBanner, updateBanner, deleteBanner, products, categories, darkMode, fetchSettings } = useStore();
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [syncing, setSyncing] = useState(false);
+
+  const handleSyncBanners = async () => {
+    setSyncing(true);
+    try {
+      await fetchSettings();
+      toast.success('✅ Banners synced from Google Sheets!');
+    } catch {
+      toast.error('❌ Failed to sync banners.');
+    } finally {
+      setSyncing(false);
+    }
+  };
 
   const initialForm = {
     title: '',
@@ -2951,19 +2964,29 @@ function BannersManager() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
           <h2 className={`text-xl font-black ${darkMode ? 'text-white' : 'text-gray-900'}`}>Banner Campaigns</h2>
           <p className="text-gray-500 text-sm">Create high-impact promotional sliders at the top of the homepage</p>
         </div>
-        {!showForm && (
+        <div className="flex items-center gap-2">
           <button
-            onClick={() => setShowForm(true)}
-            className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2.5 rounded-xl text-sm font-bold shadow-md transition-all cursor-pointer"
+            onClick={handleSyncBanners}
+            disabled={syncing}
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white transition-all disabled:opacity-60 cursor-pointer shadow-sm"
           >
-            <Plus size={16} /> Create Banner
+            <RefreshCw size={13} className={syncing ? 'animate-spin' : ''} />
+            {syncing ? 'Syncing...' : 'Sync from Sheets'}
           </button>
-        )}
+          {!showForm && (
+            <button
+              onClick={() => setShowForm(true)}
+              className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2.5 rounded-xl text-sm font-bold shadow-md transition-all cursor-pointer"
+            >
+              <Plus size={16} /> Create Banner
+            </button>
+          )}
+        </div>
       </div>
 
       {showForm && (

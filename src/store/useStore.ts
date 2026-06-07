@@ -66,6 +66,14 @@ const syncProductsWithFeedback = async (url: string, products: Product[]) => {
   }
 };
 
+// Strip base64 images from banners before saving to Google Sheets
+// (base64 strings are huge and exceed Sheets cell limits)
+const stripBannersForSheet = (banners: HomeBanner[]): HomeBanner[] =>
+  banners.map(b => ({
+    ...b,
+    image: b.image && !b.image.startsWith('data:') ? b.image : undefined,
+  }));
+
 export interface CartItem {
   product: Product;
   quantity: number;
@@ -675,7 +683,9 @@ export const useStore = create<StoreState>()(
         toast.success('Banner added successfully! 📢');
         const url = get().storeSettings.googleSheetProductsWebhookUrl || get().storeSettings.googleSheetWebhookUrl;
         if (url) {
-          const payload = { ...get().storeSettings, banners: updated };
+          // Strip base64 images before saving to Sheets (avoid cell size limit)
+          const sheetSafeBanners = stripBannersForSheet(updated);
+          const payload = { ...get().storeSettings, banners: sheetSafeBanners };
           saveSettingsToSheet(url, payload).catch(err => console.error('Failed to sync banners:', err));
         }
       },
@@ -685,7 +695,8 @@ export const useStore = create<StoreState>()(
         toast.success('Banner updated! ✏️');
         const url = get().storeSettings.googleSheetProductsWebhookUrl || get().storeSettings.googleSheetWebhookUrl;
         if (url) {
-          const payload = { ...get().storeSettings, banners: updated };
+          const sheetSafeBanners = stripBannersForSheet(updated);
+          const payload = { ...get().storeSettings, banners: sheetSafeBanners };
           saveSettingsToSheet(url, payload).catch(err => console.error('Failed to sync banners:', err));
         }
       },
@@ -695,7 +706,8 @@ export const useStore = create<StoreState>()(
         toast.success('Banner deleted! 🗑️');
         const url = get().storeSettings.googleSheetProductsWebhookUrl || get().storeSettings.googleSheetWebhookUrl;
         if (url) {
-          const payload = { ...get().storeSettings, banners: updated };
+          const sheetSafeBanners = stripBannersForSheet(updated);
+          const payload = { ...get().storeSettings, banners: sheetSafeBanners };
           saveSettingsToSheet(url, payload).catch(err => console.error('Failed to sync banners:', err));
         }
       },
@@ -784,15 +796,35 @@ export const useStore = create<StoreState>()(
       fetchSettings: async () => {
         const url = get().storeSettings.googleSheetProductsWebhookUrl || get().storeSettings.googleSheetWebhookUrl;
         if (!url) return;
-        const settings = await fetchSettingsFromSheet(url);
-        if (settings) {
-          if (settings.banners && Array.isArray(settings.banners) && settings.banners.length > 0) {
-            set({ banners: settings.banners });
-          } else if ((!settings.banners || !Array.isArray(settings.banners) || settings.banners.length === 0) && (!get().banners || get().banners.length === 0)) {
-            set({ banners: DEFAULT_BANNERS });
+        try {
+          const settings = await fetchSettingsFromSheet(url);
+          if (settings) {
+            // ALWAYS apply banners from sheet if they exist (not just when local is empty)
+            // This ensures cross-device banner sync works correctly
+            if (settings.banners && Array.isArray(settings.banners) && settings.banners.length > 0) {
+              // Merge: prefer local banner's image (may have uploaded base64) but use sheet metadata
+              const localBanners = get().banners || [];
+              const mergedBanners = (settings.banners as HomeBanner[]).map(sheetBanner => {
+                const localMatch = localBanners.find(lb => lb.id === sheetBanner.id);
+                if (localMatch) {
+                  // Keep local image if sheet has none (base64 was stripped before saving)
+                  return {
+                    ...sheetBanner,
+                    image: sheetBanner.image || localMatch.image,
+                  };
+                }
+                return sheetBanner;
+              });
+              set({ banners: mergedBanners });
+            } else if ((!get().banners || get().banners.length === 0)) {
+              // Only use defaults if there are truly no banners anywhere
+              set({ banners: DEFAULT_BANNERS });
+            }
+            const { banners, ...restSettings } = settings as any;
+            set((s) => ({ storeSettings: { ...s.storeSettings, ...restSettings } }));
           }
-          const { banners, ...restSettings } = settings as any;
-          set((s) => ({ storeSettings: { ...s.storeSettings, ...restSettings } }));
+        } catch (err) {
+          console.error('Failed to fetch settings:', err);
         }
       },
 
