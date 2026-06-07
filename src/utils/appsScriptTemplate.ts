@@ -122,6 +122,34 @@ function doGet(e) {
     return ContentService.createTextOutput(JSON.stringify(null))
       .setMimeType(ContentService.MimeType.JSON);
   }
+
+  // ACTION 4: Get all orders from OrdersSync sheet (for admin cross-device sync)
+  if (action === 'getOrders') {
+    var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('OrdersSync');
+    if (!sheet) {
+      return ContentService.createTextOutput(JSON.stringify([]))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+    var values = sheet.getDataRange().getValues();
+    var orders = [];
+    for (var i = 1; i < values.length; i++) {
+      var row = values[i];
+      if (!row[0]) continue; // skip blank rows
+      orders.push({
+        orderId: String(row[0]),
+        date: String(row[1] || ''),
+        customerName: String(row[2] || ''),
+        phone: String(row[3] || ''),
+        total: String(row[4] || ''),
+        status: String(row[5] || ''),
+        paymentMethod: String(row[6] || ''),
+        itemsSummary: String(row[7] || ''),
+        orderJson: String(row[8] || '')
+      });
+    }
+    return ContentService.createTextOutput(JSON.stringify(orders))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
   
   return ContentService.createTextOutput("Invalid Action");
 }
@@ -171,8 +199,58 @@ function doPost(e) {
       return ContentService.createTextOutput(JSON.stringify({status:'success'}))
         .setMimeType(ContentService.MimeType.JSON);
     }
+
+    // POST ACTION 1.5: Save Full Order JSON to OrdersSync sheet (admin cross-device sync)
+    if (data.action === 'saveFullOrder') {
+      var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('OrdersSync')
+                  || SpreadsheetApp.getActiveSpreadsheet().insertSheet('OrdersSync');
+      if (sheet.getLastRow() === 0) {
+        sheet.appendRow([
+          'Order ID', 'Date', 'Customer Name', 'Phone', 'Total', 'Status', 'Payment Method', 'Items Summary', 'Order JSON'
+        ]);
+        sheet.getRange("A1:I1").setFontWeight("bold");
+      }
+      var o = data.order;
+      sheet.appendRow([
+        o.orderId, o.date, o.customerName, o.phone, o.total, o.status, o.paymentMethod, o.itemsSummary, o.orderJson
+      ]);
+      return ContentService.createTextOutput(JSON.stringify({status:'success'}))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+
+    // POST ACTION 1.6: Update Order Status in OrdersSync sheet
+    if (data.action === 'updateOrderStatus') {
+      var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('OrdersSync');
+      if (!sheet) {
+        return ContentService.createTextOutput(JSON.stringify({status:'error',message:'OrdersSync sheet not found'}))
+          .setMimeType(ContentService.MimeType.JSON);
+      }
+      var values = sheet.getDataRange().getValues();
+      var orderId = data.orderId;
+      var newStatus = data.status;
+      var newPaymentStatus = data.paymentStatus;
+      for (var i = 1; i < values.length; i++) {
+        if (String(values[i][0]) === String(orderId)) {
+          // Update status column (col F = index 5)
+          sheet.getRange(i + 1, 6).setValue(newStatus);
+          // Update orderJson with new status
+          if (values[i][8]) {
+            try {
+              var orderObj = JSON.parse(String(values[i][8]));
+              orderObj.status = newStatus;
+              if (newPaymentStatus) orderObj.paymentStatus = newPaymentStatus;
+              orderObj.updatedAt = new Date().toISOString();
+              sheet.getRange(i + 1, 9).setValue(JSON.stringify(orderObj));
+            } catch(e) {}
+          }
+          break;
+        }
+      }
+      return ContentService.createTextOutput(JSON.stringify({status:'success'}))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
     
-    // POST ACTION 1.5: Send OTP SMS/Email via Fast2SMS / Twilio / GmailApp
+    // POST ACTION 2: Send OTP SMS/Email via Fast2SMS / Twilio / GmailApp
     if (data.action === 'sendSMS') {
       var gateway = data.gateway;
       var phone = data.phone;

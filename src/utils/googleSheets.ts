@@ -12,6 +12,19 @@ export interface OrderRowData {
   status: string;
 }
 
+// Full order data for bidirectional sync
+export interface OrderSyncData {
+  orderId: string;
+  orderJson: string; // Full JSON serialized order
+  date: string;
+  customerName: string;
+  phone: string;
+  total: string;
+  status: string;
+  paymentMethod: string;
+  itemsSummary: string;
+}
+
 export interface CustomerSheetData {
   dateRegistered: string;
   customerName: string;
@@ -38,7 +51,7 @@ export interface SyncSettings {
   adminPassword: string;
 }
 
-// 1. Save Orders (POST)
+// 1. Save Orders (POST) - basic row format
 export async function saveOrderToSheet(
   webhookUrl: string,
   rows: OrderRowData[]
@@ -60,7 +73,66 @@ export async function saveOrderToSheet(
   }
 }
 
-// 2. Save Customer (POST)
+// 1b. Save Full Order JSON (POST) - for admin panel bidirectional sync
+export async function saveFullOrderToSheet(
+  webhookUrl: string,
+  orderData: OrderSyncData
+): Promise<boolean> {
+  if (!webhookUrl || !webhookUrl.startsWith('https://script.google.com')) return false;
+  try {
+    await fetch(webhookUrl, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'saveFullOrder', order: orderData }),
+    });
+    return true;
+  } catch (error) {
+    console.error('Google Sheets full order sync error:', error);
+    return false;
+  }
+}
+
+// 1c. Fetch All Orders from Sheet (GET) - for admin panel cross-device sync
+export async function fetchOrdersFromSheet(webhookUrl: string): Promise<any[] | null> {
+  if (!webhookUrl || !webhookUrl.startsWith('https://script.google.com')) return null;
+  try {
+    const res = await fetch(`${webhookUrl}?action=getOrders`);
+    if (!res.ok) return null;
+    const data = await res.json();
+    if (Array.isArray(data) && data.length > 0) {
+      return data;
+    }
+    return null;
+  } catch (error) {
+    console.error('Failed to fetch orders from Google Sheet:', error);
+    return null;
+  }
+}
+
+// 1d. Update Order Status in Sheet (POST) - admin panel order management
+export async function updateOrderStatusInSheet(
+  webhookUrl: string,
+  orderId: string,
+  status: string,
+  paymentStatus?: string
+): Promise<boolean> {
+  if (!webhookUrl || !webhookUrl.startsWith('https://script.google.com')) return false;
+  try {
+    await fetch(webhookUrl, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'updateOrderStatus', orderId, status, paymentStatus }),
+    });
+    return true;
+  } catch (error) {
+    console.error('Failed to update order status in Google Sheet:', error);
+    return false;
+  }
+}
+
+
 export async function saveCustomerToSheet(
   webhookUrl: string,
   customerData: CustomerSheetData

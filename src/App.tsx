@@ -205,7 +205,7 @@ export default function App() {
       {currentPage !== 'admin' && <Header />}
 
       {/* Page Content */}
-      <main className="pb-16 md:pb-0">
+      <main className="pb-24 md:pb-0">
         {currentPage === 'home' && <HomePage />}
         {currentPage === 'products' && <ProductsPage />}
         {currentPage === 'checkout' && <CheckoutPage />}

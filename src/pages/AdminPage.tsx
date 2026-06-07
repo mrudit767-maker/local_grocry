@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   LogOut, Package, ShoppingBag, DollarSign, TrendingUp,
   Plus, Edit2, Trash2, X, ChevronLeft, Download, Search,
@@ -11,6 +11,7 @@ import toast from 'react-hot-toast';
 import SubscriptionInvoiceModal from '../components/SubscriptionInvoiceModal';
 import OrderInvoiceModal from '../components/OrderInvoiceModal';
 import { APPS_SCRIPT_CODE } from '../utils/appsScriptTemplate';
+import { updateOrderStatusInSheet } from '../utils/googleSheets';
 import SearchableSelect from '../components/SearchableSelect';
 
 const STATUS_COLORS: Record<Order['status'], string> = {
@@ -1373,26 +1374,75 @@ function ProductsManager({ branchFilter, setBranchFilter }: { branchFilter: stri
 }
 
 function OrdersManager() {
-  const { orders, updateOrderStatus, updatePaymentStatus, darkMode } = useStore();
+  const { orders, updateOrderStatus, updatePaymentStatus, darkMode, fetchOrders, storeSettings } = useStore();
   const [filter, setFilter] = useState('all');
   const [selectedInvoiceOrder, setSelectedInvoiceOrder] = useState<Order | null>(null);
+  const [syncing, setSyncing] = useState(false);
+
+  // Auto-fetch orders from Google Sheets on mount
+  useEffect(() => {
+    fetchOrders();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const handleSyncOrders = async () => {
+    setSyncing(true);
+    try {
+      await fetchOrders();
+      toast.success('✅ Orders synced from Google Sheets!');
+    } catch {
+      toast.error('❌ Failed to sync orders from Sheets.');
+    } finally {
+      setSyncing(false);
+    }
+  };
+
+  const handleStatusUpdate = (orderId: string, newStatus: Order['status']) => {
+    updateOrderStatus(orderId, newStatus);
+    toast.success(`Order ${newStatus.replace('_', ' ')}`);
+    // Also sync to Google Sheets
+    const url = storeSettings.googleSheetProductsWebhookUrl || storeSettings.googleSheetWebhookUrl;
+    if (url) {
+      updateOrderStatusInSheet(url, orderId, newStatus).catch(() => {});
+    }
+  };
+
+  const handlePaymentUpdate = (orderId: string) => {
+    updatePaymentStatus(orderId, 'paid');
+    toast.success('Payment marked as paid');
+    const url = storeSettings.googleSheetProductsWebhookUrl || storeSettings.googleSheetWebhookUrl;
+    if (url) {
+      updateOrderStatusInSheet(url, orderId, orders.find(o => o.id === orderId)?.status || 'confirmed', 'paid').catch(() => {});
+    }
+  };
 
   const filtered = filter === 'all' ? orders : orders.filter(o => o.status === filter);
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap gap-2">
-        {['all', 'pending', 'confirmed', 'preparing', 'out_for_delivery', 'delivered', 'cancelled'].map(s => (
-          <button
-            key={s}
-            onClick={() => setFilter(s)}
-            className={`px-4 py-2 rounded-full text-xs font-semibold capitalize transition-all ${
-              filter === s ? 'bg-green-600 text-white' : darkMode ? 'bg-gray-700 text-gray-300 hover:bg-gray-650' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-            }`}
-          >
-            {s.replace('_', ' ')} {s === 'all' ? `(${orders.length})` : `(${orders.filter(o => o.status === s).length})`}
-          </button>
-        ))}
+      {/* Header with Sync Button */}
+      <div className="flex items-center justify-between flex-wrap gap-3">
+        <div className="flex flex-wrap gap-2">
+          {['all', 'pending', 'confirmed', 'preparing', 'out_for_delivery', 'delivered', 'cancelled'].map(s => (
+            <button
+              key={s}
+              onClick={() => setFilter(s)}
+              className={`px-4 py-2 rounded-full text-xs font-semibold capitalize transition-all ${
+                filter === s ? 'bg-green-600 text-white' : darkMode ? 'bg-gray-700 text-gray-300 hover:bg-gray-650' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
+            >
+              {s.replace('_', ' ')} {s === 'all' ? `(${orders.length})` : `(${orders.filter(o => o.status === s).length})`}
+            </button>
+          ))}
+        </div>
+        <button
+          onClick={handleSyncOrders}
+          disabled={syncing}
+          className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white transition-all disabled:opacity-60 cursor-pointer shadow-sm"
+        >
+          <RefreshCw size={13} className={syncing ? 'animate-spin' : ''} />
+          {syncing ? 'Syncing...' : 'Sync from Sheets'}
+        </button>
       </div>
 
       {filtered.length === 0 ? (
@@ -1525,7 +1575,7 @@ function OrdersManager() {
                   {(['confirmed', 'preparing', 'out_for_delivery', 'delivered', 'cancelled'] as Order['status'][]).map(s => (
                     <button
                       key={s}
-                      onClick={() => { updateOrderStatus(order.id, s); toast.success(`Order ${s.replace('_', ' ')}`); }}
+                      onClick={() => handleStatusUpdate(order.id, s)}
                       className={`px-3 py-1 rounded-full text-xs font-medium capitalize transition-all cursor-pointer ${
                         order.status === s
                           ? `${STATUS_COLORS[s]} ring-2 ring-offset-1 ring-green-400`
@@ -1539,7 +1589,7 @@ function OrdersManager() {
                   ))}
                   {order.paymentStatus === 'pending' && (
                     <button
-                      onClick={() => { updatePaymentStatus(order.id, 'paid'); toast.success('Payment marked as paid'); }}
+                      onClick={() => handlePaymentUpdate(order.id)}
                       className="px-3 py-1 rounded-full text-xs font-medium bg-green-600 text-white hover:bg-green-700 cursor-pointer"
                     >
                       ✓ Mark Paid

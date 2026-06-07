@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { Product, PRODUCTS, CATEGORIES } from '../data/products';
-import { saveProductsToSheet, fetchProductsFromSheet, saveSettingsToSheet, fetchSettingsFromSheet } from '../utils/googleSheets';
+import { saveProductsToSheet, fetchProductsFromSheet, saveSettingsToSheet, fetchSettingsFromSheet, fetchOrdersFromSheet } from '../utils/googleSheets';
 import toast from 'react-hot-toast';
 
 const DEFAULT_BANNERS: HomeBanner[] = [
@@ -335,6 +335,7 @@ export interface StoreState {
   // DB Sync Actions
   fetchProducts: () => Promise<void>;
   fetchSettings: () => Promise<void>;
+  fetchOrders: () => Promise<void>;
 }
 
 export const useStore = create<StoreState>()(
@@ -792,6 +793,63 @@ export const useStore = create<StoreState>()(
           }
           const { banners, ...restSettings } = settings as any;
           set((s) => ({ storeSettings: { ...s.storeSettings, ...restSettings } }));
+        }
+      },
+
+      fetchOrders: async () => {
+        const url = get().storeSettings.googleSheetProductsWebhookUrl || get().storeSettings.googleSheetWebhookUrl;
+        if (!url) return;
+        try {
+          const sheetOrders = await fetchOrdersFromSheet(url);
+          if (!sheetOrders || sheetOrders.length === 0) return;
+
+          // Parse JSON orders from sheet
+          const parsedOrders: Order[] = [];
+          for (const row of sheetOrders) {
+            try {
+              if (row.orderJson) {
+                const parsed = JSON.parse(row.orderJson);
+                if (parsed && parsed.id) {
+                  parsedOrders.push(parsed as Order);
+                }
+              }
+            } catch (e) {
+              // Skip malformed rows
+            }
+          }
+
+          if (parsedOrders.length === 0) return;
+
+          // Merge: sheet orders + local orders, prefer newer updatedAt
+          const localOrders = get().orders || [];
+          const mergedMap = new Map<string, Order>();
+
+          // Add sheet orders first
+          for (const o of parsedOrders) {
+            mergedMap.set(o.id, o);
+          }
+
+          // Overlay local orders (local wins if same updatedAt or newer)
+          for (const lo of localOrders) {
+            const existing = mergedMap.get(lo.id);
+            if (!existing) {
+              mergedMap.set(lo.id, lo);
+            } else {
+              // Keep whichever was updated more recently
+              if (lo.updatedAt >= existing.updatedAt) {
+                mergedMap.set(lo.id, lo);
+              }
+            }
+          }
+
+          // Sort by createdAt descending (newest first)
+          const merged = Array.from(mergedMap.values()).sort(
+            (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+          );
+
+          set({ orders: merged });
+        } catch (err) {
+          console.error('Failed to fetch orders from Google Sheet:', err);
         }
       },
     }),

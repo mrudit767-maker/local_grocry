@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { ChevronLeft, CreditCard, Smartphone, Banknote, Shield, CheckCircle, AlertCircle, Lock } from 'lucide-react';
 import { useStore } from '../store/useStore';
 import toast from 'react-hot-toast';
-import { saveOrderToSheet, formatOrderForSheet } from '../utils/googleSheets';
+import { saveOrderToSheet, saveFullOrderToSheet, formatOrderForSheet } from '../utils/googleSheets';
 import upiQrImage from '../assets/upi_qr.png';
 
 type PaymentMethod = 'cod' | 'upi' | 'razorpay';
@@ -143,7 +143,35 @@ export default function CheckoutPage() {
       });
 
       // Sync to Google Sheets (fire-and-forget, never blocks checkout)
-      if (storeSettings.googleSheetWebhookUrl) {
+      const webhookUrl = storeSettings.googleSheetProductsWebhookUrl || storeSettings.googleSheetWebhookUrl;
+      if (webhookUrl) {
+        const orderId = `ORD${Date.now()}`;
+        const now = new Date().toISOString();
+        const orderObj = {
+          id: orderId,
+          items: cart,
+          customer: {
+            name: form.name,
+            phone: form.phone,
+            email: form.email,
+            address: `${form.address}, ${form.landmark ? form.landmark + ', ' : ''}${form.city}`,
+            city: form.city,
+            pincode: form.pincode,
+          },
+          total,
+          subtotal,
+          deliveryFee,
+          paymentMethod,
+          paymentStatus: paymentMethod === 'cod' ? 'pending' : 'paid',
+          status: 'confirmed',
+          upiRefNo: paymentMethod === 'upi' ? upiRefNo : undefined,
+          locationUrl,
+          deliverySlot,
+          createdAt: now,
+          updatedAt: now,
+        };
+
+        // 1. Save basic rows to Orders sheet (for human-readable view)
         const sheetData = formatOrderForSheet({
           customer: {
             name: form.name,
@@ -155,12 +183,29 @@ export default function CheckoutPage() {
           items: cart,
           paymentMethod: paymentMethod === 'upi' ? `UPI (UTR: ${upiRefNo})` : paymentMethod === 'razorpay' ? 'Razorpay (Card)' : paymentMethod,
           status: 'confirmed',
-          createdAt: new Date().toISOString(),
+          createdAt: now,
           locationUrl,
           deliverySlot,
         });
-        saveOrderToSheet(storeSettings.googleSheetWebhookUrl, sheetData)
-          .then(result => { if (result.success) console.log('✅ Order synced to Google Sheet'); })
+        saveOrderToSheet(webhookUrl, sheetData)
+          .then(result => { if (result.success) console.log('✅ Order rows synced to Google Sheet'); })
+          .catch(() => {});
+
+        // 2. Save full JSON to OrdersSync sheet (for admin cross-device fetch)
+        const d = new Date(now);
+        const dateStr = `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
+        saveFullOrderToSheet(webhookUrl, {
+          orderId,
+          orderJson: JSON.stringify(orderObj),
+          date: dateStr,
+          customerName: form.name,
+          phone: form.phone,
+          total: `₹${total}`,
+          status: 'confirmed',
+          paymentMethod,
+          itemsSummary: cart.map(i => `${i.product.name} x${i.quantity}`).join(', '),
+        })
+          .then(() => console.log('✅ Full order JSON synced to OrdersSync sheet'))
           .catch(() => {});
       }
 
