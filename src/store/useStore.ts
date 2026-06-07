@@ -54,7 +54,13 @@ const DEFAULT_BANNERS: HomeBanner[] = [
 const syncProductsWithFeedback = async (url: string, products: Product[]) => {
   const toastId = toast.loading('Syncing products catalog with Google Sheets... ⏳');
   try {
-    const success = await saveProductsToSheet(url, products);
+    // Strip base64 images before syncing (Sheets has a 50k char cell limit)
+    const sheetSafeProducts = products.map(p => ({
+      ...p,
+      image: p.image && !p.image.startsWith('data:') ? p.image : `https://placehold.co/200x200/16a34a/ffffff?text=${encodeURIComponent((p.name || 'P').slice(0,2).toUpperCase())}`,
+      images: Array.isArray(p.images) ? p.images.filter(img => img && !img.startsWith('data:')) : [],
+    }));
+    const success = await saveProductsToSheet(url, sheetSafeProducts);
     if (success) {
       toast.success('✅ Products catalog successfully synced with Google Sheets!', { id: toastId });
     } else {
@@ -914,6 +920,12 @@ export const useStore = create<StoreState>()(
         banners: s.banners || [],
         stockRequests: s.stockRequests || [],
         customerNotifications: s.customerNotifications || [],
+        // Save products to localStorage but strip large base64 images to avoid quota issues
+        products: (s.products || []).map(p => ({
+          ...p,
+          image: p.image && !p.image.startsWith('data:') ? p.image : `https://placehold.co/200x200/16a34a/ffffff?text=${encodeURIComponent((p.name || 'P').slice(0,2).toUpperCase())}`,
+          images: Array.isArray(p.images) ? p.images.filter(img => img && !img.startsWith('data:')) : [],
+        })),
       }),
     }
   )
