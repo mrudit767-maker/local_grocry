@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { persist, createJSONStorage } from 'zustand/middleware';
 import { Product, PRODUCTS, CATEGORIES } from '../data/products';
 import { saveProductsToSheet, fetchProductsFromSheet, saveSettingsToSheet, fetchSettingsFromSheet } from '../utils/googleSheets';
 import toast from 'react-hot-toast';
@@ -797,11 +797,21 @@ export const useStore = create<StoreState>()(
     }),
     {
       name: 'krishna-kirana-store',
+      storage: createJSONStorage(() => ({
+        getItem: (name) => localStorage.getItem(name),
+        setItem: (name, value) => {
+          try {
+            localStorage.setItem(name, value);
+          } catch (e) {
+            console.warn('localStorage setItem failed (quota exceeded):', e);
+          }
+        },
+        removeItem: (name) => localStorage.removeItem(name),
+      })),
       partialize: (s) => ({
         cart: s.cart,
         orders: s.orders,
         darkMode: s.darkMode,
-        products: s.products,
         categories: s.categories,
         branches: s.branches,
         selectedBranchId: s.selectedBranchId,
