@@ -455,8 +455,8 @@ export default function Header() {
           </button>
 
           <div className="flex-1 max-w-xl relative">
-            <div className={`flex items-center ${darkMode ? 'bg-gray-900/60 border-gray-800 focus-within:border-emerald-500/80 focus-within:ring-emerald-500/10' : 'bg-gray-50/80 border-gray-200/85 focus-within:border-emerald-500/80 focus-within:ring-emerald-500/15'} border rounded-full px-4 py-2.5 transition-all duration-300 focus-within:ring-4 focus-within:shadow-[0_0_20px_rgba(16,185,129,0.1)] focus-within:scale-[1.01]`}>
-              <Search size={18} className={`transition-colors duration-300 ${searchFocused ? 'text-emerald-500' : 'text-gray-455'} shrink-0`} />
+            <div className={`flex items-center ${darkMode ? 'bg-gray-900 border-gray-800 focus-within:border-emerald-500/80 focus-within:ring-emerald-500/10' : 'bg-gray-100 border-gray-300 focus-within:border-emerald-500/80 focus-within:ring-emerald-500/15'} border rounded-full px-4 py-2.5 transition-all duration-300 focus-within:ring-4 focus-within:shadow-[0_0_20px_rgba(16,185,129,0.1)] focus-within:scale-[1.01]`}>
+              <Search size={18} className={`transition-colors duration-300 ${searchFocused ? 'text-emerald-500' : 'text-gray-400'} shrink-0`} />
               <input
                 ref={searchInputRef}
                 type="text"
@@ -471,7 +471,7 @@ export default function Header() {
                 onFocus={() => setSearchFocused(true)}
                 onBlur={() => setTimeout(() => setSearchFocused(false), 200)}
                 placeholder="Search fresh groceries, ghee, atta..."
-                className={`flex-1 ml-2.5 bg-transparent outline-none text-sm ${darkMode ? 'text-white placeholder-gray-550' : 'text-gray-800 placeholder-gray-450'} font-medium tracking-wide`}
+                className={`flex-1 ml-2.5 bg-transparent outline-none text-sm ${darkMode ? 'text-white placeholder-gray-500' : 'text-gray-800 placeholder-gray-400'} font-medium tracking-wide`}
               />
               <button
                 onClick={() => setAiOpen(!aiOpen)}
@@ -691,8 +691,8 @@ export default function Header() {
 
         {/* Mobile Search Bar & Sparkles AI */}
         <div className="relative w-full">
-          <div className={`flex items-center ${darkMode ? 'bg-gray-900/60 border-gray-800 focus-within:border-emerald-500/80 focus-within:ring-emerald-500/10' : 'bg-gray-50/80 border-gray-200/85 focus-within:border-emerald-500/80 focus-within:ring-emerald-500/15'} border rounded-full px-3.5 py-2 transition-all duration-300 focus-within:ring-3 focus-within:shadow-[0_0_15px_rgba(16,185,129,0.08)]`}>
-            <Search size={16} className={`transition-colors duration-300 ${searchFocused ? 'text-emerald-500' : 'text-gray-455'} shrink-0`} />
+          <div className={`flex items-center ${darkMode ? 'bg-gray-900 border-gray-800 focus-within:border-emerald-500/80 focus-within:ring-emerald-500/10' : 'bg-gray-100 border-gray-300 focus-within:border-emerald-500/80 focus-within:ring-emerald-500/15'} border rounded-full px-3.5 py-2 transition-all duration-300 focus-within:ring-3 focus-within:shadow-[0_0_15px_rgba(16,185,129,0.08)]`}>
+            <Search size={16} className={`transition-colors duration-300 ${searchFocused ? 'text-emerald-500' : 'text-gray-400'} shrink-0`} />
             <input
               type="text"
               value={searchQuery}
@@ -706,7 +706,7 @@ export default function Header() {
               onFocus={() => setSearchFocused(true)}
               onBlur={() => setTimeout(() => setSearchFocused(false), 200)}
               placeholder="Search fresh groceries, ghee, atta..."
-              className={`flex-1 ml-2 bg-transparent outline-none text-xs ${darkMode ? 'text-white placeholder-gray-550' : 'text-gray-800 placeholder-gray-450'} font-semibold`}
+              className={`flex-1 ml-2 bg-transparent outline-none text-xs ${darkMode ? 'text-white placeholder-gray-500' : 'text-gray-800 placeholder-gray-400'} font-semibold`}
             />
             <button
               onClick={() => setAiOpen(!aiOpen)}
