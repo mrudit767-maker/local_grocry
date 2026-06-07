@@ -1,4 +1,4 @@
-const CACHE_NAME = 'krishna-kirana-v1';
+const CACHE_NAME = 'krishna-kirana-v2';
 const ASSETS = [
   '/',
   '/index.html',
