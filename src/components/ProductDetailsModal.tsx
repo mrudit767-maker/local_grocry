@@ -216,10 +216,17 @@ export default function ProductDetailsModal({ productId, onClose }: Props) {
     updateQuantity(getVariantCartId(), newQty);
   };
 
-  // Generate realistic expiry date based on product ID
+  // Generate realistic expiry date based on product ID or name hash
   const getExpiryDate = () => {
-    // Generate constant expiry date based on the length of product id
-    const offsetDays = (product.id.length * 7) % 180 + 90; // Between 90 to 270 days from now
+    if (product.expiryDate) return product.expiryDate;
+
+    // Fallback: Generate unique constant expiry date based on the product name & id hash
+    let hash = 0;
+    const str = (product.name || '') + (product.id || '');
+    for (let i = 0; i < str.length; i++) {
+      hash = str.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    const offsetDays = Math.abs(hash) % 270 + 30; // Between 30 and 300 days
     const expiry = new Date();
     expiry.setDate(expiry.getDate() + offsetDays);
     return expiry.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });

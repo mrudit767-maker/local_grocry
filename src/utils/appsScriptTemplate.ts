@@ -53,7 +53,8 @@ function doGet(e) {
         storeId: row[12] ? String(row[12]) : 'main',
         updatedAt: row[13] ? Number(row[13]) : undefined,
         images: row[14] ? String(row[14]).split(',').map(function(s){return s.trim();}).filter(Boolean) : [],
-        customWeights: row[15] ? String(row[15]).split(',').map(function(s){return s.trim();}).filter(Boolean) : []
+        customWeights: row[15] ? String(row[15]).split(',').map(function(s){return s.trim();}).filter(Boolean) : [],
+        expiryDate: row[16] ? String(row[16]) : ''
       });
     }
     return ContentService.createTextOutput(JSON.stringify(products))
@@ -240,8 +241,8 @@ function doPost(e) {
       var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Products') 
                   || SpreadsheetApp.getActiveSpreadsheet().insertSheet('Products');
       sheet.clearContents();
-      sheet.appendRow(['id', 'name', 'category', 'price', 'mrp', 'unit', 'image', 'badge', 'rating', 'description', 'inStock', 'subcategory', 'storeId', 'updatedAt', 'images', 'customWeights']);
-      sheet.getRange("A1:P1").setFontWeight("bold");
+      sheet.appendRow(['id', 'name', 'category', 'price', 'mrp', 'unit', 'image', 'badge', 'rating', 'description', 'inStock', 'subcategory', 'storeId', 'updatedAt', 'images', 'customWeights', 'expiryDate']);
+      sheet.getRange("A1:Q1").setFontWeight("bold");
       
       var list = data.products;
       for (var i = 0; i < list.length; i++) {
@@ -249,7 +250,8 @@ function doPost(e) {
         sheet.appendRow([
           p.id, p.name, p.category, p.price, p.mrp, p.unit, p.image, p.badge || '', p.rating || 4, p.description || '', p.inStock, p.subcategory || '', p.storeId || 'main', p.updatedAt || '',
           p.images ? (Array.isArray(p.images) ? p.images.join(', ') : String(p.images)) : '',
-          p.customWeights ? (Array.isArray(p.customWeights) ? p.customWeights.join(', ') : String(p.customWeights)) : ''
+          p.customWeights ? (Array.isArray(p.customWeights) ? p.customWeights.join(', ') : String(p.customWeights)) : '',
+          p.expiryDate || ''
         ]);
       }
       return ContentService.createTextOutput(JSON.stringify({status:'success'}))

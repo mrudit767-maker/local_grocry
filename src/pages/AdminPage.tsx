@@ -353,12 +353,13 @@ interface EditForm {
   storeId: string;
   images: string;
   customWeights: string;
+  expiryDate: string;
 }
 
 const EMPTY_EDIT: EditForm = {
   name: '', category: 'rice-atta', subcategory: '', price: '', mrp: '',
   unit: '', badge: '', image: '', description: '', rating: '4.0', inStock: true,
-  storeId: 'main', images: '', customWeights: '',
+  storeId: 'main', images: '', customWeights: '', expiryDate: '',
 };
 
 function ProductsManager({ branchFilter, setBranchFilter }: { branchFilter: string; setBranchFilter: (b: string) => void }) {
@@ -447,6 +448,7 @@ function ProductsManager({ branchFilter, setBranchFilter }: { branchFilter: stri
       storeId: p.storeId || 'main',
       images: Array.isArray(p.images) ? p.images.join(', ') : (typeof p.images === 'string' ? p.images : ''),
       customWeights: Array.isArray(p.customWeights) ? p.customWeights.join(', ') : (typeof p.customWeights === 'string' ? p.customWeights : ''),
+      expiryDate: p.expiryDate || '',
     });
   };
 
@@ -484,6 +486,7 @@ function ProductsManager({ branchFilter, setBranchFilter }: { branchFilter: stri
       storeId: editForm.storeId || 'main',
       images: imagesArr,
       customWeights: weightsArr,
+      expiryDate: (editForm.expiryDate || '').trim() || undefined,
     });
     setEditProduct(null);
     toast.success('✅ Product updated successfully!');
@@ -535,6 +538,7 @@ function ProductsManager({ branchFilter, setBranchFilter }: { branchFilter: stri
       storeId: newProduct.storeId,
       images: imagesArr,
       customWeights: weightsArr,
+      expiryDate: (newProduct.expiryDate || '').trim() || undefined,
     });
     toast.success('✅ Product added!');
     setNewProduct({ ...EMPTY_EDIT, imageUrl: '' });
@@ -828,6 +832,18 @@ function ProductsManager({ branchFilter, setBranchFilter }: { branchFilter: stri
                     className={inp(darkMode)}
                   />
                 </div>
+                <div className="sm:col-span-2">
+                  <label className={`block text-xs font-bold mb-1.5 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                    📅 Expiry Date <span className="font-normal text-gray-400">(optional, e.g. "25 Dec 2026")</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={editForm.expiryDate}
+                    onChange={e => setEditForm(f => ({...f, expiryDate: e.target.value}))}
+                    placeholder="Enter expiry date (e.g. 15 Oct 2026)"
+                    className={inp(darkMode)}
+                  />
+                </div>
               </div>
 
               {/* ── Stock Toggle ── */}
@@ -1090,6 +1106,20 @@ function ProductsManager({ branchFilter, setBranchFilter }: { branchFilter: stri
                 value={newProduct.customWeights || ''}
                 onChange={e => setNewProduct(p => ({...p, customWeights: e.target.value}))}
                 placeholder="e.g. 500 g, 1 kg, 5 kg"
+                className={`w-full px-3 py-2 rounded-lg border text-sm outline-none focus:ring-2 focus:ring-green-500 ${
+                  darkMode ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' : 'bg-gray-50 border-gray-200'
+                }`}
+              />
+            </div>
+            <div className="sm:col-span-2 md:col-span-3">
+              <label className={`block text-xs font-semibold mb-1 ${darkMode ? 'text-gray-300' : 'text-gray-655'}`}>
+                📅 Expiry Date <span className="font-normal text-gray-400">(optional, e.g. "25 Dec 2026")</span>
+              </label>
+              <input
+                type="text"
+                value={newProduct.expiryDate || ''}
+                onChange={e => setNewProduct(p => ({...p, expiryDate: e.target.value}))}
+                placeholder="e.g. 15 Oct 2026"
                 className={`w-full px-3 py-2 rounded-lg border text-sm outline-none focus:ring-2 focus:ring-green-500 ${
                   darkMode ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' : 'bg-gray-50 border-gray-200'
                 }`}

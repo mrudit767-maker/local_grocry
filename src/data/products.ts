@@ -16,6 +16,7 @@ export interface Product {
   storeId?: string;
   images?: string[];
   customWeights?: string[];
+  expiryDate?: string;
 }
 
 export const CATEGORIES = [
