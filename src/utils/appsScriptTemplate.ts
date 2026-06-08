@@ -103,9 +103,9 @@ function doGet(e) {
       var row = values[i];
       if (!row[1] && !row[2] && !row[3]) continue;
       
-      var phoneClean = String(row[2] || '').replace(/[\s\-+]/g, '').slice(-10);
+      var phoneClean = String(row[2] || '').replace(/[^0-9]/g, '').slice(-10);
       var emailClean = String(row[3] || '').trim().toLowerCase();
-      var idClean = identifier.replace(/[\s\-+]/g, '').slice(-10);
+      var idClean = identifier.replace(/[^0-9]/g, '').slice(-10);
       
       if ((emailClean && emailClean === identifier) || (phoneClean && phoneClean === idClean)) {
         return ContentService.createTextOutput(JSON.stringify({
