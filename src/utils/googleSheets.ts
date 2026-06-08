@@ -97,7 +97,8 @@ export async function saveFullOrderToSheet(
 export async function fetchOrdersFromSheet(webhookUrl: string): Promise<any[] | null> {
   if (!webhookUrl || !webhookUrl.startsWith('https://script.google.com')) return null;
   try {
-    const res = await fetch(`${webhookUrl}?action=getOrders`);
+    const ts = Date.now(); // cache-bust: always get fresh data
+    const res = await fetch(`${webhookUrl}?action=getOrders&t=${ts}`);
     if (!res.ok) return null;
     const data = await res.json();
     if (Array.isArray(data) && data.length > 0) {
@@ -180,7 +181,8 @@ export async function fetchProductsFromSheet(
 ): Promise<Product[] | null> {
   if (!webhookUrl || !webhookUrl.startsWith('https://script.google.com')) return null;
   try {
-    const res = await fetch(`${webhookUrl}?action=getProducts`);
+    const ts = Date.now(); // cache-bust: always get fresh data from sheet
+    const res = await fetch(`${webhookUrl}?action=getProducts&t=${ts}`);
     if (!res.ok) return null;
     const data = await res.json();
     if (Array.isArray(data) && data.length > 0) {
@@ -219,7 +221,8 @@ export async function fetchSettingsFromSheet(
 ): Promise<Partial<SyncSettings> | null> {
   if (!webhookUrl || !webhookUrl.startsWith('https://script.google.com')) return null;
   try {
-    const res = await fetch(`${webhookUrl}?action=getSettings`);
+    const ts = Date.now(); // cache-bust: always get fresh settings
+    const res = await fetch(`${webhookUrl}?action=getSettings&t=${ts}`);
     if (!res.ok) return null;
     const data = await res.json();
     if (data && typeof data === 'object' && Object.keys(data).length > 0) {

@@ -724,78 +724,71 @@ export const useStore = create<StoreState>()(
         try {
           const fetched = await fetchProductsFromSheet(url);
           if (fetched && fetched.length > 0) {
-            // Check if Apps Script is outdated by checking if the fetched products have 'images' or 'customWeights' property
+            // Check if Apps Script version is outdated
             const firstProd = fetched[0];
             const isOutdated = !('images' in firstProd) || !('customWeights' in firstProd);
             set({ isAppsScriptOutdated: isOutdated });
 
+            // ============================================================
+            // GOOGLE SHEETS IS THE SOURCE OF TRUTH
+            // Sheet data ALWAYS wins, EXCEPT when a local product was
+            // explicitly edited after the sheet version (newer updatedAt).
+            // This ensures cross-device sync works correctly.
+            // ============================================================
+
             const localProducts = get().products || [];
-            
-            // 1. Create a map of fetched products by ID, resolving duplicates by ID/Name
+
+            // Build a map of local products for quick lookup
+            const localMap = new Map<string, Product>();
+            for (const lp of localProducts) {
+              localMap.set(lp.id, lp);
+            }
+
+            // Build the final product list starting from sheet data
             const fetchedMap = new Map<string, Product>();
             const seenNames = new Set<string>();
+
             for (const p of fetched) {
-              if (p && p.id) {
-                const cleanId = p.id.trim();
-                const cleanName = p.name.trim().toLowerCase();
-                if (!fetchedMap.has(cleanId) && !seenNames.has(cleanName)) {
-                  fetchedMap.set(cleanId, p);
-                  seenNames.add(cleanName);
-                }
+              if (!p || !p.id) continue;
+              const cleanId = p.id.trim();
+              const cleanName = (p.name || '').trim().toLowerCase();
+              if (fetchedMap.has(cleanId) || seenNames.has(cleanName)) continue;
+
+              const localVersion = localMap.get(cleanId);
+              if (
+                localVersion &&
+                localVersion.updatedAt &&
+                p.updatedAt &&
+                localVersion.updatedAt > p.updatedAt
+              ) {
+                // Local edit is NEWER than sheet → keep local
+                fetchedMap.set(cleanId, localVersion);
+              } else {
+                // Sheet version wins (default)
+                fetchedMap.set(cleanId, p);
               }
+              seenNames.add(cleanName);
             }
 
-            // 2. Conflict resolution using updatedAt
-            // If local product has been edited (newer updatedAt) or is local-only, preserve it
-            const mergedProducts: Product[] = [];
-            const mergedIds = new Set<string>();
-
-            // Apply conflict resolution for local versions
+            // Preserve locally-added products (id starts with 'prod_') that haven't
+            // made it to the sheet yet (will sync on next admin save)
             for (const lp of localProducts) {
-              const fetchedProduct = fetchedMap.get(lp.id);
-              if (fetchedProduct) {
-                if (lp.updatedAt && (!fetchedProduct.updatedAt || lp.updatedAt > fetchedProduct.updatedAt)) {
-                  fetchedMap.set(lp.id, lp); // Keep local edited version
-                }
-              }
-            }
-
-            // Add all valid fetched (and resolved) products
-            for (const p of fetchedMap.values()) {
-              mergedProducts.push(p);
-              mergedIds.add(p.id);
-            }
-
-            // Add local custom products that are not yet on the sheet (ID starts with 'prod_')
-            for (const lp of localProducts) {
-              if (lp.id.startsWith('prod_') && !mergedIds.has(lp.id)) {
-                const lowerName = lp.name.trim().toLowerCase();
+              if (lp.id.startsWith('prod_') && !fetchedMap.has(lp.id)) {
+                const lowerName = (lp.name || '').trim().toLowerCase();
                 if (!seenNames.has(lowerName)) {
-                  mergedProducts.push(lp);
-                  mergedIds.add(lp.id);
+                  fetchedMap.set(lp.id, lp);
                   seenNames.add(lowerName);
                 }
               }
             }
 
-            // Also merge any default products from PRODUCTS that are missing
-            for (const dp of PRODUCTS) {
-              if (!mergedIds.has(dp.id)) {
-                const lowerName = dp.name.trim().toLowerCase();
-                if (!seenNames.has(lowerName)) {
-                  mergedProducts.push(dp);
-                  mergedIds.add(dp.id);
-                  seenNames.add(lowerName);
-                }
-              }
-            }
-
+            const mergedProducts = Array.from(fetchedMap.values());
             if (mergedProducts.length > 0) {
               set({ products: mergedProducts });
             }
           }
         } catch (err) {
-          console.error('Failed to fetch and merge products:', err);
+          console.error('Failed to fetch products from Google Sheet:', err);
         }
       },
 
@@ -805,27 +798,25 @@ export const useStore = create<StoreState>()(
         try {
           const settings = await fetchSettingsFromSheet(url);
           if (settings) {
-            // ALWAYS apply banners from sheet if they exist (not just when local is empty)
-            // This ensures cross-device banner sync works correctly
+            // Apply banners from sheet (sheet = source of truth for banners)
             if (settings.banners && Array.isArray(settings.banners) && settings.banners.length > 0) {
-              // Merge: prefer local banner's image (may have uploaded base64) but use sheet metadata
+              // Sheet banners fully replace local banners.
+              // Only keep local base64 image if sheet banner has no image URL
               const localBanners = get().banners || [];
               const mergedBanners = (settings.banners as HomeBanner[]).map(sheetBanner => {
                 const localMatch = localBanners.find(lb => lb.id === sheetBanner.id);
-                if (localMatch) {
-                  // Keep local image if sheet has none (base64 was stripped before saving)
-                  return {
-                    ...sheetBanner,
-                    image: sheetBanner.image || localMatch.image,
-                  };
-                }
-                return sheetBanner;
+                return {
+                  ...sheetBanner,
+                  // If sheet has no image (base64 was stripped), fall back to local image
+                  image: sheetBanner.image || (localMatch?.image ?? undefined),
+                };
               });
               set({ banners: mergedBanners });
-            } else if ((!get().banners || get().banners.length === 0)) {
-              // Only use defaults if there are truly no banners anywhere
+            } else if (!get().banners || get().banners.length === 0) {
               set({ banners: DEFAULT_BANNERS });
             }
+
+            // Apply all other settings (except banners which we handled above)
             const { banners, ...restSettings } = settings as any;
             set((s) => ({ storeSettings: { ...s.storeSettings, ...restSettings } }));
           }

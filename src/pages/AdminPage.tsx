@@ -1379,9 +1379,13 @@ function OrdersManager() {
   const [selectedInvoiceOrder, setSelectedInvoiceOrder] = useState<Order | null>(null);
   const [syncing, setSyncing] = useState(false);
 
-  // Auto-fetch orders from Google Sheets on mount
+  // Auto-fetch orders from Google Sheets on mount + every 30s for real-time updates
   useEffect(() => {
     fetchOrders();
+    const interval = setInterval(() => {
+      fetchOrders();
+    }, 30000); // every 30 seconds
+    return () => clearInterval(interval);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

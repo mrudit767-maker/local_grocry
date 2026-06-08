@@ -22,8 +22,8 @@ import ProductDetailsModal from './components/ProductDetailsModal';
 export default function App() {
   const {
     currentPage, darkMode, storeSettings, setCurrentPage, fetchProducts, fetchSettings,
-    categories, addCategory, products, bulkAddProducts, selectedProductId, setSelectedProductId,
-    setSelectedCategory, updateStoreSettings
+    fetchOrders, categories, addCategory, products, bulkAddProducts, selectedProductId,
+    setSelectedProductId, setSelectedCategory, updateStoreSettings
   } = useStore();
 
   const [activePolicy, setActivePolicy] = useState<'privacy' | 'terms' | 'refund' | null>(null);
@@ -163,17 +163,50 @@ export default function App() {
     const oldDemoUrl = 'https://script.google.com/macros/s/AKfycbzqdrrYG56NKd6pNyGhTlanuTLP3_HO9sD8vL1Fmn98IJLz0KyXzrSIQxFWH4M8by8R/exec';
     const currentUrl = storeSettings.googleSheetWebhookUrl;
     const defaultCustomUrl = 'https://script.google.com/macros/s/AKfycbzKMXP4_DT32ePA9rc2YOd9-n2AKOvYi0ID0rcl1aLKAETYjL8eJc33_EacweDFmOELCQ/exec';
-    
+
     if (!currentUrl || currentUrl === oldDemoUrl) {
       updateStoreSettings({
         googleSheetWebhookUrl: defaultCustomUrl,
         googleSheetProductsWebhookUrl: defaultCustomUrl
       });
-      console.log('Migrated old demo webhook URL to the correct custom webhook URL.');
     }
 
+    // --- Initial data fetch from Google Sheets (source of truth) ---
     fetchProducts();
     fetchSettings();
+    fetchOrders();
+
+    // --- Auto-refresh: Poll Google Sheets every 60 seconds ---
+    // This ensures all devices always see the latest products, banners, and orders
+    const pollInterval = setInterval(() => {
+      fetchProducts();
+      fetchSettings();
+      fetchOrders();
+    }, 60000); // 60 seconds
+
+    // --- Re-fetch when user comes back to this tab (visibility change) ---
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        fetchProducts();
+        fetchSettings();
+        fetchOrders();
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    // --- Re-fetch when browser comes back online ---
+    const handleOnline = () => {
+      fetchProducts();
+      fetchSettings();
+      fetchOrders();
+    };
+    window.addEventListener('online', handleOnline);
+
+    return () => {
+      clearInterval(pollInterval);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('online', handleOnline);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
