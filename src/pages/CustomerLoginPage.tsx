@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { User, Phone, MapPin, Navigation, ArrowRight, LogIn, ChevronLeft, ShieldCheck } from 'lucide-react';
+import { Mail, User, Phone, MapPin, Navigation, ArrowRight, LogIn, ChevronLeft, ShieldCheck } from 'lucide-react';
 import { useStore } from '../store/useStore';
 import { saveCustomerToSheet, fetchCustomerFromSheet } from '../utils/googleSheets';
 import toast from 'react-hot-toast';
@@ -9,8 +9,13 @@ export default function CustomerLoginPage() {
   const [activeTab, setActiveTab] = useState<'login' | 'register'>('login');
   const [loading, setLoading] = useState(false);
 
-  const isDemoWebhook = !storeSettings.googleSheetWebhookUrl || 
-    storeSettings.googleSheetWebhookUrl === 'https://script.google.com/macros/s/AKfycbzqdrrYG56NKd6pNyGhTlanuTLP3_HO9sD8vL1Fmn98IJLz0KyXzrSIQxFWH4M8by8R/exec';
+  // Demo mode = webhook not configured at all
+  const isDemoWebhook = !storeSettings.googleSheetWebhookUrl ||
+    storeSettings.googleSheetWebhookUrl.trim() === '';
+
+  // Email delivery possible = webhook URL is a real Apps Script URL
+  const canSendRealEmail = !isDemoWebhook &&
+    storeSettings.googleSheetWebhookUrl.startsWith('https://script.google.com');
 
   // Login form state
   const [loginEmail, setLoginEmail] = useState('');
@@ -73,11 +78,11 @@ export default function CustomerLoginPage() {
     return () => clearInterval(interval);
   }, [resendTimer]);
 
-  const sendOtpSms = async (phone: string, email: string, code: string) => {
-    const cleanPhone = phone.replace(/[\s-+]/g, '').slice(-10);
+  const sendOtpEmail = async (email: string, phone: string, code: string) => {
+    const cleanPhone = phone ? phone.replace(/[\s-+]/g, '').slice(-10) : '';
 
-    // Call serverless script/webhook to dispatch SMS securely if configured
-    if (storeSettings.googleSheetWebhookUrl && storeSettings.googleSheetWebhookUrl.startsWith('https://script.google.com')) {
+    if (canSendRealEmail && email) {
+      // Send real OTP email via Google Apps Script (GmailApp - completely free)
       try {
         fetch(storeSettings.googleSheetWebhookUrl, {
           method: 'POST',
@@ -99,52 +104,41 @@ export default function CustomerLoginPage() {
           }),
         }).catch(() => {});
       } catch (e) {
-        console.error('Failed to trigger Apps Script SMS/Email dispatch:', e);
+        console.error('Failed to dispatch OTP email via Apps Script:', e);
       }
-    }
 
-    // Direct HTTP GET fallback for Fast2SMS if API Key is configured on client (bypassing Apps Script webhook requirement)
-    if (storeSettings.smsGateway === 'fast2sms' && storeSettings.fast2smsApiKey) {
-      try {
-        const url = `https://www.fast2sms.com/dev/bulkV2?authorization=${encodeURIComponent(storeSettings.fast2smsApiKey)}&route=otp&variables_values=${encodeURIComponent(code)}&numbers=${encodeURIComponent(cleanPhone)}`;
-        fetch(url, { method: 'GET', mode: 'no-cors' }).catch(() => {});
-      } catch (err) {
-        console.error('Direct Fast2SMS trigger error:', err);
-      }
-    }
-
-    // Trigger toast notification (hide OTP code on screen for production, show for demo/simulated gateway)
-    const showOnScreen = isDemoWebhook || !storeSettings.smsGateway || storeSettings.smsGateway === 'simulated';
-    if (showOnScreen) {
-      let toastMsg = `[SMS Gateway] OTP for ${storeSettings.shopName} is: ${code} 📱`;
-      if (email) {
-        toastMsg += ` & [Email Gateway] Sent to ${email} 📧`;
-      }
-      toast(toastMsg, {
-        icon: '💬',
-        duration: 8000,
-        style: {
-          background: '#064e3b',
-          color: '#ecfdf5',
-          border: '1px solid #059669',
-          fontWeight: 'bold',
-        }
+      // Don't show OTP on screen - user will check their email inbox
+      toast.success(`📧 Verification code sent to ${email}\nPlease check your Inbox & Spam folder.`, {
+        duration: 7000,
+        style: { fontWeight: 'bold' },
+        icon: '✉️',
       });
     } else {
-      let toastMsg = '';
-      if (storeSettings.smsGateway && storeSettings.smsGateway !== 'simulated' && phone) {
-        toastMsg += `💬 OTP code sent to your mobile number. `;
-      }
-      if (email) {
-        toastMsg += `📧 Verification code sent to your email address.`;
-      }
-      if (toastMsg) {
-        toast.success(toastMsg, {
-          duration: 6000,
+      // Demo mode - show OTP on screen
+      toast(
+        `🔑 Demo OTP: ${code}\n(No webhook set - using test mode)`,
+        {
+          icon: '💬',
+          duration: 30000,
           style: {
-            fontWeight: 'semibold',
+            background: '#064e3b',
+            color: '#ecfdf5',
+            border: '1px solid #059669',
+            fontWeight: 'bold',
           }
-        });
+        }
+      );
+    }
+
+    // Also send SMS if configured (phone provided and smsGateway not simulated)
+    if (cleanPhone && storeSettings.smsGateway && storeSettings.smsGateway !== 'simulated' && canSendRealEmail) {
+      if (storeSettings.smsGateway === 'fast2sms' && storeSettings.fast2smsApiKey) {
+        try {
+          const url = `https://www.fast2sms.com/dev/bulkV2?authorization=${encodeURIComponent(storeSettings.fast2smsApiKey)}&route=otp&variables_values=${encodeURIComponent(code)}&numbers=${encodeURIComponent(cleanPhone)}`;
+          fetch(url, { method: 'GET', mode: 'no-cors' }).catch(() => {});
+        } catch (err) {
+          console.error('Fast2SMS error:', err);
+        }
       }
     }
   };
@@ -152,39 +146,25 @@ export default function CustomerLoginPage() {
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
     const input = loginEmail.trim();
-    if (!input) {
-      toast.error('Please enter a valid email address or phone number');
+    if (!input || !input.includes('@')) {
+      toast.error('Please enter a valid email address to receive OTP');
       return;
     }
 
-    const isEmail = input.includes('@');
-    // If it's not email, it must be a phone number
-    if (!isEmail) {
-      const cleanPhone = input.replace(/\D/g, '');
-      if (cleanPhone.length < 10) {
-        toast.error('Please enter a valid email address or 10-digit phone number');
-        return;
-      }
-    }
-
     setLoading(true);
-    setFetchedCustomerProfile(null); // Clear previous
+    setFetchedCustomerProfile(null);
 
-    const code = Math.floor(1000 + Math.random() * 9000).toString();
+    const code = Math.floor(100000 + Math.random() * 900000).toString(); // 6-digit OTP
     setGeneratedOtp(code);
-    
-    const targetEmail = isEmail ? input : '';
-    // Format phone clean for SMS dispatch if it's 10 digits
-    const targetPhone = !isEmail ? (input.startsWith('+91') ? input : `+91 ${input.replace(/\D/g, '').slice(-10)}`) : '';
-    
-    setPendingLoginPhone(targetPhone);
-    setPendingLoginEmail(targetEmail);
+
+    setPendingLoginPhone('');
+    setPendingLoginEmail(input);
     setPendingAction('login');
     setOtpMode(true);
-    setResendTimer(30);
+    setResendTimer(60);
     setOtpVal('');
-    
-    // In background, fetch customer profile from Google Sheets immediately
+
+    // Pre-fetch customer profile from Google Sheets in background
     if (storeSettings.googleSheetWebhookUrl) {
       const promise = fetchCustomerFromSheet(storeSettings.googleSheetWebhookUrl, input)
         .then(profile => {
@@ -198,33 +178,28 @@ export default function CustomerLoginPage() {
               pincode: profile.pincode,
             };
             setFetchedCustomerProfile(data);
-            console.log('Customer profile pre-loaded from sheet:', profile);
             return data;
           }
           return null;
         })
-        .catch(err => {
-          console.error('Failed to pre-fetch customer details:', err);
-          return null;
-        });
+        .catch(() => null);
       setProfilePromise(promise);
     }
-    
+
     setLoading(false);
-    toast.success(`OTP Sent to ${input}...`);
-    sendOtpSms(targetPhone, targetEmail, code);
+    sendOtpEmail(input, '', code);
   };
 
   const handleRegister = (e: React.FormEvent) => {
     e.preventDefault();
     if (!regName.trim()) return toast.error('Name is required');
     if (!regPhone || regPhone.replace(/\D/g, '').length < 10) return toast.error('Please enter a valid 10-digit phone number');
-    if (!regEmail.trim() || !regEmail.includes('@')) return toast.error('Please enter a valid email address');
+    if (!regEmail.trim() || !regEmail.includes('@')) return toast.error('Please enter a valid email address - OTP will be sent here');
     if (!regAddress.trim()) return toast.error('Address is required');
     if (!regPincode || regPincode.replace(/\D/g, '').length < 6) return toast.error('Please enter a valid 6-digit pincode');
 
     setLoading(true);
-    const code = Math.floor(1000 + Math.random() * 9000).toString();
+    const code = Math.floor(100000 + Math.random() * 900000).toString(); // 6-digit OTP
     const formattedPhone = regPhone.startsWith('+91') ? regPhone : `+91 ${regPhone.trim()}`;
     setGeneratedOtp(code);
     setPendingRegData({
@@ -237,18 +212,17 @@ export default function CustomerLoginPage() {
     });
     setPendingAction('register');
     setOtpMode(true);
-    setResendTimer(30);
+    setResendTimer(60);
     setOtpVal('');
     setLoading(false);
-    
-    toast.success(`OTP Sent to ${formattedPhone} and ${regEmail.trim()}...`);
-    sendOtpSms(formattedPhone, regEmail.trim(), code);
+
+    sendOtpEmail(regEmail.trim(), formattedPhone, code);
   };
 
   const handleVerifyOtp = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (otpVal !== generatedOtp) {
-      toast.error('Invalid OTP. Please check the code and try again.');
+    if (otpVal.trim() !== generatedOtp) {
+      toast.error('Invalid OTP. Please check the 6-digit code from your email.');
       return;
     }
 
@@ -328,21 +302,17 @@ export default function CustomerLoginPage() {
 
   const handleResendOtp = () => {
     if (resendTimer > 0) return;
-    const code = Math.floor(1000 + Math.random() * 9000).toString();
+    const code = Math.floor(100000 + Math.random() * 900000).toString();
     setGeneratedOtp(code);
-    setResendTimer(30);
+    setResendTimer(60);
     setOtpVal('');
-    
-    const targetPhone = pendingAction === 'login' ? pendingLoginPhone : pendingRegData?.phone || '';
+
     const targetEmail = pendingAction === 'login' ? pendingLoginEmail : pendingRegData?.email || '';
-    
-    let dest = targetPhone;
-    if (targetEmail) dest += ` and ${targetEmail}`;
-    toast.success(`Resending OTP to ${dest}...`);
-    
+    const targetPhone = pendingAction === 'login' ? pendingLoginPhone : pendingRegData?.phone || '';
+
     setTimeout(() => {
-      sendOtpSms(targetPhone, targetEmail, code);
-    }, 800);
+      sendOtpEmail(targetEmail, targetPhone, code);
+    }, 500);
   };
 
   return (
@@ -396,43 +366,33 @@ export default function CustomerLoginPage() {
         <div className="p-6">
           {otpMode ? (
             <form onSubmit={handleVerifyOtp} className="space-y-5 animate-fade-up">
+              {/* OTP sent to email header */}
               <div className="text-center mb-2">
-                <h3 className={`text-base font-black ${darkMode ? 'text-white' : 'text-gray-900'}`}>Verify Your Account</h3>
-                <p className="text-gray-500 text-xs mt-1">
-                  {isDemoWebhook ? "We've simulated sending a 4-digit code to " : "We've sent a secure 4-digit code to "}
-                  {pendingAction === 'login' && !pendingLoginPhone ? (
-                    <span className="font-extrabold text-green-600">
-                      {pendingLoginEmail}
-                    </span>
-                  ) : (
-                    <>
-                      <span className="font-extrabold text-green-600">
-                        +91 {pendingAction === 'login' ? pendingLoginPhone : pendingRegData?.phone.replace('+91 ', '')}
-                      </span>
-                      {(pendingAction === 'login' ? pendingLoginEmail : pendingRegData?.email) ? (
-                        <>
-                          {' '}and email{' '}
-                          <span className="font-extrabold text-green-600">
-                            {pendingAction === 'login' ? pendingLoginEmail : pendingRegData?.email}
-                          </span>
-                        </>
-                      ) : null}
-                    </>
-                  )}
+                <div className="w-14 h-14 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto mb-3">
+                  <Mail size={28} className="text-green-600" />
+                </div>
+                <h3 className={`text-base font-black ${darkMode ? 'text-white' : 'text-gray-900'}`}>Check Your Email</h3>
+                <p className={`text-xs mt-1 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                  {isDemoWebhook ? 'Demo: OTP shown above in notification' : 'We sent a 6-digit code to'}
                 </p>
+                {!isDemoWebhook && (
+                  <p className="font-extrabold text-green-600 text-sm mt-0.5">
+                    {pendingAction === 'login' ? pendingLoginEmail : pendingRegData?.email}
+                  </p>
+                )}
               </div>
 
               <div>
                 <label className={`block text-xs font-bold uppercase tracking-wider mb-2 text-center ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                  Enter Verification Code
+                  Enter 6-Digit Code from Email
                 </label>
                 <input
                   type="tel"
-                  maxLength={4}
+                  maxLength={6}
                   value={otpVal}
                   onChange={e => setOtpVal(e.target.value.replace(/\D/g, ''))}
-                  placeholder="e.g. 5824"
-                  className={`w-full tracking-[1.5em] text-center font-black text-xl py-3.5 rounded-2xl border outline-none focus:ring-2 focus:ring-green-500 transition-all ${
+                  placeholder="e.g. 582461"
+                  className={`w-full tracking-[0.8em] text-center font-black text-xl py-3.5 rounded-2xl border outline-none focus:ring-2 focus:ring-green-500 transition-all ${
                     darkMode
                       ? 'bg-gray-800 border-gray-700 text-white placeholder-gray-600'
                       : 'bg-gray-50 border-gray-200 text-gray-850 placeholder-gray-300'
@@ -444,21 +404,21 @@ export default function CustomerLoginPage() {
               {/* Status / Alert Banner */}
               {isDemoWebhook ? (
                 <div className={`p-3.5 rounded-xl text-[11px] leading-relaxed border ${darkMode ? 'bg-amber-950/20 border-amber-800/40 text-amber-300' : 'bg-amber-50 border-amber-200 text-amber-850'}`}>
-                  💡 <b>Demo Mode Active:</b> A notification toast with the 4-digit code is shown at the top of your screen. To configure real email delivery to your customers, update your Google Sheet Webhook in Admin Settings.
+                  💡 <b>Demo Mode:</b> OTP code is shown in the notification at the top. Configure your Google Sheet Webhook URL in Admin Settings to enable real email delivery.
                 </div>
               ) : (
                 <div className={`p-3.5 rounded-xl text-[11px] leading-relaxed border ${darkMode ? 'bg-emerald-950/20 border-emerald-800/40 text-emerald-300' : 'bg-emerald-50 border-emerald-200 text-emerald-850'}`}>
-                  📧 <b>Verification Email Sent:</b> A secure 4-digit verification code has been dispatched. Please check your **Inbox** and **Spam / Junk** folder.
+                  📧 <b>Email Sent!</b> Check your <b>Inbox</b> and <b>Spam/Junk</b> folder. Code expires in 5 minutes. Sent from your Google account via Apps Script.
                 </div>
               )}
 
               <div className="flex flex-col gap-2.5">
                 <button
                   type="submit"
-                  disabled={loading || otpVal.length < 4}
+                  disabled={loading || otpVal.length < 6}
                   className="w-full flex items-center justify-center gap-2 bg-green-600 hover:bg-green-700 disabled:opacity-50 disabled:hover:bg-green-600 text-white py-3.5 rounded-xl font-bold transition-all shadow-md font-extrabold"
                 >
-                  {loading ? 'Verifying...' : 'Verify & Proceed 🚀'}
+                  {loading ? 'Verifying...' : 'Verify & Continue 🚀'}
                 </button>
 
                 <div className="flex items-center justify-between text-xs mt-2 px-1">
@@ -467,8 +427,8 @@ export default function CustomerLoginPage() {
                     onClick={handleResendOtp}
                     disabled={resendTimer > 0}
                     className={`font-bold transition-colors ${
-                      resendTimer > 0 
-                        ? 'text-gray-400 cursor-not-allowed dark:text-gray-600' 
+                      resendTimer > 0
+                        ? 'text-gray-400 cursor-not-allowed dark:text-gray-600'
                         : 'text-green-600 hover:text-green-700 hover:underline'
                     }`}
                   >
@@ -483,42 +443,47 @@ export default function CustomerLoginPage() {
                     }}
                     className="text-gray-500 dark:text-gray-400 hover:underline font-bold"
                   >
-                    {pendingAction === 'login' ? 'Change Email' : 'Change Number'}
+                    Change Email
                   </button>
                 </div>
               </div>
             </form>
           ) : activeTab === 'login' ? (
             <form onSubmit={handleLogin} className="space-y-4">
-              {/* Email or Phone Number */}
+              {/* Email Address */}
               <div>
                 <label className={`block text-xs font-bold uppercase tracking-wider mb-1.5 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                  Email Address or Phone Number
+                  Email Address
                 </label>
                 <div className="relative">
                   <input
-                    type="text"
+                    type="email"
                     value={loginEmail}
                     onChange={e => setLoginEmail(e.target.value)}
-                    placeholder="e.g. 9893495231 or customer@example.com"
+                    placeholder="e.g. customer@gmail.com"
                     required
-                    className={`w-full px-4 py-3 rounded-xl border text-sm outline-none transition-all ${
+                    autoComplete="email"
+                    className={`w-full px-4 py-3 pr-10 rounded-xl border text-sm outline-none transition-all ${
                       darkMode
                         ? 'bg-gray-800 border-gray-700 text-white focus:border-green-500'
                         : 'bg-gray-50 border-gray-200 text-gray-850 focus:border-green-500'
                     }`}
                   />
+                  <Mail size={16} className="absolute right-3 top-3.5 text-gray-400" />
                 </div>
+                <p className={`text-[10px] mt-1.5 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>
+                  📧 A 6-digit OTP will be sent to this email address
+                </p>
               </div>
 
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full flex items-center justify-center gap-2 bg-green-600 hover:bg-green-700 text-white py-3 rounded-xl font-bold transition-all shadow-md mt-6 cursor-pointer"
+                className="w-full flex items-center justify-center gap-2 bg-green-600 hover:bg-green-700 text-white py-3 rounded-xl font-bold transition-all shadow-md mt-2 cursor-pointer"
               >
                 {loading ? 'Sending OTP...' : (
                   <>
-                    Send Verification Code <LogIn size={18} />
+                    Send OTP to Email <LogIn size={18} />
                   </>
                 )}
               </button>
