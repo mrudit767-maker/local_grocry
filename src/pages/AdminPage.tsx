@@ -13,6 +13,7 @@ import OrderInvoiceModal from '../components/OrderInvoiceModal';
 import { APPS_SCRIPT_CODE } from '../utils/appsScriptTemplate';
 import { updateOrderStatusInSheet } from '../utils/googleSheets';
 import SearchableSelect from '../components/SearchableSelect';
+import { uploadImageToHost, uploadMultipleImages, isBase64Image } from '../utils/imageHosting';
 
 const STATUS_COLORS: Record<Order['status'], string> = {
   pending: 'bg-yellow-100 text-yellow-700',
@@ -97,67 +98,120 @@ const compressImage = (file: File, maxWidth: number, maxHeight: number, quality:
   });
 };
 
-const handleImageUpload = async (file: File, callback: (base64: string) => void) => {
+// Upload image: compress first, then host on ImgBB for cross-device access
+const handleImageUpload = async (
+  file: File,
+  callback: (url: string) => void,
+  imgbbApiKey?: string
+) => {
   if (!file.type.startsWith('image/')) {
     toast.error('Only image files are allowed! 🖼️');
     return;
   }
-  
   if (file.size > 10 * 1024 * 1024) {
     toast.error('Image size should be less than 10MB! 📁');
     return;
   }
 
-  const toastId = toast.loading('Optimizing & compressing image... ⏳');
+  const hasApiKey = imgbbApiKey && imgbbApiKey.trim() !== '';
+  const toastId = toast.loading(
+    hasApiKey
+      ? 'Uploading image to cloud... ☁️ (will work on all devices)'
+      : 'Compressing image... ⏳'
+  );
+
   try {
-    // Compress to 300x300, 0.5 quality to easily fit under Google Sheets 50,000 char cell limit
-    const compressedBase64 = await compressImage(file, 300, 300, 0.5);
+    // Step 1: Compress locally first
+    const compressedBase64 = await compressImage(file, 600, 600, 0.75);
+
+    // Step 2: If ImgBB API key is set, upload to cloud for cross-device access
+    if (hasApiKey) {
+      const hostedUrl = await uploadImageToHost(compressedBase64, imgbbApiKey!);
+      if (!isBase64Image(hostedUrl)) {
+        // Successfully hosted!
+        callback(hostedUrl);
+        toast.success('✅ Image uploaded to cloud! Visible on all devices 🌐', { id: toastId });
+        return;
+      } else {
+        // Hosting failed, use base64 as fallback
+        toast.error('⚠️ Cloud upload failed. Image saved locally only (add ImgBB key in Settings).', { id: toastId, duration: 5000 });
+        callback(hostedUrl);
+        return;
+      }
+    }
+
+    // No API key: save as base64 (local only - show warning)
     callback(compressedBase64);
-    toast.success('Image optimized & uploaded successfully! 📸', { id: toastId });
+    toast(
+      '⚠️ Image saved locally only! Add ImgBB API Key in Settings to make images work on all devices.',
+      { id: toastId, icon: '⚠️', duration: 6000, style: { background: '#fef3c7', color: '#92400e' } }
+    );
   } catch (err) {
-    console.error('Image upload optimization error:', err);
-    toast.error('Failed to read or optimize image file.', { id: toastId });
+    console.error('Image upload error:', err);
+    toast.error('Failed to process image.', { id: toastId });
   }
 };
 
-const handleImagePaste = (e: React.ClipboardEvent<HTMLInputElement>, callback: (base64: string) => void) => {
+// Paste image handler
+const handleImagePaste = (
+  e: React.ClipboardEvent<HTMLInputElement>,
+  callback: (url: string) => void,
+  imgbbApiKey?: string
+) => {
   const items = e.clipboardData?.items;
   if (!items) return;
-
   for (let i = 0; i < items.length; i++) {
     if (items[i].type.indexOf('image') !== -1) {
       const file = items[i].getAsFile();
       if (file) {
         e.preventDefault();
-        handleImageUpload(file, callback);
+        handleImageUpload(file, callback, imgbbApiKey);
         return;
       }
     }
   }
 };
 
-const handleMultipleImagesUpload = async (files: FileList | null, callback: (base64Array: string[]) => void) => {
+// Upload multiple images to ImgBB
+const handleMultipleImagesUpload = async (
+  files: FileList | null,
+  callback: (urls: string[]) => void,
+  imgbbApiKey?: string
+) => {
   if (!files || files.length === 0) return;
-  
-  // Slice to max 4 files to prevent exceeding cell size limit
   const filesToUpload = Array.from(files).slice(0, 4);
-  const toastId = toast.loading(`Uploading & optimizing ${filesToUpload.length} images... ⏳`);
-  const uploadedUrls: string[] = [];
-  
+  const hasApiKey = imgbbApiKey && imgbbApiKey.trim() !== '';
+  const toastId = toast.loading(
+    hasApiKey
+      ? `Uploading ${filesToUpload.length} images to cloud... ☁️`
+      : `Compressing ${filesToUpload.length} images... ⏳`
+  );
   try {
-    for (let i = 0; i < filesToUpload.length; i++) {
-      const file = filesToUpload[i];
+    const base64Array: string[] = [];
+    for (const file of filesToUpload) {
       if (file.type.startsWith('image/')) {
-        // Compress heavily to fit multiple images in one cell
-        const compressedBase64 = await compressImage(file, 250, 250, 0.5);
-        uploadedUrls.push(compressedBase64);
+        const compressed = await compressImage(file, 500, 500, 0.7);
+        base64Array.push(compressed);
       }
     }
-    callback(uploadedUrls);
-    toast.success(`Successfully uploaded ${uploadedUrls.length} images! 📸`, { id: toastId });
+    if (hasApiKey) {
+      const hostedUrls = await uploadMultipleImages(base64Array, imgbbApiKey!);
+      callback(hostedUrls);
+      const allHosted = hostedUrls.every(u => !isBase64Image(u));
+      if (allHosted) {
+        toast.success(`✅ ${hostedUrls.length} images uploaded to cloud! 🌐`, { id: toastId });
+      } else {
+        toast('⚠️ Some images saved locally only. Check ImgBB API Key in Settings.', { id: toastId, icon: '⚠️', duration: 5000 });
+      }
+    } else {
+      callback(base64Array);
+      toast('⚠️ Images saved locally only! Add ImgBB API Key in Settings for cross-device images.', {
+        id: toastId, icon: '⚠️', duration: 6000, style: { background: '#fef3c7', color: '#92400e' }
+      });
+    }
   } catch (err) {
     console.error('Multiple images upload error:', err);
-    toast.error('Failed to upload or optimize some images.', { id: toastId });
+    toast.error('Failed to upload some images.', { id: toastId });
   }
 };
 
@@ -673,10 +727,10 @@ function ProductsManager({ branchFilter, setBranchFilter }: { branchFilter: stri
                             setEditForm(f => ({ ...f, image: e.target.value }));
                             setImagePreviewError(false);
                           }}
-                          onPaste={e => handleImagePaste(e, (base64) => {
-                            setEditForm(f => ({ ...f, image: base64 }));
+                          onPaste={e => handleImagePaste(e, (url) => {
+                            setEditForm(f => ({ ...f, image: url }));
                             setImagePreviewError(false);
-                          })}
+                          }, storeSettings?.imgbbApiKey)}
                           placeholder="https://example.com/image.jpg or Paste Image"
                           className={`w-full pl-8 pr-3 py-2.5 rounded-xl border text-sm outline-none focus:ring-2 focus:ring-green-500 ${
                             darkMode ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' : 'bg-white border-gray-300 text-gray-900'
@@ -697,10 +751,10 @@ function ProductsManager({ branchFilter, setBranchFilter }: { branchFilter: stri
                           onChange={e => {
                             const file = e.target.files?.[0];
                             if (file) {
-                              handleImageUpload(file, (base64) => {
-                                setEditForm(f => ({ ...f, image: base64 }));
+                              handleImageUpload(file, (url) => {
+                                setEditForm(f => ({ ...f, image: url }));
                                 setImagePreviewError(false);
-                              });
+                              }, storeSettings?.imgbbApiKey);
                             }
                           }}
                         />
@@ -812,14 +866,13 @@ function ProductsManager({ branchFilter, setBranchFilter }: { branchFilter: stri
                         multiple 
                         className="hidden" 
                         onChange={e => {
-                          handleMultipleImagesUpload(e.target.files, (base64Array) => {
+                          handleMultipleImagesUpload(e.target.files, (urlArray) => {
                             const current = editForm.images ? editForm.images.trim() : '';
-                            const added = base64Array.join(', ');
+                            const added = urlArray.join(', ');
                             const combined = current ? `${current}, ${added}` : added;
-                            // Enforce max 4 images
                             const imagesList = combined.split(',').map(s => s.trim()).filter(Boolean).slice(0, 4);
                             setEditForm(f => ({ ...f, images: imagesList.join(', ') }));
-                          });
+                          }, storeSettings?.imgbbApiKey);
                         }}
                       />
                     </label>
@@ -997,10 +1050,10 @@ function ProductsManager({ branchFilter, setBranchFilter }: { branchFilter: stri
                       setNewProduct(p => ({...p, imageUrl: e.target.value}));
                       setNewImageError(false);
                     }}
-                    onPaste={e => handleImagePaste(e, (base64) => {
-                      setNewProduct(p => ({...p, imageUrl: base64}));
+                    onPaste={e => handleImagePaste(e, (url) => {
+                      setNewProduct(p => ({...p, imageUrl: url}));
                       setNewImageError(false);
-                    })}
+                    }, storeSettings?.imgbbApiKey)}
                     placeholder="https://example.com/product.jpg or Paste Image"
                     className={`flex-1 px-3 py-2.5 rounded-xl border text-sm outline-none focus:ring-2 focus:ring-green-500 ${
                       darkMode ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' : 'bg-white border-gray-300 text-gray-900'
@@ -1020,10 +1073,10 @@ function ProductsManager({ branchFilter, setBranchFilter }: { branchFilter: stri
                       onChange={e => {
                         const file = e.target.files?.[0];
                         if (file) {
-                          handleImageUpload(file, (base64) => {
-                            setNewProduct(p => ({...p, imageUrl: base64}));
+                          handleImageUpload(file, (url) => {
+                            setNewProduct(p => ({...p, imageUrl: url}));
                             setNewImageError(false);
-                          });
+                          }, storeSettings?.imgbbApiKey);
                         }
                       }}
                     />
@@ -1088,14 +1141,13 @@ function ProductsManager({ branchFilter, setBranchFilter }: { branchFilter: stri
                     multiple 
                     className="hidden" 
                     onChange={e => {
-                      handleMultipleImagesUpload(e.target.files, (base64Array) => {
+                      handleMultipleImagesUpload(e.target.files, (urlArray) => {
                         const current = newProduct.images ? newProduct.images.trim() : '';
-                        const added = base64Array.join(', ');
+                        const added = urlArray.join(', ');
                         const combined = current ? `${current}, ${added}` : added;
-                        // Enforce max 4 images
                         const imagesList = combined.split(',').map(s => s.trim()).filter(Boolean).slice(0, 4);
                         setNewProduct(p => ({ ...p, images: imagesList.join(', ') }));
-                      });
+                      }, storeSettings?.imgbbApiKey);
                     }}
                   />
                 </label>
@@ -2460,8 +2512,40 @@ function SettingsManager() {
         </div>
       </div>
 
+      {/* ─── ImgBB Image Hosting ─── */}
+      <div className={card}>
+        {hd('🖼️', 'Image Hosting (Cross-Device Images)')}
+        <div className="space-y-3">
+          <div className={`p-3 rounded-xl text-xs ${darkMode ? 'bg-blue-900/30 border border-blue-700 text-blue-300' : 'bg-blue-50 border border-blue-200 text-blue-700'}`}>
+            <p className="font-bold mb-1">⚠️ Problem: Product images only show on your device</p>
+            <p>When you upload a product image, it gets saved as a base64 code (very long string). Google Sheets can't store it, so other devices see no image.</p>
+            <p className="mt-1 font-bold text-green-600">✅ Fix: Add a FREE ImgBB API key — images will be hosted online and visible everywhere!</p>
+          </div>
+          <div>
+            {lbl('ImgBB API Key (Free Image Hosting)')}
+            <input
+              type="text"
+              className={inp}
+              value={form.imgbbApiKey || ''}
+              onChange={e => setForm(f => ({...f, imgbbApiKey: e.target.value}))}
+              placeholder="Get free key at api.imgbb.com → paste here"
+            />
+            <p className={`text-[11px] mt-1.5 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+              🔑 Get your <strong>FREE</strong> API key: Go to{' '}
+              <a href="https://api.imgbb.com/" target="_blank" rel="noreferrer" className="text-blue-500 underline font-bold">api.imgbb.com</a>
+              {' '}→ Sign up (free) → Get API Key → Paste here → Save Settings.
+              After this, every uploaded image will be hosted online and work on all devices! 🌐
+            </p>
+            {form.imgbbApiKey && form.imgbbApiKey.trim() !== '' && (
+              <p className="text-[11px] text-green-600 font-bold mt-1">✅ ImgBB key configured! Images will auto-upload to cloud.</p>
+            )}
+          </div>
+        </div>
+      </div>
+
       <div className={card}>
         {hd('💬', 'SMS OTP Gateway Settings')}
+
         <div className="space-y-4">
           <div>
             {lbl('SMS OTP Gateway Mode')}

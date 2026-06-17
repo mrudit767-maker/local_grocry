@@ -201,6 +201,7 @@ export interface StoreSettings {
   twilioFromNumber?: string;
   androidSmsToken?: string;
   androidSmsDeviceId?: string;
+  imgbbApiKey?: string; // Free image hosting - get key at https://api.imgbb.com/
 }
 
 const DEFAULT_SETTINGS: StoreSettings = {
@@ -226,6 +227,7 @@ const DEFAULT_SETTINGS: StoreSettings = {
   twilioFromNumber: '',
   androidSmsToken: '',
   androidSmsDeviceId: '',
+  imgbbApiKey: '',
 };
 
 export interface StoreState {
