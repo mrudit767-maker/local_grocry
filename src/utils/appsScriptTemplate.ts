@@ -6,7 +6,7 @@ export const APPS_SCRIPT_CODE = `/**
  * Google Apps Script Webhook for Grocery/Kirana Store
  * Syncs Orders, Customers, Products and dispatches Email & SMS OTP.
  * 
- * ⚠️ IMPORTANT DEPLOYMENT SETTINGS (FOR EMAIL VERIFICATION TO WORK):
+ * IMPORTANT DEPLOYMENT SETTINGS (FOR EMAIL VERIFICATION TO WORK):
  * 1. Open your Google Sheet.
  * 2. Click "Extensions" -> "Apps Script".
  * 3. Delete any code in the editor and paste this entire script.
@@ -196,7 +196,7 @@ function doPost(e) {
         sheet.getRange("A1:I1").setFontWeight("bold");
       }
       var rows = data.rows;
-      var emailBody = "🚨 NEW ORDER RECEIVED!\\n\\n";
+      var emailBody = "*** NEW ORDER RECEIVED! ***\\n\\n";
       if (rows.length > 0) {
         emailBody += "Customer: " + rows[0].customerName + "\\n";
         emailBody += "Phone: " + rows[0].phone + "\\n";
@@ -217,7 +217,7 @@ function doPost(e) {
       try {
         var email = Session.getEffectiveUser().getEmail();
         if (email) {
-          GmailApp.sendEmail(email, "🛒 New Order Received - " + (rows[0] ? rows[0].customerName : "Customer"), emailBody);
+          GmailApp.sendEmail(email, "[New Order] " + (rows[0] ? rows[0].customerName : "Customer"), emailBody);
         }
       } catch (mailErr) {
         Logger.log("Mail error: " + mailErr.toString());
@@ -288,7 +288,7 @@ function doPost(e) {
       // Send Secure OTP Email (100% Free & Unlimited)
       if (email) {
         try {
-          var subject = "🔑 Your " + shopName + " Verification Code";
+          var subject = "[OTP] Your " + shopName + " Verification Code";
           var htmlBody = 
             "<div style='font-family: Arial, sans-serif; max-width: 500px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); background-color: #ffffff;'>" +
             "<div style='text-align: center; margin-bottom: 20px;'>" +
@@ -431,13 +431,13 @@ function doPost(e) {
       try {
         var adminEmail = Session.getEffectiveUser().getEmail();
         if (adminEmail) {
-          var subject = '🔔 Restock Request: ' + req.productName;
+          var subject = '[Restock Request] ' + req.productName;
           var body = 'Customer Restock Request\n\n' +
             'Product: ' + req.productName + '\n' +
             'Customer: ' + req.customerName + '\n' +
             'Contact: ' + req.customerContact + '\n' +
             'Requested At: ' + req.createdAt + '\n\n' +
-            'Please restock this item and notify the customer via Admin Panel → Stock Requests.';
+            'Please restock this item and notify the customer via Admin Panel > Stock Requests.';
           GmailApp.sendEmail(adminEmail, subject, body);
         }
       } catch (mailErr) {
