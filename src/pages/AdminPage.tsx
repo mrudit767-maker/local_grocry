@@ -3327,24 +3327,64 @@ function BannersManager() {
 }
 
 function StockRequestsManager() {
-  const { stockRequests = [], deleteStockRequest, clearStockRequests, updateProduct, products, darkMode } = useStore();
+  const { stockRequests = [], deleteStockRequest, clearStockRequests, updateProduct, products, darkMode, storeSettings, mergeStockRequestsFromSheet } = useStore();
   const [filter, setFilter] = useState<'all' | 'pending' | 'notified'>('all');
   const [search, setSearch] = useState('');
+  const [lastRefresh, setLastRefresh] = useState(new Date());
+  const [fetching, setFetching] = useState(false);
 
-  const filteredRequests = stockRequests.filter(r => {
+  // Fetch notify-me requests from Google Sheets and silently merge (no toast, no re-push)
+  const fetchFromSheets = async () => {
+    const webhookUrl = storeSettings?.googleSheetWebhookUrl;
+    if (!webhookUrl || !webhookUrl.startsWith('https://script.google.com')) return;
+    setFetching(true);
+    try {
+      const res = await fetch(`${webhookUrl}?action=getStockRequests&t=${Date.now()}`);
+      const json = await res.json();
+      if (json.success && Array.isArray(json.data) && json.data.length > 0) {
+        mergeStockRequestsFromSheet(json.data); // silent — no toast, no re-push
+        setLastRefresh(new Date());
+      }
+    } catch {
+      // Sheets fetch failed silently (normal if Apps Script not updated yet)
+    } finally {
+      setFetching(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchFromSheets();
+    const interval = setInterval(fetchFromSheets, 30000); // poll every 30s
+    return () => clearInterval(interval);
+  }, [storeSettings?.googleSheetWebhookUrl]);
+
+  const filteredRequests = (stockRequests || []).filter(r => {
     const matchesFilter = filter === 'all' || r.status === filter;
-    const matchesSearch = 
+    const matchesSearch =
       r.productName.toLowerCase().includes(search.toLowerCase()) ||
       r.customerName.toLowerCase().includes(search.toLowerCase()) ||
       r.customerContact.toLowerCase().includes(search.toLowerCase());
     return matchesFilter && matchesSearch;
   });
 
-  const pendingCount = stockRequests.filter(r => r.status === 'pending').length;
-  const notifiedCount = stockRequests.filter(r => r.status === 'notified').length;
+  const pendingCount = (stockRequests || []).filter(r => r.status === 'pending').length;
+  const notifiedCount = (stockRequests || []).filter(r => r.status === 'notified').length;
 
   const handleRestock = (productId: string) => {
     updateProduct(productId, { inStock: true });
+  };
+
+  // Send WhatsApp message to notify customer their product is back in stock
+  const handleWhatsAppNotify = (req: any) => {
+    const phone = req.customerContact.replace(/[^0-9]/g, '');
+    const msg = encodeURIComponent(
+      `Hello ${req.customerName}! 🎉\n\nGreat news! "${req.productName}" is now back in stock at ${storeSettings?.shopName || 'our store'}.\n\nShop now: ${window.location.origin}\n\nThank you! 🛒`
+    );
+    if (phone.length >= 10) {
+      window.open(`https://wa.me/${phone}?text=${msg}`, '_blank');
+    } else {
+      toast.error('No valid phone number for this customer');
+    }
   };
 
   return (

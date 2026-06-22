@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { Product, PRODUCTS, CATEGORIES } from '../data/products';
-import { saveProductsToSheet, fetchProductsFromSheet, saveSettingsToSheet, fetchSettingsFromSheet, fetchOrdersFromSheet } from '../utils/googleSheets';
+import { saveProductsToSheet, fetchProductsFromSheet, saveSettingsToSheet, fetchSettingsFromSheet, fetchOrdersFromSheet, saveStockRequestToSheet } from '../utils/googleSheets';
 import toast from 'react-hot-toast';
 
 const DEFAULT_BANNERS: HomeBanner[] = [
@@ -342,6 +342,7 @@ export interface StoreState {
   addStockRequest: (request: Omit<StockRequest, 'id' | 'createdAt' | 'status'>) => void;
   deleteStockRequest: (id: string) => void;
   clearStockRequests: () => void;
+  mergeStockRequestsFromSheet: (requests: StockRequest[]) => void; // silent merge, no toast/re-push
 
   // Customer Notification Actions
   dismissNotification: (id: string) => void;
@@ -537,8 +538,17 @@ export const useStore = create<StoreState>()(
           createdAt: new Date().toISOString(),
           status: 'pending'
         };
+        // Save locally immediately
         set(s => ({ stockRequests: [newReq, ...(s.stockRequests || [])] }));
         toast.success('Request registered! We will notify you when this item is back in stock. 🔔');
+
+        // Also push to Google Sheets so admin sees it on ALL devices
+        const webhookUrl = get().storeSettings?.googleSheetWebhookUrl;
+        if (webhookUrl) {
+          saveStockRequestToSheet(webhookUrl, newReq).catch(err =>
+            console.warn('Could not sync stock request to Sheets:', err)
+          );
+        }
       },
 
       deleteStockRequest: (id) => {
@@ -549,6 +559,16 @@ export const useStore = create<StoreState>()(
       clearStockRequests: () => {
         set({ stockRequests: [] });
         toast.success('All requests cleared');
+      },
+
+      // Silently merge requests fetched from Sheets — no toast, no re-push to Sheets
+      mergeStockRequestsFromSheet: (incoming) => {
+        set(s => {
+          const existingIds = new Set((s.stockRequests || []).map(r => r.id));
+          const newOnes = incoming.filter(r => !existingIds.has(r.id));
+          if (newOnes.length === 0) return s; // nothing to add
+          return { stockRequests: [...newOnes, ...(s.stockRequests || [])] };
+        });
       },
 
       dismissNotification: (id) => {

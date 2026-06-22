@@ -51,6 +51,35 @@ export interface SyncSettings {
   adminPassword: string;
 }
 
+// 0. Save Stock/Notify-Me Request to Google Sheets (POST)
+// This sends customer notify-me requests to Sheets AND emails the admin
+export async function saveStockRequestToSheet(
+  webhookUrl: string,
+  request: {
+    id: string;
+    productId: string;
+    productName: string;
+    productImage?: string;
+    customerName: string;
+    customerContact: string;
+    createdAt: string;
+  }
+): Promise<boolean> {
+  if (!webhookUrl || !webhookUrl.startsWith('https://script.google.com')) return false;
+  try {
+    await fetch(webhookUrl, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'saveStockRequest', request }),
+    });
+    return true;
+  } catch (error) {
+    console.error('Failed to save stock request to Google Sheet:', error);
+    return false;
+  }
+}
+
 // 1. Save Orders (POST) - basic row format
 export async function saveOrderToSheet(
   webhookUrl: string,
