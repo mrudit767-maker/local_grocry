@@ -55,6 +55,29 @@ export interface SyncSettings {
   bulkPackDiscount3?: number;
 }
 
+// Helper: Fetch with timeout to prevent hanging on network errors or slow Apps Script execution
+async function fetchWithTimeout(
+  resource: string | URL,
+  options: RequestInit & { timeout?: number } = {}
+): Promise<Response> {
+  const { timeout = 10000 } = options; // Default 10 seconds timeout
+  
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeout);
+  
+  try {
+    const response = await fetchWithTimeout(resource, {
+      ...options,
+      signal: controller.signal
+    });
+    clearTimeout(timer);
+    return response;
+  } catch (error) {
+    clearTimeout(timer);
+    throw error;
+  }
+}
+
 // 0. Save Stock/Notify-Me Request to Google Sheets (POST)
 // This sends customer notify-me requests to Sheets AND emails the admin
 export async function saveStockRequestToSheet(
@@ -71,7 +94,7 @@ export async function saveStockRequestToSheet(
 ): Promise<boolean> {
   if (!webhookUrl || !webhookUrl.startsWith('https://script.google.com')) return false;
   try {
-    await fetch(webhookUrl, {
+    await fetchWithTimeout(webhookUrl, {
       method: 'POST',
       mode: 'no-cors',
       headers: { 'Content-Type': 'application/json' },
@@ -93,7 +116,7 @@ export async function saveOrderToSheet(
     return { success: false, message: 'No webhook URL configured' };
   }
   try {
-    await fetch(webhookUrl, {
+    await fetchWithTimeout(webhookUrl, {
       method: 'POST',
       mode: 'no-cors',
       headers: { 'Content-Type': 'application/json' },
@@ -113,7 +136,7 @@ export async function saveFullOrderToSheet(
 ): Promise<boolean> {
   if (!webhookUrl || !webhookUrl.startsWith('https://script.google.com')) return false;
   try {
-    await fetch(webhookUrl, {
+    await fetchWithTimeout(webhookUrl, {
       method: 'POST',
       mode: 'no-cors',
       headers: { 'Content-Type': 'application/json' },
@@ -131,7 +154,7 @@ export async function fetchOrdersFromSheet(webhookUrl: string): Promise<any[] | 
   if (!webhookUrl || !webhookUrl.startsWith('https://script.google.com')) return null;
   try {
     const ts = Date.now(); // cache-bust: always get fresh data
-    const res = await fetch(`${webhookUrl}?action=getOrders&t=${ts}`);
+    const res = await fetchWithTimeout(`${webhookUrl}?action=getOrders&t=${ts}`);
     if (!res.ok) return null;
     const data = await res.json();
     if (Array.isArray(data) && data.length > 0) {
@@ -153,7 +176,7 @@ export async function updateOrderStatusInSheet(
 ): Promise<boolean> {
   if (!webhookUrl || !webhookUrl.startsWith('https://script.google.com')) return false;
   try {
-    await fetch(webhookUrl, {
+    await fetchWithTimeout(webhookUrl, {
       method: 'POST',
       mode: 'no-cors',
       headers: { 'Content-Type': 'application/json' },
@@ -175,7 +198,7 @@ export async function saveCustomerToSheet(
     return { success: false, message: 'No webhook URL configured' };
   }
   try {
-    await fetch(webhookUrl, {
+    await fetchWithTimeout(webhookUrl, {
       method: 'POST',
       mode: 'no-cors',
       headers: { 'Content-Type': 'application/json' },
@@ -195,7 +218,7 @@ export async function saveProductsToSheet(
 ): Promise<boolean> {
   if (!webhookUrl || !webhookUrl.startsWith('https://script.google.com')) return false;
   try {
-    await fetch(webhookUrl, {
+    await fetchWithTimeout(webhookUrl, {
       method: 'POST',
       mode: 'no-cors',
       headers: { 'Content-Type': 'application/json' },
@@ -215,7 +238,7 @@ export async function fetchProductsFromSheet(
   if (!webhookUrl || !webhookUrl.startsWith('https://script.google.com')) return null;
   try {
     const ts = Date.now(); // cache-bust: always get fresh data from sheet
-    const res = await fetch(`${webhookUrl}?action=getProducts&t=${ts}`);
+    const res = await fetchWithTimeout(`${webhookUrl}?action=getProducts&t=${ts}`);
     if (!res.ok) return null;
     const data = await res.json();
     if (Array.isArray(data) && data.length > 0) {
@@ -235,7 +258,7 @@ export async function saveSettingsToSheet(
 ): Promise<boolean> {
   if (!webhookUrl || !webhookUrl.startsWith('https://script.google.com')) return false;
   try {
-    await fetch(webhookUrl, {
+    await fetchWithTimeout(webhookUrl, {
       method: 'POST',
       mode: 'no-cors',
       headers: { 'Content-Type': 'application/json' },
@@ -255,7 +278,7 @@ export async function fetchSettingsFromSheet(
   if (!webhookUrl || !webhookUrl.startsWith('https://script.google.com')) return null;
   try {
     const ts = Date.now(); // cache-bust: always get fresh settings
-    const res = await fetch(`${webhookUrl}?action=getSettings&t=${ts}`);
+    const res = await fetchWithTimeout(`${webhookUrl}?action=getSettings&t=${ts}`);
     if (!res.ok) return null;
     const data = await res.json();
     if (data && typeof data === 'object' && Object.keys(data).length > 0) {
@@ -275,7 +298,7 @@ export async function fetchCustomerFromSheet(
 ): Promise<CustomerSheetData | null> {
   if (!webhookUrl || !webhookUrl.startsWith('https://script.google.com') || !identifier) return null;
   try {
-    const res = await fetch(`${webhookUrl}?action=getCustomer&identifier=${encodeURIComponent(identifier)}`);
+    const res = await fetchWithTimeout(`${webhookUrl}?action=getCustomer&identifier=${encodeURIComponent(identifier)}`);
     if (!res.ok) return null;
     const data = await res.json();
     if (data && typeof data === 'object') {
