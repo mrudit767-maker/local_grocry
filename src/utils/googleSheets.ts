@@ -49,6 +49,10 @@ export interface SyncSettings {
   freeDeliveryAbove: number;
   googleSheetWebhookUrl: string;
   adminPassword: string;
+  bulkPackSize2?: number;
+  bulkPackDiscount2?: number;
+  bulkPackSize3?: number;
+  bulkPackDiscount3?: number;
 }
 
 // 0. Save Stock/Notify-Me Request to Google Sheets (POST)

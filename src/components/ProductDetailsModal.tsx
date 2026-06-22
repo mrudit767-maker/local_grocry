@@ -27,6 +27,12 @@ export default function ProductDetailsModal({ productId, onClose }: Props) {
 
   if (!product) return null;
 
+  // Bulk pack configurations
+  const bulkPackSize2 = Number(storeSettings?.bulkPackSize2 ?? 3);
+  const bulkPackDiscount2 = Number(storeSettings?.bulkPackDiscount2 ?? 5);
+  const bulkPackSize3 = Number(storeSettings?.bulkPackSize3 ?? 6);
+  const bulkPackDiscount3 = Number(storeSettings?.bulkPackDiscount3 ?? 10);
+
   // State
   const [selectedPack, setSelectedPack] = useState<number>(1);
   const [selectedWeight, setSelectedWeight] = useState<string>('');
@@ -116,10 +122,10 @@ export default function ProductDetailsModal({ productId, onClose }: Props) {
     let finalMrp = rawMrp * selectedPack;
     
     // Bulk discount for pack count
-    if (selectedPack === 3) {
-      finalPrice = finalPrice * 0.95; // 5% off
-    } else if (selectedPack === 6) {
-      finalPrice = finalPrice * 0.90; // 10% off
+    if (selectedPack === bulkPackSize2) {
+      finalPrice = finalPrice * (1 - bulkPackDiscount2 / 100);
+    } else if (selectedPack === bulkPackSize3) {
+      finalPrice = finalPrice * (1 - bulkPackDiscount3 / 100);
     }
     
     finalPrice = Math.round(finalPrice);
@@ -416,29 +422,33 @@ export default function ProductDetailsModal({ productId, onClose }: Props) {
                 Selected Pack of: <b className={darkMode ? 'text-white' : 'text-gray-900'}>{selectedPack}</b>
               </span>
               <div className="flex gap-2.5">
-                {[1, 3, 6].map((pVal) => {
-                  const isSelected = selectedPack === pVal;
-                  return (
-                    <button
-                      key={pVal}
-                      onClick={() => setSelectedPack(pVal)}
-                      className={`flex-1 py-2 rounded-xl border text-center font-black transition-all cursor-pointer flex flex-col items-center justify-center ${
-                        isSelected
-                          ? 'border-green-600 bg-green-600/5 text-green-700 dark:text-green-400 ring-1 ring-green-600 scale-[1.01]'
-                          : darkMode
-                          ? 'border-gray-800 hover:border-gray-700 text-gray-300 bg-gray-900/30'
-                          : 'border-gray-200 hover:border-gray-350 text-gray-700 bg-white shadow-sm'
-                      }`}
-                    >
-                      <span className="text-xs">{pVal}</span>
-                      {pVal > 1 && (
-                        <span className="text-[8px] text-red-500 font-black uppercase mt-0.5">
-                          {pVal === 3 ? 'Save 5%' : 'Save 10%'}
-                        </span>
-                      )}
-                    </button>
-                  );
-                })}
+                {Array.from(new Set([1, bulkPackSize2, bulkPackSize3]))
+                  .filter(val => val > 0)
+                  .sort((a, b) => a - b)
+                  .map((pVal) => {
+                    const isSelected = selectedPack === pVal;
+                    const discountPercent = pVal === bulkPackSize2 ? bulkPackDiscount2 : (pVal === bulkPackSize3 ? bulkPackDiscount3 : 0);
+                    return (
+                      <button
+                        key={pVal}
+                        onClick={() => setSelectedPack(pVal)}
+                        className={`flex-1 py-2 rounded-xl border text-center font-black transition-all cursor-pointer flex flex-col items-center justify-center ${
+                          isSelected
+                            ? 'border-green-600 bg-green-600/5 text-green-700 dark:text-green-400 ring-1 ring-green-600 scale-[1.01]'
+                            : darkMode
+                            ? 'border-gray-800 hover:border-gray-700 text-gray-300 bg-gray-900/30'
+                            : 'border-gray-200 hover:border-gray-350 text-gray-700 bg-white shadow-sm'
+                        }`}
+                      >
+                        <span className="text-xs">{pVal}</span>
+                        {pVal > 1 && discountPercent > 0 && (
+                          <span className="text-[8px] text-red-500 font-black uppercase mt-0.5">
+                            Save {discountPercent}%
+                          </span>
+                        )}
+                      </button>
+                    );
+                  })}
               </div>
             </div>
 

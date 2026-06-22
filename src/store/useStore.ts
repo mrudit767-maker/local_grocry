@@ -202,6 +202,10 @@ export interface StoreSettings {
   androidSmsToken?: string;
   androidSmsDeviceId?: string;
   imgbbApiKey?: string; // Free image hosting - get key at https://api.imgbb.com/
+  bulkPackSize2?: number;
+  bulkPackDiscount2?: number;
+  bulkPackSize3?: number;
+  bulkPackDiscount3?: number;
 }
 
 const DEFAULT_SETTINGS: StoreSettings = {
@@ -228,6 +232,10 @@ const DEFAULT_SETTINGS: StoreSettings = {
   androidSmsToken: '',
   androidSmsDeviceId: '',
   imgbbApiKey: '',
+  bulkPackSize2: 3,
+  bulkPackDiscount2: 5,
+  bulkPackSize3: 6,
+  bulkPackDiscount3: 10,
 };
 
 export interface StoreState {

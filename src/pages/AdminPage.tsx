@@ -2371,6 +2371,51 @@ function SettingsManager() {
       </div>
 
       <div className={card}>
+        {hd('📦', 'Bulk Pack & Discount Settings')}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <div>
+            {lbl('Pack 2 Size')}
+            <input 
+              type="number" 
+              className={inp} 
+              value={form.bulkPackSize2 ?? 3} 
+              onChange={e => setForm(f => ({...f, bulkPackSize2: Number(e.target.value)}))} 
+            />
+          </div>
+          <div>
+            {lbl('Pack 2 Discount %')}
+            <input 
+              type="number" 
+              className={inp} 
+              value={form.bulkPackDiscount2 ?? 5} 
+              onChange={e => setForm(f => ({...f, bulkPackDiscount2: Number(e.target.value)}))} 
+            />
+          </div>
+          <div>
+            {lbl('Pack 3 Size')}
+            <input 
+              type="number" 
+              className={inp} 
+              value={form.bulkPackSize3 ?? 6} 
+              onChange={e => setForm(f => ({...f, bulkPackSize3: Number(e.target.value)}))} 
+            />
+          </div>
+          <div>
+            {lbl('Pack 3 Discount %')}
+            <input 
+              type="number" 
+              className={inp} 
+              value={form.bulkPackDiscount3 ?? 10} 
+              onChange={e => setForm(f => ({...f, bulkPackDiscount3: Number(e.target.value)}))} 
+            />
+          </div>
+        </div>
+        <p className={`text-[11px] mt-2 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+          Configure bulk pack quantity selectors and their discount percentages displayed on the product details page. (Pack 1 size is always 1 with 0% discount).
+        </p>
+      </div>
+
+      <div className={card}>
         {hd('📊', 'Google Sheets Integration')}
         <div className="space-y-4">
           <div>
