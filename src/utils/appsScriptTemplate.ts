@@ -151,6 +151,33 @@ function doGet(e) {
       .setMimeType(ContentService.MimeType.JSON);
   }
   
+  // ACTION 5: Get all Stock/Notify-Me Requests (for admin cross-device sync)
+  if (action === 'getStockRequests') {
+    var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('StockRequests');
+    if (!sheet) {
+      return ContentService.createTextOutput(JSON.stringify({success:true, data:[]}))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+    var values = sheet.getDataRange().getValues();
+    var requests = [];
+    for (var i = 1; i < values.length; i++) {
+      var row = values[i];
+      if (!row[0]) continue;
+      requests.push({
+        id: String(row[0]),
+        productId: String(row[1] || ''),
+        productName: String(row[2] || ''),
+        productImage: String(row[3] || ''),
+        customerName: String(row[4] || ''),
+        customerContact: String(row[5] || ''),
+        createdAt: String(row[6] || ''),
+        status: String(row[7] || 'pending')
+      });
+    }
+    return ContentService.createTextOutput(JSON.stringify({success:true, data:requests}))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+
   return ContentService.createTextOutput("Invalid Action");
 }
 
@@ -376,7 +403,52 @@ function doPost(e) {
         .setMimeType(ContentService.MimeType.JSON);
     }
 
-    // POST ACTION 4: Overwrite settings configuration
+    // POST ACTION 4: Save Stock / Notify-Me Request from customer
+    if (data.action === 'saveStockRequest') {
+      var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('StockRequests')
+                  || SpreadsheetApp.getActiveSpreadsheet().insertSheet('StockRequests');
+      if (sheet.getLastRow() === 0) {
+        sheet.appendRow(['ID', 'Product ID', 'Product Name', 'Product Image', 'Customer Name', 'Customer Contact', 'Requested At', 'Status']);
+        sheet.getRange('A1:H1').setFontWeight('bold').setBackground('#f59e0b').setFontColor('#ffffff');
+      }
+      var req = data.request;
+
+      // Check duplicate: same customer + same product
+      var existing = sheet.getDataRange().getValues();
+      for (var i = 1; i < existing.length; i++) {
+        if (String(existing[i][0]) === String(req.id)) {
+          return ContentService.createTextOutput(JSON.stringify({status:'duplicate'}))
+            .setMimeType(ContentService.MimeType.JSON);
+        }
+      }
+
+      sheet.appendRow([
+        req.id, req.productId, req.productName, req.productImage || '',
+        req.customerName, req.customerContact, req.createdAt, 'pending'
+      ]);
+
+      // Email admin about new notify-me request
+      try {
+        var adminEmail = Session.getEffectiveUser().getEmail();
+        if (adminEmail) {
+          var subject = '🔔 Restock Request: ' + req.productName;
+          var body = 'Customer Restock Request\n\n' +
+            'Product: ' + req.productName + '\n' +
+            'Customer: ' + req.customerName + '\n' +
+            'Contact: ' + req.customerContact + '\n' +
+            'Requested At: ' + req.createdAt + '\n\n' +
+            'Please restock this item and notify the customer via Admin Panel → Stock Requests.';
+          GmailApp.sendEmail(adminEmail, subject, body);
+        }
+      } catch (mailErr) {
+        Logger.log('Stock request mail error: ' + mailErr.toString());
+      }
+
+      return ContentService.createTextOutput(JSON.stringify({status:'success'}))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+
+    // POST ACTION 5: Overwrite settings configuration
     if (data.action === 'saveSettings') {
       var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Settings') 
                   || SpreadsheetApp.getActiveSpreadsheet().insertSheet('Settings');
