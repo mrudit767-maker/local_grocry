@@ -432,11 +432,11 @@ function doPost(e) {
         var adminEmail = Session.getEffectiveUser().getEmail();
         if (adminEmail) {
           var subject = '[Restock Request] ' + req.productName;
-          var body = 'Customer Restock Request\n\n' +
-            'Product: ' + req.productName + '\n' +
-            'Customer: ' + req.customerName + '\n' +
-            'Contact: ' + req.customerContact + '\n' +
-            'Requested At: ' + req.createdAt + '\n\n' +
+          var body = 'Customer Restock Request\\n\\n' +
+            'Product: ' + req.productName + '\\n' +
+            'Customer: ' + req.customerName + '\\n' +
+            'Contact: ' + req.customerContact + '\\n' +
+            'Requested At: ' + req.createdAt + '\\n\\n' +
             'Please restock this item and notify the customer via Admin Panel > Stock Requests.';
           GmailApp.sendEmail(adminEmail, subject, body);
         }
