@@ -390,14 +390,18 @@ function doPost(e) {
       sheet.getRange("A1:Q1").setFontWeight("bold");
       
       var list = data.products;
-      for (var i = 0; i < list.length; i++) {
-        var p = list[i];
-        sheet.appendRow([
-          p.id, p.name, p.category, p.price, p.mrp, p.unit, p.image, p.badge || '', p.rating || 4, p.description || '', p.inStock, p.subcategory || '', p.storeId || 'main', p.updatedAt || '',
-          p.images ? (Array.isArray(p.images) ? p.images.join(', ') : String(p.images)) : '',
-          p.customWeights ? (Array.isArray(p.customWeights) ? p.customWeights.join(', ') : String(p.customWeights)) : '',
-          p.expiryDate || ''
-        ]);
+      if (list && list.length > 0) {
+        var rows = [];
+        for (var i = 0; i < list.length; i++) {
+          var p = list[i];
+          rows.push([
+            p.id, p.name, p.category, p.price, p.mrp, p.unit, p.image, p.badge || '', p.rating || 4, p.description || '', p.inStock, p.subcategory || '', p.storeId || 'main', p.updatedAt || '',
+            p.images ? (Array.isArray(p.images) ? p.images.join(', ') : String(p.images)) : '',
+            p.customWeights ? (Array.isArray(p.customWeights) ? p.customWeights.join(', ') : String(p.customWeights)) : '',
+            p.expiryDate || ''
+          ]);
+        }
+        sheet.getRange(2, 1, rows.length, 17).setValues(rows);
       }
       return ContentService.createTextOutput(JSON.stringify({status:'success'}))
         .setMimeType(ContentService.MimeType.JSON);

@@ -60,13 +60,13 @@ async function fetchWithTimeout(
   resource: string | URL,
   options: RequestInit & { timeout?: number } = {}
 ): Promise<Response> {
-  const { timeout = 10000 } = options; // Default 10 seconds timeout
+  const { timeout = 30000 } = options; // Default 30 seconds timeout
   
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeout);
   
   try {
-    const response = await fetchWithTimeout(resource, {
+    const response = await fetch(resource, {
       ...options,
       signal: controller.signal
     });
