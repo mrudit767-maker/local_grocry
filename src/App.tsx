@@ -166,10 +166,20 @@ export default function App() {
     const currentUrl = storeSettings.googleSheetWebhookUrl;
     const defaultCustomUrl = 'https://script.google.com/macros/s/AKfycbzKMXP4_DT32ePA9rc2YOd9-n2AKOvYi0ID0rcl1aLKAETYjL8eJc33_EacweDFmOELCQ/exec';
 
+    const defaultSupabaseUrl = 'https://fpydfpyksodyallukess.supabase.co';
+    const defaultSupabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZweWRmcHlrc29keWFsbHVrZXNzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg5NTk2MTcsImV4cCI6MjEwNDUzNTYxN30.qbkp_-TItTTZ3SbqaqfxHuEBtw44Xc-audD9dP5hjPA';
+
     if (!adminLoggedIn || !currentUrl || currentUrl === oldDemoUrl) {
       updateStoreSettings({
         googleSheetWebhookUrl: defaultCustomUrl,
-        googleSheetProductsWebhookUrl: defaultCustomUrl
+        googleSheetProductsWebhookUrl: defaultCustomUrl,
+        supabaseUrl: storeSettings.supabaseUrl || defaultSupabaseUrl,
+        supabaseAnonKey: storeSettings.supabaseAnonKey || defaultSupabaseAnonKey,
+      });
+    } else if (!storeSettings.supabaseUrl || !storeSettings.supabaseAnonKey) {
+      updateStoreSettings({
+        supabaseUrl: defaultSupabaseUrl,
+        supabaseAnonKey: defaultSupabaseAnonKey,
       });
     }
 

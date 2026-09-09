@@ -254,8 +254,8 @@ const DEFAULT_SETTINGS: StoreSettings = {
   bulkPackDiscount2: 5,
   bulkPackSize3: 6,
   bulkPackDiscount3: 10,
-  supabaseUrl: '',
-  supabaseAnonKey: '',
+  supabaseUrl: 'https://fpydfpyksodyallukess.supabase.co',
+  supabaseAnonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZweWRmcHlrc29keWFsbHVrZXNzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg5NTk2MTcsImV4cCI6MjEwNDUzNTYxN30.qbkp_-TItTTZ3SbqaqfxHuEBtw44Xc-audD9dP5hjPA',
 };
 
 export interface StoreState {
