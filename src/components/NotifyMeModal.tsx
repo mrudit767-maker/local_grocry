@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Bell, User, Phone, Mail } from 'lucide-react';
+import { X, Bell, User, Phone, Mail, AlertCircle } from 'lucide-react';
 import { useStore } from '../store/useStore';
 import { Product } from '../data/products';
 
@@ -96,8 +96,8 @@ export default function NotifyMeModal({ product, onClose }: Props) {
         {/* Form */}
         <form onSubmit={handleSubmit} className="p-5 space-y-4">
           {error && (
-            <p className="text-xs text-red-500 font-bold bg-red-50 dark:bg-red-950/20 p-2.5 rounded-xl border border-red-200 dark:border-red-900/30">
-              ⚠️ {error}
+            <p className="text-xs text-red-500 font-bold bg-red-50 dark:bg-red-950/20 p-2.5 rounded-xl border border-red-200 dark:border-red-900/30 flex items-center gap-2">
+              <AlertCircle size={14} className="shrink-0" /> {error}
             </p>
           )}
 

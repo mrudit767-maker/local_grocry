@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { CheckCircle, Package, Clock, MessageCircle, ArrowRight, FileText } from 'lucide-react';
+import { CheckCircle, Package, Clock, MessageCircle, ArrowRight, FileText, Sparkles } from 'lucide-react';
 import { useStore } from '../store/useStore';
 import OrderInvoiceModal from '../components/OrderInvoiceModal';
 
@@ -13,11 +13,15 @@ export default function OrderSuccessPage() {
       <div className="max-w-md w-full text-center">
         {/* Success Animation */}
         <div className="relative mb-6">
-          <div className="w-28 h-28 rounded-full bg-green-100 flex items-center justify-center mx-auto shadow-lg">
-            <CheckCircle className="text-green-600" size={60} />
+          <div className="w-28 h-28 rounded-full bg-emerald-100 dark:bg-emerald-950/60 flex items-center justify-center mx-auto shadow-lg ring-8 ring-emerald-50 dark:ring-emerald-950/30">
+            <CheckCircle className="text-emerald-600 dark:text-emerald-400" size={56} />
           </div>
-          <div className="absolute -top-2 -right-2 text-3xl animate-bounce">🎉</div>
-          <div className="absolute -bottom-2 -left-2 text-2xl animate-bounce delay-100">✨</div>
+          <div className="absolute top-1 right-1 p-2 bg-amber-500 text-white rounded-full shadow-md animate-bounce">
+            <Sparkles size={16} />
+          </div>
+          <div className="absolute bottom-1 left-1 p-1.5 bg-emerald-600 text-white rounded-full shadow-md animate-bounce delay-100">
+            <CheckCircle size={14} />
+          </div>
         </div>
 
         <h1 className={`text-3xl font-black mb-2 ${darkMode ? 'text-white' : 'text-gray-900'}`}>Order Placed!</h1>

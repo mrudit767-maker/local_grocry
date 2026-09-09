@@ -1,4 +1,4 @@
-import { X, ShieldAlert, FileText, BadgePercent } from 'lucide-react';
+import { X, ShieldAlert, FileText, BadgePercent, Phone } from 'lucide-react';
 
 interface PolicyModalProps {
   type: 'privacy' | 'terms' | 'refund' | null;
@@ -119,7 +119,7 @@ export default function PolicyModal({ type, onClose, shopName, email, phone }: P
 
           {/* Contact Details */}
           <div className="mt-6 p-4 rounded-2xl bg-emerald-50/40 dark:bg-emerald-950/10 border border-emerald-100/50 dark:border-emerald-900/30 text-xs text-emerald-800 dark:text-emerald-300">
-            <span className="font-bold block mb-1">📞 Contact Support:</span>
+            <span className="font-bold mb-1 flex items-center gap-1.5"><Phone size={13} /> Contact Support:</span>
             For any queries regarding our policies, reach out to us at:
             <ul className="list-disc list-inside mt-1.5 space-y-1">
               <li>Shop: <b>{shopName}</b></li>

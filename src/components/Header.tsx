@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
-import { ShoppingCart, Search, Moon, Sun, X, MapPin, Phone, Shield, MessageCircle, Heart, Sparkles, Home, LayoutGrid, RefreshCw, ShoppingBag, User, Bell } from 'lucide-react';
+import { ShoppingCart, Search, Moon, Sun, X, MapPin, Phone, Shield, MessageCircle, Heart, Sparkles, Home, LayoutGrid, RefreshCw, ShoppingBag, User, Bell, Flame, TrendingUp, Clock, Truck, Package } from 'lucide-react';
 import { useStore } from '../store/useStore';
 import toast from 'react-hot-toast';
 import AIQueryAssistant from './AIQueryAssistant';
@@ -108,7 +108,7 @@ export default function Header() {
   const handleSelectArea = (area: string) => {
     setSelectedArea(area);
     setLocationOpen(false);
-    toast.success(`Delivery location set to: ${area} 🛵`);
+    toast.success(`Delivery location set to: ${area}`);
   };
 
   // Notification panel renderer
@@ -154,7 +154,7 @@ export default function Header() {
           // Admin: show pending stock requests
           (stockRequests || []).filter(r => r.status === 'pending').length === 0 ? (
             <div className="flex flex-col items-center justify-center py-8 text-center">
-              <span className="text-3xl mb-2">🔔</span>
+              <Bell className="w-8 h-8 text-gray-300 dark:text-gray-600 mb-2" />
               <p className="text-sm font-bold text-gray-400">No pending stock requests</p>
               <p className="text-xs text-gray-400 mt-1">Customers' restock requests will appear here</p>
             </div>
@@ -171,8 +171,14 @@ export default function Header() {
                   )}
                   <div className="flex-1 min-w-0">
                     <p className="text-xs font-bold truncate">{req.productName}</p>
-                    <p className="text-[10px] text-gray-400 mt-0.5">👤 {req.customerName} • {req.customerContact}</p>
-                    <p className="text-[10px] text-orange-500 font-bold mt-0.5">⏳ Awaiting restock</p>
+                    <p className="text-[10px] text-gray-400 mt-0.5 flex items-center gap-1">
+                      <User size={10} className="text-emerald-500" />
+                      <span>{req.customerName} • {req.customerContact}</span>
+                    </p>
+                    <p className="text-[10px] text-orange-500 font-bold mt-0.5 flex items-center gap-1">
+                      <Clock size={10} />
+                      <span>Awaiting restock</span>
+                    </p>
                   </div>
                 </div>
               ))}
@@ -192,7 +198,7 @@ export default function Header() {
           // Customer: show restock notifications
           (customerNotifications || []).length === 0 ? (
             <div className="flex flex-col items-center justify-center py-8 text-center">
-              <span className="text-3xl mb-2">🔔</span>
+              <Bell className="w-8 h-8 text-gray-300 dark:text-gray-600 mb-2" />
               <p className="text-sm font-bold text-gray-400">No notifications yet</p>
               <p className="text-xs text-gray-400 mt-1">We'll notify you when requested items are restocked</p>
             </div>
@@ -206,7 +212,7 @@ export default function Header() {
                     <img src={notif.productImage} alt="Product" className="w-10 h-10 rounded-lg object-contain bg-gray-100 dark:bg-gray-800 border dark:border-gray-700 shrink-0" />
                   ) : (
                     <div className="w-10 h-10 rounded-lg bg-green-100 dark:bg-green-950/30 flex items-center justify-center shrink-0">
-                      <span className="text-lg">🎉</span>
+                      <Sparkles size={16} className="text-emerald-600" />
                     </div>
                   )}
                   <div className="flex-1 min-w-0">
@@ -253,7 +259,7 @@ export default function Header() {
           <div className="space-y-4">
             <div>
               <div className="flex items-center gap-1.5 mb-2">
-                <span className="text-xs">🔥</span>
+                <Flame size={12} className="text-orange-500" />
                 <p className="text-[10px] font-black uppercase tracking-wider text-gray-450 dark:text-gray-500">Popular Searches</p>
               </div>
               <div className="flex flex-wrap gap-1.5">
@@ -266,13 +272,14 @@ export default function Header() {
                       trackSearch(term);
                       setCurrentPage('products');
                     }}
-                    className={`text-xs px-3.5 py-1.5 rounded-full border transition-all duration-200 font-semibold cursor-pointer ${
+                    className={`text-xs px-3.5 py-1.5 rounded-full border transition-all duration-200 font-semibold cursor-pointer flex items-center gap-1.5 ${
                       darkMode 
                         ? 'border-gray-800 hover:border-emerald-500/50 bg-gray-900/50 hover:bg-emerald-950/20 text-gray-300 hover:text-emerald-400' 
                         : 'border-gray-250 hover:border-emerald-500/50 bg-gray-150/50 hover:bg-emerald-50 text-gray-655 hover:text-emerald-600'
                     }`}
                   >
-                    🔍 {term}
+                    <Search size={10} className="text-emerald-500" />
+                    <span>{term}</span>
                   </button>
                 ))}
               </div>
@@ -281,7 +288,7 @@ export default function Header() {
             {frequentSearches.length > 0 && (
               <div>
                 <div className="flex items-center gap-1.5 mb-2">
-                  <span className="text-xs">📈</span>
+                  <TrendingUp size={12} className="text-emerald-500" />
                   <p className="text-[10px] font-black uppercase tracking-wider text-gray-450 dark:text-gray-500">Your Recent Searches</p>
                 </div>
                 <div className="flex flex-wrap gap-1.5">
@@ -294,13 +301,14 @@ export default function Header() {
                         trackSearch(term);
                         setCurrentPage('products');
                       }}
-                      className={`text-xs px-3.5 py-1.5 rounded-full border transition-all duration-200 font-semibold cursor-pointer ${
+                      className={`text-xs px-3.5 py-1.5 rounded-full border transition-all duration-200 font-semibold cursor-pointer flex items-center gap-1.5 ${
                         darkMode 
                           ? 'border-gray-800 hover:border-emerald-500/50 bg-gray-900/50 hover:bg-emerald-950/20 text-emerald-400' 
                           : 'border-gray-250 hover:border-emerald-500/50 bg-gray-150/50 hover:bg-emerald-55 text-emerald-600'
                       }`}
                     >
-                      ⏱️ {term}
+                      <Clock size={10} className="text-emerald-500" />
+                      <span>{term}</span>
                     </button>
                   ))}
                 </div>
@@ -327,7 +335,7 @@ export default function Header() {
 
             {matchingProducts.length === 0 ? (
               <div className="text-center py-4 text-gray-500 text-xs">
-                😞 No products matching "{searchQuery}" in our catalog.
+                No products matching "{searchQuery}" in our catalog.
               </div>
             ) : (
               <div className="divide-y divide-gray-100 dark:divide-gray-800">
@@ -366,7 +374,7 @@ export default function Header() {
                           onMouseDown={(e) => {
                             e.preventDefault();
                             addToCart(p);
-                            toast.success(`🛒 Added ${p.name}`);
+                            toast.success(`Added ${p.name}`);
                           }}
                           className="p-1.8 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white shadow-sm cursor-pointer"
                           title="Add to Cart"
@@ -410,13 +418,14 @@ export default function Header() {
                     <button
                       key={area}
                       onClick={() => handleSelectArea(area)}
-                      className={`w-full text-left px-2 py-1.5 text-xs rounded-lg font-semibold transition-colors cursor-pointer ${
+                      className={`w-full text-left px-2 py-1.5 text-xs rounded-lg font-semibold transition-colors cursor-pointer flex items-center gap-1.5 ${
                         selectedArea === area 
                           ? 'bg-green-600 text-white' 
                           : darkMode ? 'hover:bg-gray-800 text-gray-300' : 'hover:bg-gray-100 text-gray-700'
                       }`}
                     >
-                      📍 {area}
+                      <MapPin size={11} className={selectedArea === area ? 'text-white' : 'text-emerald-500'} />
+                      <span>{area}</span>
                     </button>
                   ))}
                 </div>
@@ -428,7 +437,7 @@ export default function Header() {
             </a>
           </div>
           <div className="flex items-center gap-3">
-            <span>🕐 {storeSettings.businessHours}</span>
+            <span className="flex items-center gap-1.5"><Clock size={11} className="text-emerald-400" /> {storeSettings.businessHours}</span>
             <span className="hidden sm:inline opacity-30">|</span>
             <span className="hidden sm:inline">Free delivery above ₹{storeSettings.freeDeliveryAbove}</span>
           </div>
@@ -559,8 +568,9 @@ export default function Header() {
             {/* Customer Login / Profile */}
             {currentCustomer ? (
               <div className="flex items-center gap-2 border border-emerald-500/20 dark:border-emerald-500/10 rounded-xl px-3 py-1.5 bg-emerald-50/50 dark:bg-emerald-950/20">
-                <span className="text-xs font-black text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
-                  👤 Valued
+                <span className="text-xs font-black text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5">
+                  <User size={12} />
+                  <span>Account</span>
                 </span>
                 <button
                   onClick={() => { customerLogout(); toast.success('Logged out successfully'); setCurrentPage('home'); }}
@@ -572,13 +582,14 @@ export default function Header() {
             ) : (
               <button
                 onClick={() => setCurrentPage('customer-login')}
-                className={`flex items-center gap-1 text-xs px-3.5 py-2.5 rounded-xl border font-black transition-all duration-300 cursor-pointer ${
+                className={`flex items-center gap-1.5 text-xs px-3.5 py-2.5 rounded-xl border font-black transition-all duration-300 cursor-pointer ${
                   currentPage === 'customer-login'
                     ? 'bg-emerald-600 border-emerald-600 text-white shadow-sm'
                     : darkMode ? 'bg-gray-900 border-gray-800 text-gray-300 hover:text-white hover:border-gray-700' : 'bg-gray-50 border-gray-200 text-gray-650 hover:text-emerald-600 hover:border-gray-300'
                 }`}
               >
-                👤 Login
+                <User size={13} />
+                <span>Login</span>
               </button>
             )}
 
@@ -629,11 +640,12 @@ export default function Header() {
                   <button
                     key={area}
                     onClick={() => handleSelectArea(area)}
-                    className={`w-full text-left px-2 py-1.5 text-xs rounded-lg font-semibold transition-colors cursor-pointer ${
+                    className={`w-full text-left px-2 py-1.5 text-xs rounded-lg font-semibold transition-colors cursor-pointer flex items-center gap-1.5 ${
                       selectedArea === area ? 'bg-green-600 text-white' : darkMode ? 'hover:bg-gray-800 text-gray-300' : 'hover:bg-gray-100 text-gray-700'
                     }`}
                   >
-                    📍 {area}
+                    <MapPin size={10} className={selectedArea === area ? 'text-white' : 'text-emerald-500'} />
+                    <span>{area}</span>
                   </button>
                 ))}
               </div>
@@ -736,18 +748,18 @@ export default function Header() {
         <div className="max-w-7xl mx-auto px-4">
           <nav className="flex gap-1.5 py-2.5">
             {[
-              { id: 'home', label: '🏠 Home' },
-              { id: 'products', label: '🛍️ All Products' },
-              { id: 'wishlist', label: '❤️ Wishlist' },
-              { id: 'subscriptions', label: '🗓️ Subscription Pack' },
-              { id: 'orders', label: '📦 My Orders' },
-              { id: 'location', label: '📍 Our Location' },
-              { id: 'track-order', label: '🚚 Track Order' },
+              { id: 'home', label: 'Home', icon: Home },
+              { id: 'products', label: 'All Products', icon: ShoppingBag },
+              { id: 'wishlist', label: 'Wishlist', icon: Heart },
+              { id: 'subscriptions', label: 'Subscription Pack', icon: RefreshCw },
+              { id: 'orders', label: 'My Orders', icon: Package },
+              { id: 'location', label: 'Our Location', icon: MapPin },
+              { id: 'track-order', label: 'Track Order', icon: Truck },
             ].map(item => (
               <button
                 key={item.id}
                 onClick={() => setCurrentPage(item.id as any)}
-                className={`px-4.5 py-1.8 rounded-xl text-sm font-semibold transition-all duration-300 ${
+                className={`flex items-center gap-2 px-3.5 py-1.8 rounded-xl text-sm font-semibold transition-all duration-300 cursor-pointer ${
                   currentPage === item.id
                     ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-md shadow-emerald-600/20'
                     : darkMode
@@ -755,7 +767,8 @@ export default function Header() {
                     : 'text-gray-650 hover:text-emerald-600 hover:bg-emerald-50/50'
                 }`}
               >
-                {item.label}
+                <item.icon size={15} className={currentPage === item.id ? 'text-white' : 'text-emerald-600 dark:text-emerald-400'} />
+                <span>{item.label}</span>
               </button>
             ))}
 

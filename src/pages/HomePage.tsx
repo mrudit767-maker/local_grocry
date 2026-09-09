@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Zap, Shield, Truck, Clock, Star, ArrowRight, MapPin, Phone, MessageCircle, Sparkles, ChevronLeft, ChevronRight, ArrowUp } from 'lucide-react';
+import { Zap, Shield, Truck, Clock, Star, ArrowRight, MapPin, Phone, MessageCircle, Sparkles, ChevronLeft, ChevronRight, ArrowUp, Flame, BookOpen, Leaf, ShoppingBag, Store, RotateCcw, Tag, MessageSquare, Package } from 'lucide-react';
 import { useStore } from '../store/useStore';
 import ProductCard from '../components/ProductCard';
 import AIQueryAssistant from '../components/AIQueryAssistant';
@@ -161,7 +161,7 @@ export default function HomePage() {
         <div className="max-w-7xl mx-auto px-6 sm:px-8 relative z-10 grid md:grid-cols-2 gap-8 items-center">
           <div className="space-y-6">
             <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#FF6B35]/20 text-[#FF8E53] border border-[#FF6B35]/30 text-xs font-bold uppercase tracking-wider">
-              🚚 Free delivery on orders above ₹{storeSettings.freeDeliveryAbove}
+              <Truck size={13} className="text-[#FF8E53]" /> Free delivery on orders above ₹{storeSettings.freeDeliveryAbove}
             </span>
             <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black text-white leading-tight">
               Order Online & <br/>
@@ -198,7 +198,9 @@ export default function HomePage() {
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
             <div className="absolute bottom-4 left-4 right-4">
-              <span className="text-[10px] bg-[#2ECC71] text-white font-bold px-2 py-0.5 rounded-full uppercase">⚡ Bhopal Delivery</span>
+              <span className="text-[10px] bg-[#2ECC71] text-white font-bold px-2 py-0.5 rounded-full uppercase inline-flex items-center gap-1">
+                <Zap size={10} /> Bhopal Delivery
+              </span>
               <p className="text-white text-xs font-bold mt-1">Premium staples, pure oils & daily kitchen essentials delivered instantly.</p>
             </div>
           </div>
@@ -264,7 +266,6 @@ export default function HomePage() {
                         <div className="max-w-xl space-y-3 font-poppins">
                           {slide.badge && (
                             <span className="inline-block bg-white/20 backdrop-blur-sm text-white text-[9px] font-black uppercase tracking-wider px-3 py-1 rounded-full">
-                              {slide.emoji && <span className="mr-1.5">{slide.emoji}</span>}
                               {slide.badge}
                             </span>
                           )}
@@ -342,7 +343,10 @@ export default function HomePage() {
           <div className="max-w-7xl mx-auto px-4 space-y-6">
             <div className="flex items-center justify-between">
               <div>
-                <h2 className="text-lg font-black uppercase tracking-wider font-poppins">🛍️ Shop by Category</h2>
+                <h2 className="text-lg font-black uppercase tracking-wider font-poppins flex items-center gap-2">
+                  <ShoppingBag size={20} className="text-emerald-600" />
+                  <span>Shop by Category</span>
+                </h2>
                 <p className="text-gray-400 text-xs font-semibold">Choose from a variety of fresh goods</p>
               </div>
               <button
@@ -407,8 +411,9 @@ export default function HomePage() {
             <div className="flex items-center justify-between">
               <div>
                 <h2 className="text-lg font-black uppercase tracking-wider font-poppins flex items-center gap-1.5">
-                  <span className="text-[#FF6B35]">🔥 Trending Now</span>
-                  <span className="text-[9px] bg-[#2ECC71] text-white font-extrabold px-2 py-0.5 rounded-full uppercase">Top Sellers</span>
+                  <Flame size={20} className="text-[#FF6B35]" />
+                  <span className="text-[#FF6B35]">Trending Now</span>
+                  <span className="text-[9px] bg-[#2ECC71] text-white font-extrabold px-2 py-0.5 rounded-full uppercase ml-1">Top Sellers</span>
                 </h2>
                 <p className="text-gray-400 text-xs font-semibold">Most bought items in Bhopal this week</p>
               </div>
@@ -441,8 +446,8 @@ export default function HomePage() {
               
               <div className="relative z-10 grid md:grid-cols-2 gap-6 items-center">
                 <div className="space-y-4">
-                  <span className="inline-flex items-center gap-1 px-3 py-1 bg-gradient-to-r from-blue-500 to-indigo-500 text-white rounded-full text-[10px] font-black uppercase tracking-wider shadow-sm">
-                    ✏️ school & office essentials
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-gradient-to-r from-blue-500 to-indigo-500 text-white rounded-full text-[10px] font-black uppercase tracking-wider shadow-sm">
+                    <BookOpen size={11} /> School & Office Essentials
                   </span>
                   <h2 className="text-2xl sm:text-3xl md:text-4xl font-black text-white leading-tight font-poppins">
                     Stationery & Study Supplies <br/>
@@ -473,8 +478,9 @@ export default function HomePage() {
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <h3 className={`text-base font-black uppercase tracking-wider font-poppins ${darkMode ? 'text-white' : 'text-gray-900'}`}>
-                    ✏️ Best Selling Stationery
+                  <h3 className={`text-base font-black uppercase tracking-wider font-poppins flex items-center gap-2 ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                    <BookOpen size={16} className="text-blue-500" />
+                    <span>Best Selling Stationery</span>
                   </h3>
                   <p className="text-gray-400 text-xs font-semibold">Notebooks, pens, colors & art supplies</p>
                 </div>
@@ -508,8 +514,8 @@ export default function HomePage() {
               
               <div className="relative z-10 grid md:grid-cols-2 gap-6 items-center">
                 <div className="space-y-4">
-                  <span className="inline-flex items-center gap-1 px-3 py-1 bg-gradient-to-r from-emerald-500 to-green-500 text-white rounded-full text-[10px] font-black uppercase tracking-wider shadow-sm">
-                    🥬 100% organic & farm fresh
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-gradient-to-r from-emerald-500 to-green-500 text-white rounded-full text-[10px] font-black uppercase tracking-wider shadow-sm">
+                    <Leaf size={11} /> 100% Organic & Farm Fresh
                   </span>
                   <h2 className="text-2xl sm:text-3xl md:text-4xl font-black text-white leading-tight font-poppins">
                     Fresh Vegetables & Greens <br/>
@@ -540,8 +546,9 @@ export default function HomePage() {
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <h3 className={`text-base font-black uppercase tracking-wider font-poppins ${darkMode ? 'text-white' : 'text-gray-900'}`}>
-                    🥬 Farm Fresh Vegetables
+                  <h3 className={`text-base font-black uppercase tracking-wider font-poppins flex items-center gap-2 ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                    <Leaf size={16} className="text-green-500" />
+                    <span>Farm Fresh Vegetables</span>
                   </h3>
                   <p className="text-gray-400 text-xs font-semibold">Tomatoes, onions, potatoes, leafy greens & more</p>
                 </div>
@@ -575,8 +582,8 @@ export default function HomePage() {
               
               <div className="relative z-10 grid md:grid-cols-2 gap-6 items-center">
                 <div className="space-y-4">
-                  <span className="inline-flex items-center gap-1 px-3 py-1 bg-gradient-to-r from-yellow-500 to-orange-500 text-white rounded-full text-[10px] font-black uppercase tracking-wider shadow-sm">
-                    🍎 Sweet & healthy seasonal fruits
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-gradient-to-r from-yellow-500 to-orange-500 text-white rounded-full text-[10px] font-black uppercase tracking-wider shadow-sm">
+                    <Sparkles size={11} /> Sweet & Healthy Seasonal Fruits
                   </span>
                   <h2 className="text-2xl sm:text-3xl md:text-4xl font-black text-white leading-tight font-poppins">
                     Juicy & Fresh Fruits <br/>
@@ -607,8 +614,9 @@ export default function HomePage() {
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <h3 className={`text-base font-black uppercase tracking-wider font-poppins ${darkMode ? 'text-white' : 'text-gray-900'}`}>
-                    🍎 Seasonal Fresh Fruits
+                  <h3 className={`text-base font-black uppercase tracking-wider font-poppins flex items-center gap-2 ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                    <Sparkles size={16} className="text-orange-500" />
+                    <span>Seasonal Fresh Fruits</span>
                   </h3>
                   <p className="text-gray-400 text-xs font-semibold">Bananas, apples, grapes, mangoes & more</p>
                 </div>
@@ -642,8 +650,8 @@ export default function HomePage() {
               
               <div className="relative z-10 grid md:grid-cols-2 gap-6 items-center">
                 <div className="space-y-4">
-                  <span className="inline-flex items-center gap-1 px-3 py-1 bg-gradient-to-r from-cyan-500 to-blue-500 text-white rounded-full text-[10px] font-black uppercase tracking-wider shadow-sm">
-                    🍦 Cool & Creamy Delights
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-gradient-to-r from-cyan-500 to-blue-500 text-white rounded-full text-[10px] font-black uppercase tracking-wider shadow-sm">
+                    <Sparkles size={11} /> Cool & Creamy Delights
                   </span>
                   <h2 className="text-2xl sm:text-3xl md:text-4xl font-black text-white leading-tight font-poppins">
                     Ice Creams & Frozen Desserts <br/>
@@ -674,8 +682,9 @@ export default function HomePage() {
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <h3 className={`text-base font-black uppercase tracking-wider font-poppins ${darkMode ? 'text-white' : 'text-gray-900'}`}>
-                    🍨 Best Selling Ice Creams & Frozen Foods
+                  <h3 className={`text-base font-black uppercase tracking-wider font-poppins flex items-center gap-2 ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                    <Package size={16} className="text-cyan-500" />
+                    <span>Best Selling Ice Creams & Frozen Foods</span>
                   </h3>
                   <p className="text-gray-400 text-xs font-semibold">Vanilla, chocolate, butterscotch, french fries & more</p>
                 </div>
@@ -705,9 +714,10 @@ export default function HomePage() {
             <div className="max-w-7xl mx-auto px-4 space-y-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <h2 className="text-lg font-black uppercase tracking-wider font-poppins text-[#2ECC71] flex items-center gap-1.5">
-                    <span>⚡ Deal Zone</span>
-                    <span className="text-[9px] bg-[#FF4444] text-white font-extrabold px-2.5 py-0.5 rounded-full animate-pulse">MIN. 15% OFF</span>
+                  <h2 className="text-lg font-black uppercase tracking-wider font-poppins text-[#2ECC71] flex items-center gap-2">
+                    <Zap size={18} className="text-amber-500" />
+                    <span>Deal Zone</span>
+                    <span className="text-[9px] bg-[#FF4444] text-white font-extrabold px-2.5 py-0.5 rounded-full animate-pulse ml-1">MIN. 15% OFF</span>
                   </h2>
                   <p className="text-gray-400 text-xs font-semibold">Special discounts on daily essentials</p>
                 </div>
@@ -755,7 +765,7 @@ export default function HomePage() {
                     <Sparkles size={11} className="animate-pulse" /> Kirana AI Assistant
                   </span>
                   <h2 className={`text-xl sm:text-2xl font-black leading-tight font-poppins ${darkMode ? 'text-white' : 'text-gray-900'}`}>
-                    💬 Need ingredients for a recipe? <br className="hidden sm:inline" />
+                    Need ingredients for a recipe? <br className="hidden sm:inline" />
                     <span className="text-[#FF6B35]">Ask Kirana AI!</span>
                   </h2>
                   <p className={`text-xs sm:text-sm font-semibold max-w-xl leading-relaxed ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
@@ -766,7 +776,8 @@ export default function HomePage() {
                       onClick={() => setAiOpenInline(true)}
                       className="mt-2 inline-flex items-center gap-1.5 bg-[#FF6B35] hover:bg-[#e85d04] text-white px-5 py-3 rounded-xl font-extrabold text-xs shadow-md transition-all hover:scale-102 cursor-pointer border-none outline-none"
                     >
-                      💬 Launch AI Assistant
+                      <Sparkles size={14} />
+                      <span>Launch AI Assistant</span>
                     </button>
                   )}
                 </div>
@@ -785,7 +796,10 @@ export default function HomePage() {
           <section className={`py-12 ${darkMode ? 'bg-gray-950' : 'bg-white'}`}>
             <div className="max-w-7xl mx-auto px-4 space-y-6 animate-fade-up">
               <div>
-                <h2 className="text-lg font-black uppercase tracking-wider font-poppins">🔄 Buy Again / Recently Viewed</h2>
+                <h2 className="text-lg font-black uppercase tracking-wider font-poppins flex items-center gap-2">
+                  <RotateCcw size={18} className="text-emerald-600" />
+                  <span>Buy Again / Recently Viewed</span>
+                </h2>
                 <p className="text-gray-405 text-xs font-semibold">Quick checkout on products you checked out recently</p>
               </div>
               
@@ -805,7 +819,10 @@ export default function HomePage() {
           <div className="max-w-7xl mx-auto px-4 space-y-6 animate-fade-up">
             <div className="flex items-center justify-between">
               <div>
-                <h2 className="text-lg font-black uppercase tracking-wider font-poppins">🔥 Bestseller Staples</h2>
+                <h2 className="text-lg font-black uppercase tracking-wider font-poppins flex items-center gap-2">
+                  <Flame size={18} className="text-orange-500" />
+                  <span>Bestseller Staples</span>
+                </h2>
                 <p className="text-gray-400 text-xs font-semibold">Daily grocery items most popular in your area</p>
               </div>
               <button type="button" onClick={() => setCurrentPage('products')} className="text-green-600 text-xs font-bold hover:underline flex items-center gap-1 cursor-pointer bg-transparent border-none outline-none p-0">
@@ -823,7 +840,9 @@ export default function HomePage() {
           <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-[#FF6B35] to-red-650 p-6 sm:p-8">
             <div className="relative z-10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
               <div>
-                <span className="bg-white/20 text-white text-[10px] font-black uppercase tracking-wider px-3 py-1 rounded-full">Limited Coupon Alert 🎉</span>
+                <span className="bg-white/20 text-white text-[10px] font-black uppercase tracking-wider px-3 py-1 rounded-full inline-flex items-center gap-1">
+                  <Tag size={10} /> Limited Coupon Alert
+                </span>
                 <h3 className="text-xl sm:text-2xl font-black text-white mt-2 font-poppins">Get 20% OFF on your first purchase!</h3>
                 <p className="text-orange-100 mt-1 text-xs font-semibold">Use code: <span className="font-bold bg-white text-orange-655 px-2 py-0.5 rounded-lg">KRISHNA20</span></p>
               </div>
@@ -834,7 +853,9 @@ export default function HomePage() {
                 Claim Offer →
               </button>
             </div>
-            <div className="absolute right-4 top-4 text-7xl opacity-20 select-none">🥦</div>
+            <div className="absolute right-4 top-4 text-white/10 select-none">
+              <ShoppingBag size={80} strokeWidth={1} />
+            </div>
           </div>
         </section>
 
@@ -843,7 +864,10 @@ export default function HomePage() {
           <div className="max-w-7xl mx-auto px-4 space-y-6 animate-fade-up">
             <div className="flex items-center justify-between">
               <div>
-                <h2 className="text-lg font-black uppercase tracking-wider font-poppins">🌿 Organic & Fresh</h2>
+                <h2 className="text-lg font-black uppercase tracking-wider font-poppins flex items-center gap-2">
+                  <Leaf size={18} className="text-emerald-600" />
+                  <span>Organic & Fresh</span>
+                </h2>
                 <p className="text-gray-400 text-xs font-semibold">100% organic, healthy daily essentials</p>
               </div>
               <button type="button" onClick={() => setCurrentPage('products')} className="text-green-600 text-xs font-bold hover:underline flex items-center gap-1 cursor-pointer bg-transparent border-none outline-none p-0">
@@ -864,7 +888,8 @@ export default function HomePage() {
             } grid md:grid-cols-3 gap-6 items-center animate-fade-up`}>
               <div className="md:col-span-2 space-y-4">
                 <h2 className="text-lg font-black flex items-center gap-2 font-poppins">
-                  🏪 About Krishna Kirana Store
+                  <Store size={20} className="text-emerald-600" />
+                  <span>About Krishna Kirana Store</span>
                 </h2>
                 <div className={`text-xs leading-relaxed space-y-3 ${darkMode ? 'text-gray-300' : 'text-gray-650'}`}>
                   <p>
@@ -878,9 +903,12 @@ export default function HomePage() {
                 </div>
                 <div className="flex flex-wrap gap-2 pt-2">
                   {['Bhanpur', 'Karond', 'Vidisha Road', 'Kalyan Nagar'].map(tag => (
-                    <span key={tag} className={`text-[10px] font-bold px-3 py-1 rounded-full ${
+                    <span key={tag} className={`text-[10px] font-bold px-3 py-1 rounded-full flex items-center gap-1 ${
                       darkMode ? 'bg-gray-800 text-green-404' : 'bg-green-50 text-green-700'
-                    }`}>📍 Active in {tag}</span>
+                    }`}>
+                      <MapPin size={10} />
+                      <span>Active in {tag}</span>
+                    </span>
                   ))}
                 </div>
               </div>
@@ -903,7 +931,10 @@ export default function HomePage() {
         <section className={`py-12 ${darkMode ? 'bg-gray-950' : 'bg-white'}`}>
           <div className="max-w-7xl mx-auto px-4 space-y-6 animate-fade-up">
             <div>
-              <h2 className="text-lg font-black uppercase tracking-wider font-poppins">💬 Customer Testimonials (Google Reviews)</h2>
+              <h2 className="text-lg font-black uppercase tracking-wider font-poppins flex items-center gap-2">
+                <MessageSquare size={18} className="text-emerald-600" />
+                <span>Customer Testimonials (Google Reviews)</span>
+              </h2>
               <p className="text-gray-405 text-xs font-semibold">Real opinions from verified shoppers in Bhopal</p>
             </div>
             <div className="grid md:grid-cols-3 gap-4">
@@ -941,7 +972,10 @@ export default function HomePage() {
           <div className="max-w-7xl mx-auto px-4">
             <div className={`rounded-3xl overflow-hidden border shadow-premium animate-fade-up ${darkMode ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-200'}`}>
               <div className="p-6">
-                <h2 className={`text-base font-black mb-1 font-poppins ${darkMode ? 'text-white' : 'text-gray-900'}`}>📍 Visit Our Storefront</h2>
+                <h2 className={`text-base font-black mb-1 font-poppins flex items-center gap-2 ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                  <MapPin size={18} className="text-emerald-600" />
+                  <span>Visit Our Storefront</span>
+                </h2>
                 <p className="text-gray-500 text-xs">If you prefer shopping in person, come visit our main warehouse outlet</p>
               </div>
               <div className="relative border-b dark:border-gray-800">
@@ -992,7 +1026,8 @@ export default function HomePage() {
                     : 'border-gray-250 bg-gray-55 text-gray-550 hover:text-[#FF6B35] hover:border-gray-300'
                 }`}
               >
-                🛡️ Admin Login Panel
+                <Shield size={14} className="text-emerald-500" />
+                <span>Admin Login Panel</span>
               </button>
             </div>
           </div>

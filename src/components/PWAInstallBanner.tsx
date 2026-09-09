@@ -67,7 +67,7 @@ export default function PWAInstallBanner() {
         console.log(`PWA install user choice: ${outcome}`);
         if (outcome === 'accepted') {
           setShowBanner(false);
-          toast.success('Thank you for installing Krishna Kirana! 🎉');
+          toast.success('Thank you for installing Krishna Kirana!');
         }
         setDeferredPrompt(null);
       } catch (err) {
@@ -76,18 +76,15 @@ export default function PWAInstallBanner() {
     } else {
       // Manual installation guide based on platform
       if (platform === 'ios') {
-        toast('To install: Tap the Share button 📤 and choose "Add to Home Screen".', {
-          icon: '📱',
+        toast('To install: Tap the Share button and choose "Add to Home Screen".', {
           duration: 6000
         });
       } else if (platform === 'android') {
         toast('To install: Tap the browser menu (3-dots) and choose "Install App" or "Add to Home screen".', {
-          icon: '📱',
           duration: 6000
         });
       } else {
         toast('To install: Click the install icon in your browser address bar or click browser settings -> "Install Krishna Kirana".', {
-          icon: '💻',
           duration: 6000
         });
       }

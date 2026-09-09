@@ -1,4 +1,4 @@
-import { MapPin, Phone, Mail, Clock, Navigation, MessageCircle, ChevronLeft, ExternalLink } from 'lucide-react';
+import { MapPin, Phone, Mail, Clock, Navigation, MessageCircle, ChevronLeft, ExternalLink, Truck, Package } from 'lucide-react';
 import { useStore } from '../store/useStore';
 
 export default function LocationPage() {
@@ -85,7 +85,7 @@ export default function LocationPage() {
             {/* Contact Info */}
             <div className={`rounded-3xl border p-6 ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'} shadow-lg`}>
               <h2 className={`font-black text-lg mb-5 flex items-center gap-2 ${darkMode ? 'text-white' : 'text-gray-900'}`}>
-                <span className="text-2xl">📍</span> Shop Info
+                <MapPin size={22} className="text-emerald-600" /> Shop Info
               </h2>
 
               <div className="space-y-4">
@@ -150,12 +150,14 @@ export default function LocationPage() {
               className="flex items-center justify-center gap-3 w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white py-4 rounded-2xl font-bold text-base shadow-lg hover:shadow-xl transition-all hover:scale-[1.02]"
             >
               <MessageCircle size={20} />
-              💬 WhatsApp Order Now
+              WhatsApp Order Now
             </a>
 
             {/* Delivery Info */}
             <div className={`rounded-2xl border p-5 ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
-              <h3 className={`font-bold text-sm mb-3 ${darkMode ? 'text-white' : 'text-gray-900'}`}>🛵 Delivery Info</h3>
+              <h3 className={`font-bold text-sm mb-3 flex items-center gap-2 ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                <Truck size={16} className="text-emerald-600" /> Delivery Info
+              </h3>
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between">
                   <span className={darkMode ? 'text-gray-400' : 'text-gray-500'}>Free Delivery Above</span>
@@ -177,7 +179,9 @@ export default function LocationPage() {
         {/* Track Order CTA */}
         <div className={`mt-6 rounded-3xl border p-6 flex flex-col sm:flex-row items-center justify-between gap-4 ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
           <div>
-            <h3 className={`font-black text-lg ${darkMode ? 'text-white' : 'text-gray-900'}`}>📦 Track Your Order</h3>
+            <h3 className={`font-black text-lg flex items-center gap-2 ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+              <Package size={22} className="text-emerald-600" /> Track Your Order
+            </h3>
             <p className={`text-sm mt-1 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Enter your Order ID and mobile number to see live delivery status</p>
           </div>
           <button

@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { ChevronDown, X, SlidersHorizontal, Store } from 'lucide-react';
+import { ChevronDown, X, SlidersHorizontal, Store, Search } from 'lucide-react';
 import { useStore } from '../store/useStore';
 import ProductCard from '../components/ProductCard';
 
@@ -116,7 +116,7 @@ export default function ProductsPage() {
           {selectedCat && (
             <>
               <span>/</span>
-              <span className="text-green-600 font-extrabold">{selectedCat.emoji} {selectedCat.name}</span>
+              <span className="text-green-600 font-extrabold">{selectedCat.name}</span>
             </>
           )}
         </div>
@@ -205,7 +205,7 @@ export default function ProductsPage() {
                       : 'hover:bg-gray-100 dark:hover:bg-gray-800'
                   }`}
                 >
-                  🏪 All Stores
+                  <span className="flex items-center gap-1.5"><Store size={12} className="text-emerald-600" /> All Stores</span>
                 </button>
                 {activeBranches.map(br => (
                   <button
@@ -217,7 +217,7 @@ export default function ProductsPage() {
                         : 'hover:bg-gray-100 dark:hover:bg-gray-800'
                     }`}
                   >
-                    🏪 {(br.name || '').replace(' (Main Branch)', '')}
+                    <span className="flex items-center gap-1.5"><Store size={12} className="text-emerald-600" /> {(br.name || '').replace(' (Main Branch)', '')}</span>
                   </button>
                 ))}
               </div>
@@ -235,7 +235,7 @@ export default function ProductsPage() {
             }`}>
               <div>
                 <h1 className="text-lg font-black dark:text-white">
-                  {searchQuery ? `Search results for "${searchQuery}"` : selectedCat ? `${selectedCat.emoji} ${selectedCat.name}` : '🛍️ Grocery Catalog'}
+                  {searchQuery ? `Search results for "${searchQuery}"` : selectedCat ? selectedCat.name : 'Grocery Catalog'}
                 </h1>
                 <p className="text-gray-400 text-xs font-semibold mt-0.5">
                   Showing {filtered.length} products
@@ -325,7 +325,9 @@ export default function ProductsPage() {
             {/* Products Catalog Grid */}
             {filtered.length === 0 ? (
               <div className="text-center py-20 bg-white dark:bg-gray-900 rounded-3xl border border-gray-200/60 dark:border-gray-800 max-w-md mx-auto shadow-sm">
-                <div className="text-5xl mb-4">🔍</div>
+                <div className="w-14 h-14 mx-auto mb-4 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 flex items-center justify-center text-emerald-600">
+                  <Search size={28} />
+                </div>
                 <h3 className="text-base font-extrabold mb-1">No matches found</h3>
                 <p className="text-gray-500 text-xs px-6">We couldn't find any products fitting your active filters. Try resetting price ranges or store selection.</p>
                 <button

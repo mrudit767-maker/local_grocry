@@ -1,4 +1,4 @@
-import { X, Printer, Share2 } from 'lucide-react';
+import { X, Printer, Share2, FileText, Phone, Clock, MapPin } from 'lucide-react';
 import { useStore, Order } from '../store/useStore';
 
 interface OrderInvoiceModalProps {
@@ -79,7 +79,7 @@ export default function OrderInvoiceModal({ order, onClose }: OrderInvoiceModalP
         {/* Header */}
         <div className="flex items-center justify-between p-5 border-b dark:border-gray-800 no-print">
           <h3 className="font-extrabold text-sm flex items-center gap-2">
-            🧾 Order Invoice & Bill Generator
+            <FileText size={18} className="text-emerald-600" /> Order Invoice & Bill Generator
           </h3>
           <button onClick={onClose} className="p-1.5 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-400 cursor-pointer no-print">
             <X size={18} />
@@ -111,16 +111,22 @@ export default function OrderInvoiceModal({ order, onClose }: OrderInvoiceModalP
             <div>
               <h4 className="text-[10px] uppercase font-bold tracking-wider text-gray-400">Bill To:</h4>
               <p className="text-xs font-black text-gray-950 mt-1">{order.customer.name}</p>
-              <p className="text-xs text-gray-600 mt-0.5">📞 +91 {order.customer.phone.replace(/[\s-+]/g, '').slice(-10)}</p>
+              <p className="text-xs text-gray-600 mt-0.5 flex items-center gap-1">
+                <Phone size={11} className="text-gray-400" /> +91 {order.customer.phone.replace(/[\s-+]/g, '').slice(-10)}
+              </p>
             </div>
             <div>
               <h4 className="text-[10px] uppercase font-bold tracking-wider text-gray-400">Ship To Address:</h4>
               <p className="text-xs text-gray-600 mt-1 leading-normal">{order.customer.address}</p>
               {order.deliverySlot && (
-                <p className="text-xs text-green-700 font-bold mt-1">🕒 Delivery Slot: {order.deliverySlot}</p>
+                <p className="text-xs text-green-700 font-bold mt-1 flex items-center gap-1">
+                  <Clock size={11} /> Delivery Slot: {order.deliverySlot}
+                </p>
               )}
               {order.locationUrl && (
-                <p className="text-[10px] text-blue-600 font-semibold mt-1">📍 Linked GPS Navigation Enabled</p>
+                <p className="text-[10px] text-blue-600 font-semibold mt-1 flex items-center gap-1">
+                  <MapPin size={11} /> Linked GPS Navigation Enabled
+                </p>
               )}
             </div>
           </div>

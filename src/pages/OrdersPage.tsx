@@ -1,4 +1,4 @@
-import { Package, Clock, CheckCircle, XCircle, Truck, ChefHat, ChevronDown, ChevronUp, FileText } from 'lucide-react';
+import { Package, Clock, CheckCircle, XCircle, Truck, ChefHat, ChevronDown, ChevronUp, FileText, Star } from 'lucide-react';
 import { useState } from 'react';
 import { useStore } from '../store/useStore';
 import { Order } from '../store/useStore';
@@ -150,7 +150,7 @@ function OrderCard({ order, onViewInvoice, onGiveFeedback }: { order: Order; onV
                     onClick={() => onGiveFeedback(order)}
                     className="w-full flex items-center justify-center gap-1.5 bg-yellow-50 hover:bg-yellow-100 dark:bg-yellow-950/20 text-yellow-700 dark:text-yellow-400 text-xs font-black px-4 py-2.5 rounded-xl border border-yellow-200/50 cursor-pointer shadow-sm animate-pulse"
                   >
-                    ⭐ Share Feedback
+                    <Star size={13} fill="currentColor" /> Share Feedback
                   </button>
                 )}
               </div>
@@ -172,14 +172,18 @@ export default function OrdersPage() {
       <div className="max-w-2xl mx-auto px-4">
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h1 className={`text-2xl font-black ${darkMode ? 'text-white' : 'text-gray-900'}`}>📦 My Orders</h1>
+            <h1 className={`text-2xl font-black flex items-center gap-2.5 ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+              <Package size={26} className="text-emerald-600" /> My Orders
+            </h1>
             <p className="text-gray-500 text-sm mt-0.5">{orders.length} order{orders.length !== 1 ? 's' : ''} placed</p>
           </div>
         </div>
 
         {orders.length === 0 ? (
           <div className="text-center py-24">
-            <div className="text-6xl mb-4">📭</div>
+            <div className="w-20 h-20 mx-auto mb-4 rounded-3xl bg-emerald-50 dark:bg-emerald-950/40 flex items-center justify-center text-emerald-600">
+              <Package size={36} />
+            </div>
             <h3 className={`text-xl font-bold mb-2 ${darkMode ? 'text-white' : 'text-gray-900'}`}>No orders yet</h3>
             <p className="text-gray-500 mb-6">Start shopping and your orders will appear here.</p>
             <button onClick={() => setCurrentPage('products')} className="bg-green-600 text-white px-6 py-3 rounded-xl font-bold hover:bg-green-700 transition-all cursor-pointer">

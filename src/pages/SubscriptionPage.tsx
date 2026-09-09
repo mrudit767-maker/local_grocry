@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useStore } from '../store/useStore';
-import { X, RefreshCw } from 'lucide-react';
+import { X, RefreshCw, Package, Calendar, FileText, MapPin } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { Product } from '../data/products';
 import SubscriptionInvoiceModal from '../components/SubscriptionInvoiceModal';
@@ -69,8 +69,8 @@ export default function SubscriptionPage() {
 
         {/* Subscribe Options */}
         <section className="space-y-4">
-          <h2 className="text-base font-extrabold flex items-center gap-1.5">
-            📦 Subscribe to Essentials
+          <h2 className="text-base font-extrabold flex items-center gap-2">
+            <Package size={18} className="text-emerald-600" /> Subscribe to Essentials
           </h2>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
             {subscriptionEligibleProducts.map(p => (
@@ -113,8 +113,8 @@ export default function SubscriptionPage() {
 
         {/* Active Subscriptions */}
         <section className="space-y-4">
-          <h2 className="text-base font-extrabold flex items-center gap-1.5">
-            🗓️ Active Subscriptions ({activeSubs.length})
+          <h2 className="text-base font-extrabold flex items-center gap-2">
+            <Calendar size={18} className="text-emerald-600" /> Active Subscriptions ({activeSubs.length})
           </h2>
           {activeSubs.length === 0 ? (
             <div className={`p-8 rounded-3xl border text-center ${
@@ -159,9 +159,9 @@ export default function SubscriptionPage() {
                               pincode: sub.customer.pincode
                             });
                           }}
-                          className="px-2.5 py-1.5 rounded-lg bg-green-50 hover:bg-green-100 dark:bg-green-950/20 text-green-600 dark:text-green-400 text-[10px] font-bold border border-green-200/50 cursor-pointer"
+                          className="px-2.5 py-1.5 rounded-lg bg-green-50 hover:bg-green-100 dark:bg-green-950/20 text-green-600 dark:text-green-400 text-[10px] font-bold border border-green-200/50 cursor-pointer flex items-center gap-1"
                         >
-                          🧾 Bill
+                          <FileText size={11} /> Bill
                         </button>
                         <button
                           onClick={() => cancelSubscription(sub.id)}
@@ -186,7 +186,7 @@ export default function SubscriptionPage() {
             }`}>
               <div className="flex items-center justify-between mb-4 pb-2 border-b dark:border-gray-700">
                 <h3 className="font-extrabold text-sm flex items-center gap-2">
-                  📅 Set Up Recurring Delivery
+                  <Calendar size={16} className="text-emerald-600" /> Set Up Recurring Delivery
                 </h3>
                 <button onClick={() => setSelectedProduct(null)} className="p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-400">
                   <X size={18} />
@@ -276,7 +276,9 @@ export default function SubscriptionPage() {
 
                 {/* Delivery details */}
                 <div className="space-y-3 pt-3 border-t dark:border-gray-700">
-                  <p className="font-extrabold">📍 Delivery Location</p>
+                  <p className="font-extrabold flex items-center gap-1.5">
+                    <MapPin size={14} className="text-emerald-600" /> Delivery Location
+                  </p>
                   <div className="grid grid-cols-2 gap-3">
                     <div className="col-span-2">
                       <label className="block mb-1.5">Customer Name *</label>

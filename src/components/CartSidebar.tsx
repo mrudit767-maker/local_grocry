@@ -57,10 +57,9 @@ export default function CartSidebar() {
         {/* Free delivery banner */}
         {subtotal > 0 && subtotal < storeSettings.freeDeliveryAbove && (
           <div className="bg-gradient-to-r from-green-50 to-emerald-50 border-b border-green-100 px-4 py-2">
-            <p className="text-green-700 text-xs font-medium flex items-center gap-1">
+            <p className="text-green-700 text-xs font-semibold flex items-center gap-1.5">
               <Tag size={12} />
               Add ₹{storeSettings.freeDeliveryAbove - subtotal} more for FREE delivery!
-              <span className="ml-1 font-bold">🚀</span>
             </p>
             <div className="mt-1.5 h-1.5 rounded-full bg-green-200 overflow-hidden">
               <div
@@ -155,8 +154,8 @@ export default function CartSidebar() {
               </div>
               <div className="flex justify-between text-sm">
                 <span className={darkMode ? 'text-gray-400' : 'text-gray-600'}>Delivery Fee</span>
-                <span className={deliveryFee === 0 ? 'text-green-600 font-semibold' : `font-semibold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
-                  {deliveryFee === 0 ? 'FREE 🎉' : `₹${deliveryFee}`}
+                <span className={deliveryFee === 0 ? 'text-green-600 font-extrabold uppercase text-xs tracking-wider' : `font-semibold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                  {deliveryFee === 0 ? 'FREE' : `₹${deliveryFee}`}
                 </span>
               </div>
               <div className={`flex justify-between text-base font-bold border-t pt-2 ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}>

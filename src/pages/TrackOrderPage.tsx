@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Search, ChevronLeft, Package, CheckCircle, Truck, Clock, XCircle, Phone, MessageCircle, ChefHat, ShieldCheck } from 'lucide-react';
+import { Search, ChevronLeft, Package, CheckCircle, Truck, Clock, XCircle, Phone, MessageCircle, ChefHat, ShieldCheck, MapPin, ShoppingBag } from 'lucide-react';
 import { useStore } from '../store/useStore';
 
 const STATUS_STEPS = [
@@ -62,7 +62,7 @@ export default function TrackOrderPage() {
           darkMode ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-200/60'
         }`}>
           <h2 className="text-sm font-extrabold flex items-center gap-2 mb-4">
-            🔍 Enter Tracking Details
+            <Search size={16} className="text-emerald-600" /> Enter Tracking Details
           </h2>
           <div className="grid sm:grid-cols-2 gap-4">
             <div>
@@ -105,7 +105,9 @@ export default function TrackOrderPage() {
           <div className={`p-8 rounded-3xl border text-center shadow-premium ${
             darkMode ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-200'
           }`}>
-            <span className="text-5xl mb-4 block">🔍</span>
+            <div className="w-16 h-16 mx-auto mb-4 rounded-3xl bg-emerald-50 dark:bg-emerald-950/40 flex items-center justify-center text-emerald-600">
+              <Search size={32} />
+            </div>
             <h3 className="text-base font-extrabold mb-1">Order Details Not Found</h3>
             <p className="text-gray-500 text-xs px-6 mb-6">Double check your Order ID and mobile number or contact customer care to sync your offline details.</p>
             <a
@@ -148,7 +150,7 @@ export default function TrackOrderPage() {
 
               {foundOrder.deliverySlot && (
                 <div className="mt-4 pt-4 border-t border-dashed dark:border-gray-800 flex items-center gap-2 text-xs font-semibold text-green-600 bg-green-50/50 dark:bg-green-950/20 px-3 py-2 rounded-xl">
-                  <span>🕒 Scheduled delivery slot: <strong>{foundOrder.deliverySlot}</strong></span>
+                  <span className="flex items-center gap-1.5"><Clock size={13} /> Scheduled delivery slot: <strong>{foundOrder.deliverySlot}</strong></span>
                 </div>
               )}
 
@@ -179,7 +181,9 @@ export default function TrackOrderPage() {
               <div className={`p-6 rounded-3xl border shadow-premium ${
                 darkMode ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-200/60'
               }`}>
-                <h3 className="text-xs font-black uppercase tracking-wider text-gray-400 mb-6">🚚 Live Tracking Timeline</h3>
+                <h3 className="text-xs font-black uppercase tracking-wider text-gray-400 mb-6 flex items-center gap-2">
+                  <Truck size={14} className="text-emerald-600" /> Live Tracking Timeline
+                </h3>
                 
                 <div className="relative pl-2">
                   {STATUS_STEPS.map((step, idx) => {
@@ -245,7 +249,9 @@ export default function TrackOrderPage() {
               <div className={`p-6 rounded-3xl border shadow-premium ${
                 darkMode ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-200/60'
               } space-y-4`}>
-                <h3 className="text-xs font-black uppercase tracking-wider text-gray-450">🚴 Delivery Partner Details</h3>
+                <h3 className="text-xs font-black uppercase tracking-wider text-gray-400 flex items-center gap-1.5">
+                  <Truck size={14} className="text-emerald-600" /> Delivery Partner Details
+                </h3>
                 <div className="flex gap-4 items-center">
                   <img 
                     src="https://images.pexels.com/photos/220453/pexels-photo-220453.jpeg?auto=compress&cs=tinysrgb&fit=crop&h=100&w=100" 
@@ -278,7 +284,9 @@ export default function TrackOrderPage() {
               <div className={`p-5 rounded-3xl border ${
                 darkMode ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-200/60'
               } space-y-2`}>
-                <h3 className="text-xs font-black uppercase tracking-wider text-gray-450">📍 GPS Navigation Linked</h3>
+                <h3 className="text-xs font-black uppercase tracking-wider text-gray-400 flex items-center gap-1.5">
+                  <MapPin size={14} className="text-emerald-600" /> GPS Navigation Linked
+                </h3>
                 <p className="text-[10px] text-gray-500 leading-relaxed font-semibold">
                   Your device GPS coordinates have been loaded directly into the delivery driver's navigator app to guarantee precision routing.
                 </p>
@@ -297,7 +305,9 @@ export default function TrackOrderPage() {
             <div className={`p-6 rounded-3xl border shadow-premium ${
               darkMode ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-200/60'
             }`}>
-              <h3 className="text-xs font-black uppercase tracking-wider text-gray-400 mb-4">🛒 Order Content</h3>
+              <h3 className="text-xs font-black uppercase tracking-wider text-gray-400 mb-4 flex items-center gap-1.5">
+                <ShoppingBag size={14} className="text-emerald-600" /> Order Content
+              </h3>
               <div className="space-y-2.5 max-h-60 overflow-y-auto pr-1">
                 {foundOrder.items.map(item => (
                   <div key={item.product.id} className={`flex items-center gap-3 p-3 rounded-2xl ${darkMode ? 'bg-gray-800' : 'bg-gray-50'}`}>

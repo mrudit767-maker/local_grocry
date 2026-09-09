@@ -24,10 +24,10 @@ const DEFAULT_BANNERS: HomeBanner[] = [
   {
     id: 'banner_default_1',
     title: 'Festival Special Offers',
-    subtitle: '🪔 Up to 50% Off on all Grocery Staples',
+    subtitle: 'Up to 50% Off on all Grocery Staples',
     cta: 'Shop Staples',
     bg: 'from-[#d00000] via-[#dc2f02] to-[#FF6B35]',
-    emoji: '🪔',
+    emoji: '',
     badge: 'Festival Special',
     image: 'https://images.unsplash.com/photo-1589301760014-d929f3979dbc?auto=compress&cs=tinysrgb&w=1000&h=450&fit=crop',
     linkCategory: 'rice-atta'
@@ -35,10 +35,10 @@ const DEFAULT_BANNERS: HomeBanner[] = [
   {
     id: 'banner_default_2',
     title: 'Direct From Farms',
-    subtitle: '🥬 100% Fresh Vegetables & Fruits Daily',
+    subtitle: '100% Fresh Vegetables & Fruits Daily',
     cta: 'Shop Fresh',
     bg: 'from-[#1b4332] via-[#2d6a4f] to-[#2ECC71]',
-    emoji: '🥬',
+    emoji: '',
     badge: 'Farm Fresh',
     image: 'https://images.unsplash.com/photo-1542838132-92c53300491e?auto=compress&cs=tinysrgb&w=1000&h=450&fit=crop',
     linkCategory: 'fruits-veggies'
@@ -46,10 +46,10 @@ const DEFAULT_BANNERS: HomeBanner[] = [
   {
     id: 'banner_default_3',
     title: 'Double The Savings',
-    subtitle: '⭐ Buy 1 Get 1 Free on Selected Snacks',
+    subtitle: 'Buy 1 Get 1 Free on Selected Snacks',
     cta: 'Get Deal',
     bg: 'from-[#0077b6] via-[#0096c7] to-[#03045e]',
-    emoji: '⭐',
+    emoji: '',
     badge: 'Buy 1 Get 1 Free',
     image: 'https://images.unsplash.com/photo-1590080875515-8a3a8dc5735e?auto=compress&cs=tinysrgb&w=1000&h=450&fit=crop',
     linkCategory: 'biscuits-snacks'
@@ -57,10 +57,10 @@ const DEFAULT_BANNERS: HomeBanner[] = [
   {
     id: 'banner_default_4',
     title: 'Exclusive Welcome Gift',
-    subtitle: '🎁 Free Surprise Gift on First Order Above ₹499',
+    subtitle: 'Free Surprise Gift on First Order Above ₹499',
     cta: 'Shop Now',
     bg: 'from-[#7b2cbf] via-[#5a189a] to-[#FF6B35]',
-    emoji: '🎁',
+    emoji: '',
     badge: 'New Customer Gift',
     image: 'https://images.unsplash.com/photo-1549465220-1a8b9238cd48?auto=compress&cs=tinysrgb&w=1000&h=450&fit=crop',
     linkCategory: 'all'
@@ -78,13 +78,13 @@ const syncProductsWithFeedback = async (url: string, products: Product[]) => {
     }));
     const success = await saveProductsToSheet(url, sheetSafeProducts);
     if (success) {
-      toast.success('✅ Products catalog successfully synced with Google Sheets!', { id: toastId });
+      toast.success('Products catalog successfully synced with Google Sheets!', { id: toastId });
     } else {
-      toast.error('❌ Failed to sync catalog. Please check your Google Sheets webhook or Apps Script version.', { id: toastId, duration: 6000 });
+      toast.error('Failed to sync catalog. Please check your Google Sheets webhook or Apps Script version.', { id: toastId, duration: 6000 });
     }
   } catch (err) {
     console.error('Failed to sync products to Google Sheet:', err);
-    toast.error('❌ Network error syncing products catalog with Google Sheets.', { id: toastId });
+    toast.error('Network error syncing products catalog with Google Sheets.', { id: toastId });
   }
 };
 
@@ -543,7 +543,7 @@ export const useStore = create<StoreState>()(
             const newNotifications: CustomerNotification[] = pendingRequests.map(_ => ({
               id: `notif_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
               type: 'restock' as const,
-              title: '🎉 Product Back in Stock!',
+              title: 'Product Back in Stock!',
               message: `${oldProduct?.name || 'Your requested product'} is now available! Order now before it sells out.`,
               productId: id,
               productImage: oldProduct?.image,
@@ -558,7 +558,7 @@ export const useStore = create<StoreState>()(
 
             // Admin toast
             toast.success(
-              `✅ ${pendingRequests.length} customer${pendingRequests.length > 1 ? 's' : ''} notified that "${oldProduct?.name || 'Product'}" is back in stock!`,
+              `${pendingRequests.length} customer${pendingRequests.length > 1 ? 's' : ''} notified that "${oldProduct?.name || 'Product'}" is back in stock!`,
               { duration: 5000 }
             );
           }
@@ -580,7 +580,7 @@ export const useStore = create<StoreState>()(
         };
         // Save locally immediately
         set(s => ({ stockRequests: [newReq, ...(s.stockRequests || [])] }));
-        toast.success('Request registered! We will notify you when this item is back in stock. 🔔');
+        toast.success('Request registered! We will notify you when this item is back in stock.');
 
         if (isSupabaseConfigured()) {
           saveStockRequestToSupabase({
@@ -660,7 +660,7 @@ export const useStore = create<StoreState>()(
         const newCat = {
           id,
           name: cat.name.trim(),
-          emoji: cat.emoji.trim() || '📦',
+          emoji: cat.emoji.trim() || '',
           color: cat.color || 'from-green-500 to-emerald-600',
           image: cat.image?.trim() || '',
         };
@@ -728,10 +728,10 @@ export const useStore = create<StoreState>()(
         const ids = get().wishlistIds || [];
         if (ids.includes(productId)) {
           set({ wishlistIds: ids.filter(id => id !== productId) });
-          toast.success('Removed from Wishlist 💔');
+          toast.success('Removed from Wishlist');
         } else {
           set({ wishlistIds: [...ids, productId] });
-          toast.success('Added to Wishlist! ❤️');
+          toast.success('Added to Wishlist!');
         }
       },
 
@@ -751,14 +751,14 @@ export const useStore = create<StoreState>()(
           createdAt: new Date().toISOString()
         };
         set(s => ({ subscriptions: [newSub, ...(s.subscriptions || [])] }));
-        toast.success('Subscription started successfully! 📅');
+        toast.success('Subscription started successfully!');
       },
 
       cancelSubscription: (id) => {
         set(s => ({
           subscriptions: (s.subscriptions || []).map(sub => sub.id === id ? { ...sub, status: 'cancelled' as const } : sub)
         }));
-        toast.success('Subscription cancelled 🛑');
+        toast.success('Subscription cancelled');
       },
 
       customerLogin: (customer) => set({ currentCustomer: customer }),
@@ -768,7 +768,7 @@ export const useStore = create<StoreState>()(
         const id = `banner_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
         const updated = [...(get().banners || []), { ...banner, id }];
         set({ banners: updated });
-        toast.success('Banner added successfully! 📢');
+        toast.success('Banner added successfully!');
 
         if (isSupabaseConfigured()) {
           bulkUpsertBannersToSupabase(updated).catch(err => console.error('Supabase banner sync error:', err));
@@ -785,7 +785,7 @@ export const useStore = create<StoreState>()(
       updateBanner: (id, updates) => {
         const updated = (get().banners || []).map((b) => (b.id === id ? { ...b, ...updates } : b));
         set({ banners: updated });
-        toast.success('Banner updated! ✏️');
+        toast.success('Banner updated!');
 
         if (isSupabaseConfigured()) {
           bulkUpsertBannersToSupabase(updated).catch(err => console.error('Supabase banner sync error:', err));
@@ -801,7 +801,7 @@ export const useStore = create<StoreState>()(
       deleteBanner: (id) => {
         const updated = (get().banners || []).filter((b) => b.id !== id);
         set({ banners: updated });
-        toast.success('Banner deleted! 🗑️');
+        toast.success('Banner deleted!');
 
         if (isSupabaseConfigured()) {
           bulkUpsertBannersToSupabase(updated).catch(err => console.error('Supabase banner sync error:', err));
@@ -1040,7 +1040,7 @@ export const useStore = create<StoreState>()(
           };
         }
 
-        const toastId = toast.loading('Migrating all store data to Supabase... 🚀');
+        const toastId = toast.loading('Migrating all store data to Supabase...');
         try {
           const { products, categories, banners, storeSettings } = get();
 
@@ -1065,14 +1065,14 @@ export const useStore = create<StoreState>()(
             await saveSettingsToSupabase(storeSettings);
           }
 
-          toast.success(`✅ Successfully migrated ${products.length} products, categories, banners, and settings to Supabase! 🎉`, { id: toastId, duration: 6000 });
+          toast.success(`Successfully migrated ${products.length} products, categories, banners, and settings to Supabase!`, { id: toastId, duration: 6000 });
           return {
             success: true,
             message: `Successfully migrated ${products.length} products to Supabase!`,
           };
         } catch (err: any) {
           console.error('Migration to Supabase error:', err);
-          toast.error(`❌ Migration failed: ${err?.message || 'Unknown error'}`, { id: toastId, duration: 6000 });
+          toast.error(`Migration failed: ${err?.message || 'Unknown error'}`, { id: toastId, duration: 6000 });
           return {
             success: false,
             message: err?.message || 'Migration failed',

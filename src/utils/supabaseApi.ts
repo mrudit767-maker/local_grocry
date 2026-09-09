@@ -164,7 +164,7 @@ export async function fetchCategoriesFromSupabase(): Promise<Category[] | null> 
     return data.map((r) => ({
       id: r.id,
       name: r.name,
-      emoji: r.emoji || '📦',
+      emoji: r.emoji || '',
       color: r.color || 'from-green-500 to-emerald-600',
       image: r.image || undefined,
     }));
@@ -182,7 +182,7 @@ export async function bulkUpsertCategoriesToSupabase(categories: Category[]): Pr
     const rows = categories.map((c) => ({
       id: c.id,
       name: c.name,
-      emoji: c.emoji || '📦',
+      emoji: c.emoji || '',
       color: c.color || 'from-green-500 to-emerald-600',
       image: c.image || null,
     }));

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Mail, User, Phone, MapPin, Navigation, ArrowRight, LogIn, ChevronLeft, ShieldCheck } from 'lucide-react';
+import { Mail, User, Phone, MapPin, Navigation, ArrowRight, LogIn, ChevronLeft, ShieldCheck, CheckCircle, Info } from 'lucide-react';
 import { useStore } from '../store/useStore';
 import { saveCustomerToSheet, fetchCustomerFromSheet } from '../utils/googleSheets';
 import { isSupabaseConfigured } from '../lib/supabase';
@@ -110,17 +110,15 @@ export default function CustomerLoginPage() {
       }
 
       // Don't show OTP on screen - user will check their email inbox
-      toast.success(`📧 Verification code sent to ${email}\nPlease check your Inbox & Spam folder.`, {
+      toast.success(`Verification code sent to ${email}\nPlease check your Inbox & Spam folder.`, {
         duration: 7000,
         style: { fontWeight: 'bold' },
-        icon: '✉️',
       });
     } else {
       // Demo mode - show OTP on screen
       toast(
-        `🔑 Demo OTP: ${code}\n(No webhook set - using test mode)`,
+        `Demo OTP: ${code}\n(No webhook set - using test mode)`,
         {
-          icon: '💬',
           duration: 30000,
           style: {
             background: '#064e3b',
@@ -263,7 +261,7 @@ export default function CustomerLoginPage() {
       // 1. Try to use fetched customer profile details from Google Sheets
       if (profile) {
         customerLogin(profile);
-        toast.success(`OTP Verified! Welcome back, ${profile.name}! 🎉`);
+        toast.success(`OTP Verified! Welcome back, ${profile.name}!`);
       } else {
         // 2. Fallback: Try to find past orders matching email or phone
         const cleanPendingPhone = pendingLoginPhone.replace(/[\s-+]/g, '').slice(-10);
@@ -283,7 +281,7 @@ export default function CustomerLoginPage() {
             city: pastOrder.customer.city,
             pincode: pastOrder.customer.pincode,
           });
-          toast.success(`OTP Verified! Welcome back, ${pastOrder.customer.name}! 🎉`);
+          toast.success(`OTP Verified! Welcome back, ${pastOrder.customer.name}!`);
         } else {
           // 3. Last fallback: Log in as default customer
           customerLogin({
@@ -295,7 +293,7 @@ export default function CustomerLoginPage() {
             pincode: '',
           });
           toast.success('OTP Verified! Logged in successfully!');
-          toast('Go to checkout or edit profile to complete your address.', { icon: '📝' });
+          toast('Go to checkout or edit profile to complete your address.');
         }
       }
       setCurrentPage('home');
@@ -326,7 +324,7 @@ export default function CustomerLoginPage() {
         }).catch(err => console.error('Failed to save customer in background:', err));
       }
       customerLogin(pendingRegData);
-      toast.success(`OTP Verified! Welcome, ${pendingRegData.name}! 🛍️`);
+      toast.success(`OTP Verified! Welcome, ${pendingRegData.name}!`);
       setCurrentPage('home');
     }
     
@@ -437,12 +435,14 @@ export default function CustomerLoginPage() {
 
               {/* Status / Alert Banner */}
               {isDemoWebhook ? (
-                <div className={`p-3.5 rounded-xl text-[11px] leading-relaxed border ${darkMode ? 'bg-amber-950/20 border-amber-800/40 text-amber-300' : 'bg-amber-50 border-amber-200 text-amber-850'}`}>
-                  💡 <b>Demo Mode:</b> OTP code is shown in the notification at the top. Configure your Google Sheet Webhook URL in Admin Settings to enable real email delivery.
+                <div className={`p-3.5 rounded-xl text-[11px] leading-relaxed border flex items-start gap-2 ${darkMode ? 'bg-amber-950/20 border-amber-800/40 text-amber-300' : 'bg-amber-50 border-amber-200 text-amber-800'}`}>
+                  <Info size={14} className="shrink-0 mt-0.5 text-amber-600" />
+                  <span><b>Demo Mode:</b> OTP code is shown in the notification at the top. Configure your Google Sheet Webhook URL in Admin Settings to enable real email delivery.</span>
                 </div>
               ) : (
-                <div className={`p-3.5 rounded-xl text-[11px] leading-relaxed border ${darkMode ? 'bg-emerald-950/20 border-emerald-800/40 text-emerald-300' : 'bg-emerald-50 border-emerald-200 text-emerald-850'}`}>
-                  📧 <b>Email Sent!</b> Check your <b>Inbox</b> and <b>Spam/Junk</b> folder. Code expires in 5 minutes. Sent from your Google account via Apps Script.
+                <div className={`p-3.5 rounded-xl text-[11px] leading-relaxed border flex items-start gap-2 ${darkMode ? 'bg-emerald-950/20 border-emerald-800/40 text-emerald-300' : 'bg-emerald-50 border-emerald-200 text-emerald-800'}`}>
+                  <Mail size={14} className="shrink-0 mt-0.5 text-emerald-600" />
+                  <span><b>Email Sent!</b> Check your <b>Inbox</b> and <b>Spam/Junk</b> folder. Code expires in 5 minutes. Sent from your Google account via Apps Script.</span>
                 </div>
               )}
 
@@ -452,7 +452,7 @@ export default function CustomerLoginPage() {
                   disabled={loading || otpVal.length < 6}
                   className="w-full flex items-center justify-center gap-2 bg-green-600 hover:bg-green-700 disabled:opacity-50 disabled:hover:bg-green-600 text-white py-3.5 rounded-xl font-bold transition-all shadow-md font-extrabold"
                 >
-                  {loading ? 'Verifying...' : 'Verify & Continue 🚀'}
+                  {loading ? 'Verifying...' : 'Verify & Continue'}
                 </button>
 
                 <div className="flex items-center justify-between text-xs mt-2 px-1">
@@ -505,8 +505,8 @@ export default function CustomerLoginPage() {
                   />
                   <Mail size={16} className="absolute right-3 top-3.5 text-gray-400" />
                 </div>
-                <p className={`text-[10px] mt-1.5 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>
-                  📧 A 6-digit OTP will be sent to this email address
+                <p className={`text-[10px] mt-1.5 flex items-center gap-1.5 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>
+                  <Mail size={11} className="text-emerald-600" /> A 6-digit OTP will be sent to this email address
                 </p>
               </div>
 

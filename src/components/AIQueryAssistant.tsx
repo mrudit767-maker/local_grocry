@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useMemo } from 'react';
-import { Send, X, Plus, Check, AlertCircle, ChefHat, Search } from 'lucide-react';
+import { Send, X, Plus, Check, AlertCircle, ChefHat, Search, ShoppingBag, Bell, Utensils } from 'lucide-react';
 import { useStore } from '../store/useStore';
 import { Product } from '../data/products';
 import { RECIPE_DB, getDynamicIngredients } from '../data/recipes';
@@ -244,7 +244,7 @@ export default function AIQueryAssistant({ onClose }: { onClose?: () => void }) 
   const [messages, setMessages] = useState<Message[]>([
     {
       sender: 'ai',
-      text: `🧑‍🍳 Namaste! Main hoon aapka Kirana AI Assistant!\n\nMere paas ${Object.keys(RECIPE_DB).length}+ Indian recipes ki jankari hai. Aap koi bhi dish ka naam type karein jaise:\n• Paneer Butter Masala\n• Biryani\n• Gajar Halwa\n• Chole Bhature\n• Maggi\n\nMain aapko us dish ke saare ingredients ki list dunga aur bataunga ki hamare store mein kya available hai! 🛒`
+      text: `Namaste! Main hoon aapka Kirana AI Assistant!\n\nMere paas ${Object.keys(RECIPE_DB).length}+ Indian recipes ki jankari hai. Aap koi bhi dish ka naam type karein jaise:\n• Paneer Butter Masala\n• Biryani\n• Gajar Halwa\n• Chole Bhature\n• Maggi\n\nMain aapko us dish ke saare ingredients ki list dunga aur bataunga ki hamare store mein kya available hai!`
     }
   ]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -310,7 +310,7 @@ export default function AIQueryAssistant({ onClose }: { onClose?: () => void }) 
       return {
         responseText: `**${capitalizedName}** ke liye ingredients aur store availability:`,
         recipeInfo: {
-          recipeName: capitalizedName + ' 🍲',
+          recipeName: capitalizedName,
           requiredIngredients: dynamicRequired,
           availableProducts: available,
           outOfStockProducts: outOfStock,
@@ -334,7 +334,7 @@ export default function AIQueryAssistant({ onClose }: { onClose?: () => void }) 
       if (greetings.some(g => normalized.includes(g))) {
         setMessages(prev => [...prev, {
           sender: 'ai',
-          text: `Namaste! 🙏 Main aapka Kirana AI hoon. Koi bhi dish ka naam type karein aur main:\n✅ Us dish ke complete ingredients bataunga\n✅ Hamare store mein available items dikhaunga\n✅ Cart mein add karne ka option dunga\n\nTotal ${Object.keys(RECIPE_DB).length}+ recipes available hain! 🍛`
+          text: `Namaste! Main aapka Kirana AI Assistant hoon. Koi bhi dish ka naam type karein aur main:\n• Us dish ke complete ingredients bataunga\n• Hamare store mein available items dikhaunga\n• Cart mein add karne ka option dunga\n\nTotal ${Object.keys(RECIPE_DB).length}+ recipes available hain!`
         }]);
       } else {
         // Check if it directly matches a recipe first
@@ -350,8 +350,8 @@ export default function AIQueryAssistant({ onClose }: { onClose?: () => void }) 
             sender: 'ai',
             text: `"${userMsg}" ke liye kya chahiye aapko?`,
             options: [
-              { label: '🍲 Recipe Ingredients Dekho', actionKey: 'recipe', query: userMsg },
-              { label: '🔍 Products Dhundo', actionKey: 'products', query: userMsg }
+              { label: 'Recipe Ingredients Dekho', actionKey: 'recipe', query: userMsg },
+              { label: 'Products Dhundo', actionKey: 'products', query: userMsg }
             ]
           }]);
         }
@@ -361,7 +361,7 @@ export default function AIQueryAssistant({ onClose }: { onClose?: () => void }) 
 
   const handleOptionClick = (actionKey: 'products' | 'recipe', optQuery: string, msgIndex: number) => {
     setMessages(prev => prev.map((m, idx) => idx === msgIndex ? { ...m, options: undefined } : m));
-    const choiceText = actionKey === 'products' ? `🔍 Products: "${optQuery}"` : `🍲 Recipe: "${optQuery}"`;
+    const choiceText = actionKey === 'products' ? `Products: "${optQuery}"` : `Recipe: "${optQuery}"`;
     setMessages(prev => [...prev, { sender: 'user', text: choiceText }]);
 
     setTimeout(() => {
@@ -391,7 +391,7 @@ export default function AIQueryAssistant({ onClose }: { onClose?: () => void }) 
 
   const handleAddAll = (items: Product[]) => {
     items.forEach(item => addToCart(item));
-    toast.success(`${items.length} ingredients cart mein add ho gaye! 🛒`);
+    toast.success(`${items.length} ingredients cart mein add ho gaye!`);
   };
 
   const handleSuggestionClick = (suggestion: string) => {
@@ -417,7 +417,7 @@ export default function AIQueryAssistant({ onClose }: { onClose?: () => void }) 
             <ChefHat size={16} className="text-yellow-300" />
           </div>
           <div>
-            <h3 className="font-extrabold text-sm leading-none">Kirana AI Chef 🧑‍🍳</h3>
+            <h3 className="font-extrabold text-sm leading-none">Kirana AI Chef</h3>
             <span className="text-[10px] opacity-80 font-medium">{Object.keys(RECIPE_DB).length}+ recipes • Ingredients matcher</span>
           </div>
         </div>
@@ -547,9 +547,9 @@ export default function AIQueryAssistant({ onClose }: { onClose?: () => void }) 
                           <button
                             type="button"
                             onClick={() => setNotifyProduct(p)}
-                            className="px-2 py-1 text-[9px] font-black rounded-lg bg-orange-500 hover:bg-orange-655 text-white transition-all cursor-pointer border-none outline-none shrink-0"
+                            className="px-2 py-1 text-[9px] font-black rounded-lg bg-orange-500 hover:bg-orange-600 text-white transition-all cursor-pointer border-none outline-none shrink-0 flex items-center gap-1"
                           >
-                            🔔 Notify Me
+                            <Bell size={10} /> Notify Me
                           </button>
                         </div>
                       </div>
@@ -581,16 +581,16 @@ export default function AIQueryAssistant({ onClose }: { onClose?: () => void }) 
                         <div className="flex items-center gap-2 min-w-0">
                           <AlertCircle size={13} className="text-red-400 shrink-0" />
                           <div className="min-w-0">
-                            <span className="font-bold text-[11px] text-gray-550 dark:text-gray-450 block truncate">{ing}</span>
+                            <span className="font-bold text-[11px] text-gray-500 dark:text-gray-400 block truncate">{ing}</span>
                             <span className="text-[9px] text-red-400/80 block font-semibold">Store mein available nahi</span>
                           </div>
                         </div>
                         <button
                           type="button"
                           onClick={handleNotifyClick}
-                          className="px-2 py-1 text-[9px] font-black rounded-lg bg-red-500 hover:bg-red-600 text-white transition-all cursor-pointer border-none outline-none shrink-0"
+                          className="px-2 py-1 text-[9px] font-black rounded-lg bg-red-500 hover:bg-red-600 text-white transition-all cursor-pointer border-none outline-none shrink-0 flex items-center gap-1"
                         >
-                          🔔 Notify Me
+                          <Bell size={10} /> Notify Me
                         </button>
                       </div>
                     );
@@ -608,7 +608,7 @@ export default function AIQueryAssistant({ onClose }: { onClose?: () => void }) 
                       onClick={() => handleAddAll(msg.recipeInfo!.availableProducts)}
                       className="flex items-center gap-1.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-extrabold text-[10px] px-3 py-2 rounded-xl cursor-pointer shadow-sm border-none outline-none transition-all hover:scale-[1.02]"
                     >
-                      🛒 Sab Cart Mein Add Karo
+                      <ShoppingBag size={12} /> Sab Cart Mein Add Karo
                     </button>
                   </div>
                 )}
@@ -627,7 +627,7 @@ export default function AIQueryAssistant({ onClose }: { onClose?: () => void }) 
                     onClick={() => handleAddAll(msg.recommendedProducts!)}
                     className="text-[10px] font-extrabold text-green-600 dark:text-green-400 hover:underline flex items-center gap-1 border-none bg-transparent cursor-pointer"
                   >
-                    🛒 Sab Add Karo
+                    <ShoppingBag size={11} /> Sab Add Karo
                   </button>
                 </div>
                 <div className="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto custom-scroll pr-1">
@@ -666,13 +666,13 @@ export default function AIQueryAssistant({ onClose }: { onClose?: () => void }) 
                 key={i}
                 type="button"
                 onClick={() => handleSuggestionClick(s)}
-                className={`text-[10px] font-bold px-2.5 py-1.5 rounded-full border cursor-pointer transition-all hover:scale-[1.02] border-none outline-none ${
+                className={`text-[10px] font-bold px-2.5 py-1.5 rounded-full border cursor-pointer transition-all hover:scale-[1.02] border-none outline-none flex items-center gap-1.5 ${
                   darkMode
                     ? 'bg-gray-800 text-emerald-400 hover:bg-gray-700'
                     : 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
                 }`}
               >
-                🍽️ {s}
+                <Utensils size={10} /> {s}
               </button>
             ))}
           </div>

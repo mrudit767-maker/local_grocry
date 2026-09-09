@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { X, Star, Sparkles } from 'lucide-react';
+import { X, Star, Sparkles, MessageSquare } from 'lucide-react';
 import { useStore, Order } from '../store/useStore';
 import toast from 'react-hot-toast';
 
@@ -61,8 +61,8 @@ export default function OrderFeedbackModal({ order, onClose }: Props) {
           darkMode ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-100'
         } z-10`}>
           <div>
-            <h3 className={`font-black text-base ${darkMode ? 'text-white' : 'text-gray-900'}`}>
-              📝 Order Feedback
+            <h3 className={`font-black text-base flex items-center gap-2 ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+              <MessageSquare size={16} className="text-emerald-600" /> Order Feedback
             </h3>
             <p className="text-[10px] font-bold text-gray-400 mt-0.5">Order ID: {order.id}</p>
           </div>
@@ -110,11 +110,11 @@ export default function OrderFeedbackModal({ order, onClose }: Props) {
               })}
             </div>
             {storeRating > 0 && (
-              <p className="text-xs text-green-600 font-extrabold animate-pulse">
-                {storeRating === 5 ? 'Excellent! 😍' : 
-                 storeRating === 4 ? 'Good! 😊' : 
-                 storeRating === 3 ? 'Average. 🙂' : 
-                 storeRating === 2 ? 'Poor. 🙁' : 'Very Bad. 😢'}
+              <p className="text-xs text-green-600 font-extrabold">
+                {storeRating === 5 ? 'Excellent Experience' : 
+                 storeRating === 4 ? 'Good Experience' : 
+                 storeRating === 3 ? 'Average' : 
+                 storeRating === 2 ? 'Needs Improvement' : 'Unsatisfactory'}
               </p>
             )}
           </div>

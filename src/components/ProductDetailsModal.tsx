@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { X, Star, ShoppingCart, Heart, Shield, CheckCircle, Bell } from 'lucide-react';
+import { X, Star, ShoppingCart, Heart, Shield, CheckCircle, Bell, Truck } from 'lucide-react';
 import { useStore } from '../store/useStore';
 import { Product } from '../data/products';
 import toast from 'react-hot-toast';
@@ -193,7 +193,7 @@ export default function ProductDetailsModal({ productId, onClose }: Props) {
     };
     
     addToCart(variantProduct);
-    toast.success(`🛒 Added ${variantProduct.name} (Pack of ${selectedPack}) to Cart!`);
+    toast.success(`Added ${variantProduct.name} (Pack of ${selectedPack}) to Cart!`);
   };
 
   const handleBuyNow = () => {
@@ -518,7 +518,7 @@ export default function ProductDetailsModal({ productId, onClose }: Props) {
                 Delivery Details
               </p>
               <div className="flex items-center gap-1.5">
-                <span className="text-sm">🛵</span>
+                <Truck size={15} className="text-emerald-600 shrink-0" />
                 <p className="text-xs font-bold">
                   Delivery to <b className="text-green-600">Bhopal (All localities)</b>
                 </p>

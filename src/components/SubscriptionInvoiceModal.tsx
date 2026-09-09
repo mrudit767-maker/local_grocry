@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { X, Printer, Share2 } from 'lucide-react';
+import { X, Printer, Share2, FileText, Phone, Clock, Calendar } from 'lucide-react';
 import { useStore } from '../store/useStore';
 
 interface SubscriptionInvoiceModalProps {
@@ -117,7 +117,7 @@ export default function SubscriptionInvoiceModal({ customer, onClose }: Subscrip
         {/* Header */}
         <div className="flex items-center justify-between p-5 border-b dark:border-gray-800 no-print">
           <h3 className="font-extrabold text-sm flex items-center gap-2">
-            🧾 Subscription Invoice & Billing
+            <FileText size={18} className="text-emerald-600" /> Subscription Invoice & Billing
           </h3>
           <button onClick={onClose} className="p-1.5 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-400 cursor-pointer no-print">
             <X size={18} />
@@ -149,12 +149,16 @@ export default function SubscriptionInvoiceModal({ customer, onClose }: Subscrip
             <div>
               <h4 className="text-[10px] uppercase font-bold tracking-wider text-gray-400">Bill To:</h4>
               <p className="text-xs font-black text-gray-900 mt-1">{customer.name}</p>
-              <p className="text-xs text-gray-600 mt-0.5">📞 +91 {customerPhoneClean}</p>
+              <p className="text-xs text-gray-600 mt-0.5 flex items-center gap-1">
+                <Phone size={11} className="text-gray-400" /> +91 {customerPhoneClean}
+              </p>
             </div>
             <div>
               <h4 className="text-[10px] uppercase font-bold tracking-wider text-gray-400">Delivery Location:</h4>
               <p className="text-xs text-gray-600 mt-1 leading-normal">{customer.address}, {customer.city} - {customer.pincode}</p>
-              <p className="text-xs text-green-700 font-bold mt-1">🕒 Slot: {activeSubs[0]?.deliverySlot || 'N/A'}</p>
+              <p className="text-xs text-green-700 font-bold mt-1 flex items-center gap-1">
+                <Clock size={11} /> Slot: {activeSubs[0]?.deliverySlot || 'N/A'}
+              </p>
             </div>
           </div>
 
@@ -222,8 +226,8 @@ export default function SubscriptionInvoiceModal({ customer, onClose }: Subscrip
           <div className="border-t border-dashed border-gray-300 pt-6">
             <div className="flex justify-between items-center mb-3">
               <div>
-                <h4 className="text-xs font-black uppercase text-gray-900 tracking-wider">
-                  📅 Delivery Log Checklist
+                <h4 className="text-xs font-black uppercase text-gray-900 tracking-wider flex items-center gap-1.5">
+                  <Calendar size={14} className="text-emerald-600" /> Delivery Log Checklist
                 </h4>
                 <p className="text-[10px] text-gray-400 mt-0.5">Use this grid to check off daily deliveries as they arrive to keep accurate records.</p>
               </div>

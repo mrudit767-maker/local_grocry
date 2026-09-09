@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ChevronLeft, CreditCard, Smartphone, Banknote, Shield, CheckCircle, AlertCircle, Lock } from 'lucide-react';
+import { ChevronLeft, CreditCard, Smartphone, Banknote, Shield, CheckCircle, AlertCircle, Lock, MapPin, Clock, ShoppingBag, FileText, Zap, Store, Phone, Check } from 'lucide-react';
 import { useStore } from '../store/useStore';
 import toast from 'react-hot-toast';
 import { saveOrderToSheet, saveFullOrderToSheet, formatOrderForSheet } from '../utils/googleSheets';
@@ -56,7 +56,7 @@ export default function CheckoutPage() {
         const url = `https://www.google.com/maps?q=${latitude},${longitude}`;
         setLocationUrl(url);
         setGpsLoading(false);
-        toast.success('GPS Location Linked Successfully! 📍');
+        toast.success('GPS Location Linked Successfully!');
       },
       (error) => {
         setGpsLoading(false);
@@ -237,7 +237,7 @@ export default function CheckoutPage() {
 
       clearCart();
       setCurrentPage('order-success');
-      toast.success('Order placed successfully! 🎉');
+      toast.success('Order placed successfully!');
     } catch (err) {
       console.error('Order placement error:', err);
       toast.error(`Something went wrong: ${err instanceof Error ? err.message : String(err)}`);
@@ -282,7 +282,9 @@ export default function CheckoutPage() {
     return (
       <div className={`min-h-screen flex items-center justify-center ${darkMode ? 'bg-gray-950' : 'bg-gray-50'}`}>
         <div className="text-center">
-          <div className="text-6xl mb-4">🛒</div>
+          <div className="w-16 h-16 mx-auto mb-4 rounded-3xl bg-emerald-50 dark:bg-emerald-950/40 flex items-center justify-center text-emerald-600">
+            <ShoppingBag size={32} />
+          </div>
           <h2 className={`text-xl font-bold mb-2 ${darkMode ? 'text-white' : 'text-gray-900'}`}>Your cart is empty</h2>
           <button onClick={() => setCurrentPage('products')} className="bg-green-600 text-white px-6 py-2.5 rounded-xl font-semibold mt-4 hover:bg-green-700">
             Start Shopping
@@ -331,7 +333,9 @@ export default function CheckoutPage() {
             {step === 1 && (
               <div className={`p-6 rounded-2xl border ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5 border-b border-gray-150 dark:border-gray-700 pb-4">
-                  <h2 className={`text-lg font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>📍 Delivery Information</h2>
+                  <h2 className={`text-lg font-bold flex items-center gap-2 ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                    <MapPin size={20} className="text-emerald-600" /> Delivery Information
+                  </h2>
                   <button
                     type="button"
                     onClick={shareLocation}
@@ -345,15 +349,18 @@ export default function CheckoutPage() {
                     {gpsLoading ? (
                       <><div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" /> Fetching...</>
                     ) : locationUrl ? (
-                      '✓ GPS Location Linked'
+                      <span className="flex items-center gap-1.5"><Check size={14} className="text-emerald-600" /> GPS Location Linked</span>
                     ) : (
-                      '📍 Share GPS Location'
+                      <span className="flex items-center gap-1.5"><MapPin size={14} /> Share GPS Location</span>
                     )}
                   </button>
                 </div>
                 {locationUrl && (
                   <div className="mb-4 p-3 bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-900/50 rounded-xl flex items-center gap-2 text-xs font-semibold text-green-800 dark:text-green-400 animate-fadeIn">
-                    <span>📍 GPS coordinates successfully linked! Drivers will navigate directly to your device location.</span>
+                    <span className="flex items-center gap-1.5">
+                      <MapPin size={14} className="text-emerald-600 shrink-0" />
+                      GPS coordinates successfully linked! Drivers will navigate directly to your device location.
+                    </span>
                   </div>
                 )}
                 <div className="grid sm:grid-cols-2 gap-4">
@@ -392,15 +399,15 @@ export default function CheckoutPage() {
 
                 {/* Delivery Slots selector */}
                 <div className="mt-6 border-t border-gray-200 dark:border-gray-700 pt-5">
-                  <label className={`block text-xs font-bold uppercase tracking-wider mb-3 ${darkMode ? 'text-gray-300' : 'text-gray-500'}`}>
-                    🕒 Preferred Delivery Slot *
+                  <label className={`block text-xs font-bold uppercase tracking-wider mb-3 flex items-center gap-1.5 ${darkMode ? 'text-gray-300' : 'text-gray-500'}`}>
+                    <Clock size={13} className="text-emerald-600" /> Preferred Delivery Slot *
                   </label>
                   <div className="grid grid-cols-2 gap-3">
                     {[
-                      { id: '10 AM – 12 PM', label: '☀️ Morning (10 AM - 12 PM)' },
-                      { id: '12 PM – 2 PM', label: '☀️ Noon (12 PM - 2 PM)' },
-                      { id: '2 PM – 4 PM', label: '⛅ Afternoon (2 PM - 4 PM)' },
-                      { id: '6 PM – 8 PM', label: '🌙 Evening (6 PM - 8 PM)' },
+                      { id: '10 AM – 12 PM', label: 'Morning (10 AM - 12 PM)' },
+                      { id: '12 PM – 2 PM', label: 'Noon (12 PM - 2 PM)' },
+                      { id: '2 PM – 4 PM', label: 'Afternoon (2 PM - 4 PM)' },
+                      { id: '6 PM – 8 PM', label: 'Evening (6 PM - 8 PM)' },
                     ].map(slot => (
                       <button
                         key={slot.id}
@@ -432,7 +439,9 @@ export default function CheckoutPage() {
             {/* Step 2: Payment */}
             {step === 2 && (
               <div className={`p-6 rounded-2xl border ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
-                <h2 className={`text-lg font-bold mb-5 ${darkMode ? 'text-white' : 'text-gray-900'}`}>💳 Payment Method</h2>
+                <h2 className={`text-lg font-bold mb-5 flex items-center gap-2 ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                  <CreditCard size={20} className="text-emerald-600" /> Payment Method
+                </h2>
                 <div className="space-y-3">
                   {[
                     { id: 'cod', icon: Banknote, label: 'Cash on Delivery', desc: 'Pay when your order arrives', badge: 'Most Popular', color: 'text-green-600' },
@@ -479,24 +488,24 @@ export default function CheckoutPage() {
                         <button
                           type="button"
                           onClick={() => setQrType('dynamic')}
-                          className={`flex-1 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                          className={`flex-1 py-1.5 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition-all ${
                             qrType === 'dynamic'
                               ? 'bg-blue-600 text-white shadow-sm'
-                              : 'text-blue-700 dark:text-blue-350 hover:bg-blue-100/50 dark:hover:bg-gray-700/50'
+                              : 'text-blue-700 dark:text-blue-300 hover:bg-blue-100/50 dark:hover:bg-gray-700/50'
                           }`}
                         >
-                          ⚡ Auto-Amount QR
+                          <Zap size={13} /> Auto-Amount QR
                         </button>
                         <button
                           type="button"
                           onClick={() => setQrType('static')}
-                          className={`flex-1 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                          className={`flex-1 py-1.5 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition-all ${
                             qrType === 'static'
                               ? 'bg-blue-600 text-white shadow-sm'
-                              : 'text-blue-700 dark:text-blue-355 hover:bg-blue-100/50 dark:hover:bg-gray-700/50'
+                              : 'text-blue-700 dark:text-blue-300 hover:bg-blue-100/50 dark:hover:bg-gray-700/50'
                           }`}
                         >
-                          🏪 Store Official QR
+                          <Store size={13} /> Store Official QR
                         </button>
                       </div>
 
@@ -539,12 +548,12 @@ export default function CheckoutPage() {
 
                       {/* Mobile Launch Button */}
                       <div className="sm:hidden text-center">
-                        <p className="text-xs text-gray-450 mb-1.5">— OR —</p>
+                        <p className="text-xs text-gray-400 mb-1.5">— OR —</p>
                         <a 
                           href={upiUrl}
                           className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white py-3 px-4 rounded-xl font-bold text-sm shadow-md transition-all"
                         >
-                          📱 Pay via UPI App
+                          <Smartphone size={16} /> Pay via UPI App
                         </a>
                       </div>
 
@@ -561,8 +570,9 @@ export default function CheckoutPage() {
                           placeholder="e.g. 306512345678"
                           className="w-full px-4 py-3 rounded-xl border border-blue-200 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500"
                         />
-                        <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-1">
-                          ⚠️ Order is processed only after verifying the 12-digit UTR from your bank message/UPI app receipt.
+                        <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-1 flex items-center gap-1">
+                          <AlertCircle size={12} className="text-amber-500 shrink-0" />
+                          Order is processed only after verifying the 12-digit UTR from your bank message/UPI app receipt.
                         </p>
                       </div>
                     </div>
@@ -597,7 +607,9 @@ export default function CheckoutPage() {
             {/* Step 3: Review */}
             {step === 3 && (
               <div className={`p-6 rounded-2xl border ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
-                <h2 className={`text-lg font-bold mb-5 ${darkMode ? 'text-white' : 'text-gray-900'}`}>📋 Review Your Order</h2>
+                <h2 className={`text-lg font-bold mb-5 flex items-center gap-2 ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                  <FileText size={20} className="text-emerald-600" /> Review Your Order
+                </h2>
 
                 <div className="space-y-3 mb-5 max-h-60 overflow-y-auto pr-1">
                   {cart.map(item => (
@@ -617,9 +629,11 @@ export default function CheckoutPage() {
                   <p className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>{form.name}</p>
                   <p className="text-gray-500 text-sm">{form.phone}</p>
                   <p className="text-gray-500 text-sm">{form.address}, {form.city} - {form.pincode}</p>
-                  <p className="text-green-600 text-xs font-bold mt-1.5 flex items-center gap-1">🕒 Delivery Slot: {deliverySlot}</p>
+                  <p className="text-green-600 text-xs font-bold mt-1.5 flex items-center gap-1.5">
+                    <Clock size={13} /> Delivery Slot: {deliverySlot}
+                  </p>
                   <p className={`text-sm mt-3 font-medium ${darkMode ? 'text-white' : 'text-gray-900'}`}>
-                    Payment: {paymentMethod === 'cod' ? '💵 Cash on Delivery' : paymentMethod === 'upi' ? `📱 UPI (UTR: ${upiRefNo})` : '💳 Card (Razorpay)'}
+                    Payment: {paymentMethod === 'cod' ? 'Cash on Delivery (COD)' : paymentMethod === 'upi' ? `UPI Transfer (UTR: ${upiRefNo})` : 'Card / NetBanking (Razorpay)'}
                   </p>
                 </div>
 
@@ -691,7 +705,9 @@ export default function CheckoutPage() {
               <div>
                 <p className="text-[10px] uppercase font-bold tracking-widest opacity-80">Payment Request</p>
                 <h3 className="text-base font-black">{storeSettings.shopName}</h3>
-                <p className="text-[10px] mt-0.5 opacity-90">📞 {storeSettings.phone}</p>
+                <p className="text-[10px] mt-0.5 opacity-90 flex items-center gap-1">
+                  <Phone size={10} /> {storeSettings.phone}
+                </p>
               </div>
               <div className="text-right">
                 <span className="text-[10px] block opacity-80">Amount Payable</span>
@@ -827,9 +843,9 @@ export default function CheckoutPage() {
             
             {/* Trust footer badges */}
             <div className="bg-gray-50 dark:bg-gray-900/50 p-4 border-t dark:border-gray-800 flex justify-center gap-4 text-[10px] text-gray-400 font-bold">
-              <span>🔒 256-BIT SSL Encryption</span>
+              <span className="flex items-center gap-1.5"><Lock size={12} className="text-emerald-600" /> 256-BIT SSL Encryption</span>
               <span>•</span>
-              <span>💳 PCI-DSS Compliant</span>
+              <span className="flex items-center gap-1.5"><CreditCard size={12} className="text-emerald-600" /> PCI-DSS Compliant</span>
             </div>
           </div>
         </div>

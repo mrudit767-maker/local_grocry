@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Toaster, toast } from 'react-hot-toast';
 import { useStore } from './store/useStore';
-import { MessageCircle } from 'lucide-react';
+import { MessageCircle, MapPin, Phone, Mail, Clock, Home, ShoppingBag, Package, Truck, ChevronRight } from 'lucide-react';
 import Header from './components/Header';
 import CartSidebar from './components/CartSidebar';
 import HomePage from './pages/HomePage';
@@ -329,18 +329,19 @@ export default function App() {
                 <h3 className={`font-bold mb-3 ${darkMode ? 'text-white' : 'text-gray-900'}`}>Quick Links</h3>
                 <ul className="space-y-2">
                   {[
-                    { label: '🏠 Home', page: 'home' },
-                    { label: '🛍️ All Products', page: 'products' },
-                    { label: '📦 My Orders', page: 'orders' },
-                    { label: '📍 Our Location', page: 'location' },
-                    { label: '🚚 Track Order', page: 'track-order' },
+                    { label: 'Home', page: 'home', icon: Home },
+                    { label: 'All Products', page: 'products', icon: ShoppingBag },
+                    { label: 'My Orders', page: 'orders', icon: Package },
+                    { label: 'Our Location', page: 'location', icon: MapPin },
+                    { label: 'Track Order', page: 'track-order', icon: Truck },
                   ].map(link => (
                     <li key={link.label}>
                       <button
                         onClick={() => setCurrentPage(link.page as any)}
-                        className="text-gray-500 hover:text-green-600 cursor-pointer text-sm transition-colors"
+                        className="text-gray-500 hover:text-emerald-600 cursor-pointer text-sm transition-colors flex items-center gap-2"
                       >
-                        {link.label}
+                        <link.icon size={14} className="text-emerald-500 opacity-80" />
+                        <span>{link.label}</span>
                       </button>
                     </li>
                   ))}
@@ -352,11 +353,11 @@ export default function App() {
                 <h3 className={`font-bold mb-3 ${darkMode ? 'text-white' : 'text-gray-900'}`}>Categories</h3>
                 <ul className="space-y-2">
                   {[
-                    { label: '🌾 Rice & Atta', id: 'rice-atta' },
-                    { label: '🫙 Oils & Ghee', id: 'oils-ghee' },
-                    { label: '🫘 Dal & Pulses', id: 'dal-pulses' },
-                    { label: '🌶️ Spices & Masala', id: 'spices-masala' },
-                    { label: '🍪 Snacks & Biscuits', id: 'biscuits-snacks' }
+                    { label: 'Rice & Atta', id: 'rice-atta' },
+                    { label: 'Oils & Ghee', id: 'oils-ghee' },
+                    { label: 'Dal & Pulses', id: 'dal-pulses' },
+                    { label: 'Spices & Masala', id: 'spices' },
+                    { label: 'Snacks & Biscuits', id: 'biscuits-snacks' }
                   ].map(c => (
                     <li key={c.label}>
                       <button
@@ -364,9 +365,10 @@ export default function App() {
                           setSelectedCategory(c.id);
                           setCurrentPage('products');
                         }}
-                        className="text-gray-500 hover:text-green-600 cursor-pointer text-sm transition-colors bg-transparent border-none p-0 text-left outline-none"
+                        className="text-gray-500 hover:text-emerald-600 cursor-pointer text-sm transition-colors bg-transparent border-none p-0 text-left outline-none flex items-center gap-1.5"
                       >
-                        {c.label}
+                        <ChevronRight size={12} className="text-emerald-500 opacity-60" />
+                        <span>{c.label}</span>
                       </button>
                     </li>
                   ))}
@@ -376,27 +378,35 @@ export default function App() {
               {/* Contact */}
               <div>
                 <h3 className={`font-bold mb-3 ${darkMode ? 'text-white' : 'text-gray-900'}`}>Contact Us</h3>
-                <ul className="space-y-2 text-sm text-gray-500">
-                  <li>📍 {storeSettings.address}</li>
+                <ul className="space-y-2.5 text-sm text-gray-500">
+                  <li className="flex items-start gap-2">
+                    <MapPin size={15} className="text-emerald-500 shrink-0 mt-0.5" />
+                    <span>{storeSettings.address}</span>
+                  </li>
                   <li>
-                    <a href={`tel:${storeSettings.phone.replace(/\s/g,'')}`} className="hover:text-green-600 transition-colors">
-                      📞 {storeSettings.phone}
+                    <a href={`tel:${storeSettings.phone.replace(/\s/g,'')}`} className="hover:text-emerald-600 transition-colors flex items-center gap-2">
+                      <Phone size={14} className="text-emerald-500" />
+                      <span>{storeSettings.phone}</span>
                     </a>
                   </li>
                   <li>
-                    <a href={`mailto:${storeSettings.email}`} className="hover:text-green-600 transition-colors">
-                      ✉️ {storeSettings.email}
+                    <a href={`mailto:${storeSettings.email}`} className="hover:text-emerald-600 transition-colors flex items-center gap-2">
+                      <Mail size={14} className="text-emerald-500" />
+                      <span>{storeSettings.email}</span>
                     </a>
                   </li>
-                  <li>🕐 {storeSettings.businessHours}</li>
+                  <li className="flex items-center gap-2">
+                    <Clock size={14} className="text-emerald-500" />
+                    <span>{storeSettings.businessHours}</span>
+                  </li>
                 </ul>
                 <a
                   href={`https://wa.me/${storeSettings.whatsapp}?text=Hi! I want to place an order`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="mt-4 inline-flex items-center gap-2 bg-green-500 text-white px-4 py-2 rounded-xl text-sm font-semibold hover:bg-green-600 transition-colors"
+                  className="mt-4 inline-flex items-center gap-2 bg-gradient-to-r from-emerald-600 to-teal-600 text-white px-4 py-2.5 rounded-xl text-sm font-semibold hover:from-emerald-500 hover:to-teal-500 transition-all shadow-md shadow-emerald-600/10"
                 >
-                  💬 WhatsApp Order
+                  <MessageCircle size={15} /> WhatsApp Order
                 </a>
               </div>
             </div>

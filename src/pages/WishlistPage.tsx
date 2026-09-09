@@ -23,7 +23,9 @@ export default function WishlistPage() {
 
         {wishlistProducts.length === 0 ? (
           <div className="text-center py-20 bg-white dark:bg-gray-900 rounded-3xl border border-gray-200/60 dark:border-gray-800 max-w-md mx-auto shadow-sm">
-            <div className="text-5xl mb-4">❤️</div>
+            <div className="w-16 h-16 mx-auto mb-4 rounded-3xl bg-red-50 dark:bg-red-950/20 flex items-center justify-center text-red-500">
+              <Heart size={32} fill="currentColor" />
+            </div>
             <h2 className="text-lg font-bold mb-1">Your wishlist is empty</h2>
             <p className="text-gray-500 text-xs px-6">Explore our catalog and click on the heart icon on any product to save it here.</p>
             <button
