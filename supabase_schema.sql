@@ -1,14 +1,11 @@
--- ========================================================
--- Supabase Schema for Kirana / Grocery Store Application
--- Run this complete SQL script in your Supabase SQL Editor
--- ========================================================
+/* Supabase Schema for Kirana Grocery Store */
 
 -- 1. Create storage bucket for product images (Public access)
 INSERT INTO storage.buckets (id, name, public)
 VALUES ('product-images', 'product-images', true)
 ON CONFLICT (id) DO UPDATE SET public = true;
 
--- Storage policies for 'product-images' bucket
+-- Storage policies for product-images bucket
 DROP POLICY IF EXISTS "Public Access Product Images" ON storage.objects;
 CREATE POLICY "Public Access Product Images"
 ON storage.objects FOR SELECT
@@ -148,11 +145,7 @@ INSERT INTO public.store_settings (id, shop_name, tagline)
 VALUES ('main', 'Krishna Kirana', 'Premium Grocery')
 ON CONFLICT (id) DO NOTHING;
 
--- ========================================================
 -- Row Level Security (RLS) Configuration
--- Enable public access for the static web app (Anon key)
--- ========================================================
-
 ALTER TABLE public.products ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.categories ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.orders ENABLE ROW LEVEL SECURITY;
