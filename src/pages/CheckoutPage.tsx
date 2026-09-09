@@ -3,6 +3,9 @@ import { ChevronLeft, CreditCard, Smartphone, Banknote, Shield, CheckCircle, Ale
 import { useStore } from '../store/useStore';
 import toast from 'react-hot-toast';
 import { saveOrderToSheet, saveFullOrderToSheet, formatOrderForSheet } from '../utils/googleSheets';
+import { isSupabaseConfigured } from '../lib/supabase';
+import { saveOrderToSupabase } from '../utils/supabaseApi';
+import { Order } from '../store/useStore';
 import upiQrImage from '../assets/upi_qr.png';
 
 type PaymentMethod = 'cod' | 'upi' | 'razorpay';
@@ -142,11 +145,34 @@ export default function CheckoutPage() {
         deliverySlot,
       });
 
+      const orderId = `ORD${Date.now()}`;
+      const now = new Date().toISOString();
+
+      // Sync to Supabase
+      if (isSupabaseConfigured()) {
+        const orderForSupabase: Order = {
+          id: orderId,
+          date: now.split('T')[0],
+          items: cart,
+          total,
+          status: 'confirmed',
+          customerName: form.name,
+          phone: form.phone,
+          address: `${form.address}, ${form.landmark ? form.landmark + ', ' : ''}${form.city} - ${form.pincode}`,
+          deliverySlot,
+          paymentMethod: paymentMethod as any,
+          paymentStatus: paymentMethod === 'cod' ? 'pending' : 'paid',
+          upiRefNo: paymentMethod === 'upi' ? upiRefNo : undefined,
+          locationUrl,
+        };
+        saveOrderToSupabase(orderForSupabase)
+          .then(success => { if (success) console.log('✅ Order saved to Supabase'); })
+          .catch(err => console.error('Failed to save order to Supabase:', err));
+      }
+
       // Sync to Google Sheets (fire-and-forget, never blocks checkout)
       const webhookUrl = storeSettings.googleSheetProductsWebhookUrl || storeSettings.googleSheetWebhookUrl;
       if (webhookUrl) {
-        const orderId = `ORD${Date.now()}`;
-        const now = new Date().toISOString();
         const orderObj = {
           id: orderId,
           items: cart,

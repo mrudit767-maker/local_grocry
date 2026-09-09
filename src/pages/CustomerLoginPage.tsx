@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { Mail, User, Phone, MapPin, Navigation, ArrowRight, LogIn, ChevronLeft, ShieldCheck } from 'lucide-react';
 import { useStore } from '../store/useStore';
 import { saveCustomerToSheet, fetchCustomerFromSheet } from '../utils/googleSheets';
+import { isSupabaseConfigured } from '../lib/supabase';
+import { fetchCustomerFromSupabase, saveCustomerToSupabase } from '../utils/supabaseApi';
 import toast from 'react-hot-toast';
 
 export default function CustomerLoginPage() {
@@ -164,8 +166,27 @@ export default function CustomerLoginPage() {
     setResendTimer(60);
     setOtpVal('');
 
-    // Pre-fetch customer profile from Google Sheets in background
-    if (storeSettings.googleSheetWebhookUrl) {
+    // Pre-fetch customer profile from Supabase or Google Sheets in background
+    if (isSupabaseConfigured()) {
+      const promise = fetchCustomerFromSupabase(input)
+        .then(profile => {
+          if (profile) {
+            const data = {
+              name: profile.name,
+              phone: profile.phone,
+              email: profile.email,
+              address: profile.address,
+              city: profile.city,
+              pincode: profile.pincode,
+            };
+            setFetchedCustomerProfile(data);
+            return data;
+          }
+          return null;
+        })
+        .catch(() => null);
+      setProfilePromise(promise);
+    } else if (storeSettings.googleSheetWebhookUrl) {
       const promise = fetchCustomerFromSheet(storeSettings.googleSheetWebhookUrl, input)
         .then(profile => {
           if (profile) {
@@ -279,6 +300,19 @@ export default function CustomerLoginPage() {
       }
       setCurrentPage('home');
     } else if (pendingAction === 'register' && pendingRegData) {
+      if (isSupabaseConfigured()) {
+        saveCustomerToSupabase({
+          id: `cust_${Date.now()}`,
+          name: pendingRegData.name,
+          phone: pendingRegData.phone,
+          email: pendingRegData.email,
+          address: pendingRegData.address,
+          city: pendingRegData.city,
+          pincode: pendingRegData.pincode,
+          dateRegistered: new Date().toLocaleDateString('en-IN'),
+        }).catch(err => console.error('Failed to save customer to Supabase:', err));
+      }
+
       if (storeSettings.googleSheetWebhookUrl) {
         // Run in background without blocking to make verification instant
         saveCustomerToSheet(storeSettings.googleSheetWebhookUrl, {

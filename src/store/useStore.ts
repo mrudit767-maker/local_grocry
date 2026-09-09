@@ -2,6 +2,22 @@ import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { Product, PRODUCTS, CATEGORIES } from '../data/products';
 import { saveProductsToSheet, fetchProductsFromSheet, saveSettingsToSheet, fetchSettingsFromSheet, fetchOrdersFromSheet, saveStockRequestToSheet } from '../utils/googleSheets';
+import { isSupabaseConfigured } from '../lib/supabase';
+import {
+  fetchProductsFromSupabase,
+  saveProductToSupabase,
+  deleteProductFromSupabase,
+  bulkUpsertProductsToSupabase,
+  fetchCategoriesFromSupabase,
+  bulkUpsertCategoriesToSupabase,
+  fetchOrdersFromSupabase,
+  saveOrderToSupabase,
+  fetchSettingsFromSupabase,
+  saveSettingsToSupabase,
+  fetchBannersFromSupabase,
+  bulkUpsertBannersToSupabase,
+  saveStockRequestToSupabase,
+} from '../utils/supabaseApi';
 import toast from 'react-hot-toast';
 
 const DEFAULT_BANNERS: HomeBanner[] = [
@@ -206,6 +222,8 @@ export interface StoreSettings {
   bulkPackDiscount2?: number;
   bulkPackSize3?: number;
   bulkPackDiscount3?: number;
+  supabaseUrl?: string;
+  supabaseAnonKey?: string;
 }
 
 const DEFAULT_SETTINGS: StoreSettings = {
@@ -236,6 +254,8 @@ const DEFAULT_SETTINGS: StoreSettings = {
   bulkPackDiscount2: 5,
   bulkPackSize3: 6,
   bulkPackDiscount3: 10,
+  supabaseUrl: '',
+  supabaseAnonKey: '',
 };
 
 export interface StoreState {
@@ -361,6 +381,7 @@ export interface StoreState {
   fetchProducts: () => Promise<void>;
   fetchSettings: () => Promise<void>;
   fetchOrders: () => Promise<void>;
+  migrateDataToSupabase: () => Promise<{ success: boolean; message: string }>;
 }
 
 export const useStore = create<StoreState>()(
@@ -477,8 +498,14 @@ export const useStore = create<StoreState>()(
 
       addProduct: (product) => {
         const id = `prod_${Date.now()}`;
-        const updated = [...get().products, { ...product, id, updatedAt: Date.now() }];
+        const newProduct = { ...product, id, updatedAt: Date.now() };
+        const updated = [...get().products, newProduct];
         set({ products: updated });
+
+        if (isSupabaseConfigured()) {
+          saveProductToSupabase(newProduct).catch(err => console.error('Supabase addProduct error:', err));
+        }
+
         const url = get().storeSettings.googleSheetProductsWebhookUrl || get().storeSettings.googleSheetWebhookUrl;
         if (url) {
           syncProductsWithFeedback(url, updated);
@@ -489,8 +516,13 @@ export const useStore = create<StoreState>()(
         const oldProduct = get().products.find(p => p.id === id);
         const wasOutOfStock = oldProduct ? !oldProduct.inStock : false;
 
-        const updated = get().products.map(p => p.id === id ? { ...p, ...updates, updatedAt: Date.now() } : p);
+        const updatedProduct = { ...oldProduct, ...updates, updatedAt: Date.now() };
+        const updated = get().products.map(p => p.id === id ? updatedProduct as Product : p);
         set({ products: updated });
+
+        if (isSupabaseConfigured()) {
+          saveProductToSupabase(updatedProduct as Product).catch(err => console.error('Supabase updateProduct error:', err));
+        }
 
         // If product is now in stock, trigger notifications for pending requests
         if (updates.inStock === true && wasOutOfStock) {
@@ -550,6 +582,16 @@ export const useStore = create<StoreState>()(
         set(s => ({ stockRequests: [newReq, ...(s.stockRequests || [])] }));
         toast.success('Request registered! We will notify you when this item is back in stock. 🔔');
 
+        if (isSupabaseConfigured()) {
+          saveStockRequestToSupabase({
+            productId: req.productId,
+            productName: req.productName,
+            productImage: req.productImage,
+            customerName: req.customerName,
+            customerContact: req.customerContact,
+          }).catch(err => console.warn('Could not sync stock request to Supabase:', err));
+        }
+
         // Also push to Google Sheets so admin sees it on ALL devices
         const webhookUrl = get().storeSettings?.googleSheetWebhookUrl;
         if (webhookUrl) {
@@ -594,6 +636,11 @@ export const useStore = create<StoreState>()(
       deleteProduct: (id) => {
         const updated = get().products.filter(p => p.id !== id);
         set({ products: updated });
+
+        if (isSupabaseConfigured()) {
+          deleteProductFromSupabase(id).catch(err => console.error('Supabase deleteProduct error:', err));
+        }
+
         const url = get().storeSettings.googleSheetProductsWebhookUrl || get().storeSettings.googleSheetWebhookUrl;
         if (url) {
           syncProductsWithFeedback(url, updated);
@@ -645,6 +692,11 @@ export const useStore = create<StoreState>()(
       updateStoreSettings: (settings) => {
         const updated = { ...get().storeSettings, ...settings };
         set({ storeSettings: updated });
+
+        if (isSupabaseConfigured()) {
+          saveSettingsToSupabase(updated).catch(err => console.error('Supabase saveSettings error:', err));
+        }
+
         const url = updated.googleSheetProductsWebhookUrl || updated.googleSheetWebhookUrl;
         if (url) {
           const payload = { ...updated, banners: get().banners };
@@ -717,6 +769,11 @@ export const useStore = create<StoreState>()(
         const updated = [...(get().banners || []), { ...banner, id }];
         set({ banners: updated });
         toast.success('Banner added successfully! 📢');
+
+        if (isSupabaseConfigured()) {
+          bulkUpsertBannersToSupabase(updated).catch(err => console.error('Supabase banner sync error:', err));
+        }
+
         const url = get().storeSettings.googleSheetProductsWebhookUrl || get().storeSettings.googleSheetWebhookUrl;
         if (url) {
           // Strip base64 images before saving to Sheets (avoid cell size limit)
@@ -729,6 +786,11 @@ export const useStore = create<StoreState>()(
         const updated = (get().banners || []).map((b) => (b.id === id ? { ...b, ...updates } : b));
         set({ banners: updated });
         toast.success('Banner updated! ✏️');
+
+        if (isSupabaseConfigured()) {
+          bulkUpsertBannersToSupabase(updated).catch(err => console.error('Supabase banner sync error:', err));
+        }
+
         const url = get().storeSettings.googleSheetProductsWebhookUrl || get().storeSettings.googleSheetWebhookUrl;
         if (url) {
           const sheetSafeBanners = stripBannersForSheet(updated);
@@ -740,6 +802,11 @@ export const useStore = create<StoreState>()(
         const updated = (get().banners || []).filter((b) => b.id !== id);
         set({ banners: updated });
         toast.success('Banner deleted! 🗑️');
+
+        if (isSupabaseConfigured()) {
+          bulkUpsertBannersToSupabase(updated).catch(err => console.error('Supabase banner sync error:', err));
+        }
+
         const url = get().storeSettings.googleSheetProductsWebhookUrl || get().storeSettings.googleSheetWebhookUrl;
         if (url) {
           const sheetSafeBanners = stripBannersForSheet(updated);
@@ -749,6 +816,26 @@ export const useStore = create<StoreState>()(
       },
 
       fetchProducts: async () => {
+        // Priority 1: Supabase
+        if (isSupabaseConfigured()) {
+          try {
+            const supabaseProds = await fetchProductsFromSupabase();
+            if (supabaseProds && supabaseProds.length > 0) {
+              set({ products: supabaseProds, isAppsScriptOutdated: false });
+
+              // Also fetch categories if available
+              const cats = await fetchCategoriesFromSupabase();
+              if (cats && cats.length > 0) {
+                set({ categories: cats });
+              }
+              return;
+            }
+          } catch (e) {
+            console.warn('Supabase fetch products error, falling back to Sheets:', e);
+          }
+        }
+
+        // Priority 2: Google Sheets
         const url = get().storeSettings.googleSheetProductsWebhookUrl || get().storeSettings.googleSheetWebhookUrl;
         if (!url) return;
         try {
@@ -823,6 +910,25 @@ export const useStore = create<StoreState>()(
       },
 
       fetchSettings: async () => {
+        // Priority 1: Supabase
+        if (isSupabaseConfigured()) {
+          try {
+            const sbSettings = await fetchSettingsFromSupabase();
+            const sbBanners = await fetchBannersFromSupabase();
+
+            if (sbBanners && sbBanners.length > 0) {
+              set({ banners: sbBanners });
+            }
+            if (sbSettings) {
+              set((s) => ({ storeSettings: { ...s.storeSettings, ...sbSettings } }));
+              return;
+            }
+          } catch (e) {
+            console.warn('Supabase fetch settings error, falling back to Sheets:', e);
+          }
+        }
+
+        // Priority 2: Google Sheets
         const url = get().storeSettings.googleSheetProductsWebhookUrl || get().storeSettings.googleSheetWebhookUrl;
         if (!url) return;
         try {
@@ -856,6 +962,20 @@ export const useStore = create<StoreState>()(
       },
 
       fetchOrders: async () => {
+        // Priority 1: Supabase
+        if (isSupabaseConfigured()) {
+          try {
+            const sbOrders = await fetchOrdersFromSupabase();
+            if (sbOrders && sbOrders.length > 0) {
+              set({ orders: sbOrders });
+              return;
+            }
+          } catch (e) {
+            console.warn('Supabase fetch orders error, falling back to Sheets:', e);
+          }
+        }
+
+        // Priority 2: Google Sheets
         const url = get().storeSettings.googleSheetProductsWebhookUrl || get().storeSettings.googleSheetWebhookUrl;
         if (!url) return;
         try {
@@ -909,6 +1029,54 @@ export const useStore = create<StoreState>()(
           set({ orders: merged });
         } catch (err) {
           console.error('Failed to fetch orders from Google Sheet:', err);
+        }
+      },
+
+      migrateDataToSupabase: async () => {
+        if (!isSupabaseConfigured()) {
+          return {
+            success: false,
+            message: 'Supabase is not configured yet. Please enter your Supabase URL and Anon Key in Settings first.',
+          };
+        }
+
+        const toastId = toast.loading('Migrating all store data to Supabase... 🚀');
+        try {
+          const { products, categories, banners, storeSettings } = get();
+
+          // 1. Migrate Products
+          if (products && products.length > 0) {
+            const prodSuccess = await bulkUpsertProductsToSupabase(products);
+            if (!prodSuccess) throw new Error('Failed to upsert products to Supabase. Check if products table exists.');
+          }
+
+          // 2. Migrate Categories
+          if (categories && categories.length > 0) {
+            await bulkUpsertCategoriesToSupabase(categories);
+          }
+
+          // 3. Migrate Banners
+          if (banners && banners.length > 0) {
+            await bulkUpsertBannersToSupabase(banners);
+          }
+
+          // 4. Migrate Settings
+          if (storeSettings) {
+            await saveSettingsToSupabase(storeSettings);
+          }
+
+          toast.success(`✅ Successfully migrated ${products.length} products, categories, banners, and settings to Supabase! 🎉`, { id: toastId, duration: 6000 });
+          return {
+            success: true,
+            message: `Successfully migrated ${products.length} products to Supabase!`,
+          };
+        } catch (err: any) {
+          console.error('Migration to Supabase error:', err);
+          toast.error(`❌ Migration failed: ${err?.message || 'Unknown error'}`, { id: toastId, duration: 6000 });
+          return {
+            success: false,
+            message: err?.message || 'Migration failed',
+          };
         }
       },
     }),

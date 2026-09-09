@@ -14,6 +14,9 @@ import { APPS_SCRIPT_CODE } from '../utils/appsScriptTemplate';
 import { updateOrderStatusInSheet } from '../utils/googleSheets';
 import SearchableSelect from '../components/SearchableSelect';
 import { uploadImageToHost, uploadMultipleImages, isBase64Image } from '../utils/imageHosting';
+import { isSupabaseConfigured, testSupabaseConnection } from '../lib/supabase';
+import { updateOrderStatusInSupabase } from '../utils/supabaseApi';
+import { uploadImageToSupabase, uploadMultipleImagesToSupabase } from '../utils/supabaseStorage';
 
 const STATUS_COLORS: Record<Order['status'], string> = {
   pending: 'bg-yellow-100 text-yellow-700',
@@ -124,7 +127,17 @@ const handleImageUpload = async (
     // Step 1: Compress locally first
     const compressedBase64 = await compressImage(file, 600, 600, 0.75);
 
-    // Step 2: If ImgBB API key is set, upload to cloud for cross-device access
+    // Step 2: If Supabase Storage is configured, upload directly to Supabase bucket
+    if (isSupabaseConfigured()) {
+      const sbUrl = await uploadImageToSupabase(file, 'product');
+      if (sbUrl) {
+        callback(sbUrl);
+        toast.success('✅ Image uploaded to Supabase Storage! 🌐', { id: toastId });
+        return;
+      }
+    }
+
+    // Step 3: If ImgBB API key is set, upload to ImgBB cloud for cross-device access
     if (hasApiKey) {
       const hostedUrl = await uploadImageToHost(compressedBase64, imgbbApiKey!);
       if (!isBase64Image(hostedUrl)) {
@@ -143,7 +156,7 @@ const handleImageUpload = async (
     // No API key: save as base64 (local only - show warning)
     callback(compressedBase64);
     toast(
-      '⚠️ Image saved locally only! Add ImgBB API Key in Settings to make images work on all devices.',
+      '⚠️ Image saved locally only! Configure Supabase Storage or ImgBB in Settings for cross-device access.',
       { id: toastId, icon: '⚠️', duration: 6000, style: { background: '#fef3c7', color: '#92400e' } }
     );
   } catch (err) {
@@ -172,7 +185,7 @@ const handleImagePaste = (
   }
 };
 
-// Upload multiple images to ImgBB
+// Upload multiple images to Supabase or ImgBB
 const handleMultipleImagesUpload = async (
   files: FileList | null,
   callback: (urls: string[]) => void,
@@ -181,12 +194,18 @@ const handleMultipleImagesUpload = async (
   if (!files || files.length === 0) return;
   const filesToUpload = Array.from(files).slice(0, 4);
   const hasApiKey = imgbbApiKey && imgbbApiKey.trim() !== '';
-  const toastId = toast.loading(
-    hasApiKey
-      ? `Uploading ${filesToUpload.length} images to cloud... ☁️`
-      : `Compressing ${filesToUpload.length} images... ⏳`
-  );
+  const toastId = toast.loading('Uploading images to cloud... ☁️');
   try {
+    // If Supabase Storage is configured, upload directly to Supabase bucket
+    if (isSupabaseConfigured()) {
+      const sbUrls = await uploadMultipleImagesToSupabase(filesToUpload, 'product');
+      if (sbUrls && sbUrls.length > 0) {
+        callback(sbUrls);
+        toast.success(`✅ ${sbUrls.length} images uploaded to Supabase Storage! 🌐`, { id: toastId });
+        return;
+      }
+    }
+
     const base64Array: string[] = [];
     for (const file of filesToUpload) {
       if (file.type.startsWith('image/')) {
@@ -205,7 +224,7 @@ const handleMultipleImagesUpload = async (
       }
     } else {
       callback(base64Array);
-      toast('⚠️ Images saved locally only! Add ImgBB API Key in Settings for cross-device images.', {
+      toast('⚠️ Images saved locally only! Configure Supabase Storage or ImgBB in Settings for cross-device access.', {
         id: toastId, icon: '⚠️', duration: 6000, style: { background: '#fef3c7', color: '#92400e' }
       });
     }
@@ -1445,9 +1464,9 @@ function OrdersManager() {
     setSyncing(true);
     try {
       await fetchOrders();
-      toast.success('✅ Orders synced from Google Sheets!');
+      toast.success(isSupabaseConfigured() ? '✅ Orders synced from Supabase!' : '✅ Orders synced from Google Sheets!');
     } catch {
-      toast.error('❌ Failed to sync orders from Sheets.');
+      toast.error('❌ Failed to sync orders.');
     } finally {
       setSyncing(false);
     }
@@ -1456,6 +1475,11 @@ function OrdersManager() {
   const handleStatusUpdate = (orderId: string, newStatus: Order['status']) => {
     updateOrderStatus(orderId, newStatus);
     toast.success(`Order ${newStatus.replace('_', ' ')}`);
+
+    if (isSupabaseConfigured()) {
+      updateOrderStatusInSupabase(orderId, newStatus).catch(err => console.error('Supabase updateOrderStatus error:', err));
+    }
+
     // Also sync to Google Sheets
     const url = storeSettings.googleSheetProductsWebhookUrl || storeSettings.googleSheetWebhookUrl;
     if (url) {
@@ -1466,6 +1490,12 @@ function OrdersManager() {
   const handlePaymentUpdate = (orderId: string) => {
     updatePaymentStatus(orderId, 'paid');
     toast.success('Payment marked as paid');
+
+    if (isSupabaseConfigured()) {
+      const currStatus = orders.find(o => o.id === orderId)?.status || 'confirmed';
+      updateOrderStatusInSupabase(orderId, currStatus, 'paid').catch(err => console.error('Supabase updateOrderStatus error:', err));
+    }
+
     const url = storeSettings.googleSheetProductsWebhookUrl || storeSettings.googleSheetWebhookUrl;
     if (url) {
       updateOrderStatusInSheet(url, orderId, orders.find(o => o.id === orderId)?.status || 'confirmed', 'paid').catch(() => {});
@@ -2102,7 +2132,7 @@ function SubscriptionsManager() {
 }
 
 function SettingsManager() {
-  const { storeSettings, updateStoreSettings, categories, addCategory, updateCategory, deleteCategory, darkMode } = useStore();
+  const { storeSettings, updateStoreSettings, categories, addCategory, updateCategory, deleteCategory, darkMode, migrateDataToSupabase } = useStore();
   const [form, setForm] = useState({ ...storeSettings });
   const [saved, setSaved] = useState(false);
   const [newCatName, setNewCatName] = useState('');
@@ -2111,6 +2141,37 @@ function SettingsManager() {
   const [testingEmail, setTestingEmail] = useState(false);
   const [testEmailInput, setTestEmailInput] = useState(storeSettings.email || '');
   const [showAppsScriptCode, setShowAppsScriptCode] = useState(false);
+  const [testingSupabase, setTestingSupabase] = useState(false);
+  const [migratingToSupabase, setMigratingToSupabase] = useState(false);
+
+  const handleTestSupabase = async () => {
+    setTestingSupabase(true);
+    try {
+      const res = await testSupabaseConnection(form.supabaseUrl, form.supabaseAnonKey);
+      if (res.success) {
+        toast.success(res.message, { duration: 6000 });
+      } else {
+        toast.error(res.message, { duration: 7000 });
+      }
+    } catch (e: any) {
+      toast.error(`Connection error: ${e?.message || e}`);
+    } finally {
+      setTestingSupabase(false);
+    }
+  };
+
+  const handleMigrateSupabase = async () => {
+    if (!form.supabaseUrl || !form.supabaseAnonKey) {
+      toast.error('Please enter your Supabase Project URL and Anon Key, then click "Save Settings" below before migrating.');
+      return;
+    }
+    setMigratingToSupabase(true);
+    try {
+      await migrateDataToSupabase();
+    } finally {
+      setMigratingToSupabase(false);
+    }
+  };
 
   const handleTestEmailOtp = async () => {
     if (!form.googleSheetWebhookUrl || !form.googleSheetWebhookUrl.trim()) {
@@ -2200,6 +2261,8 @@ function SettingsManager() {
       ...form,
       googleSheetWebhookUrl: orderWebhook,
       googleSheetProductsWebhookUrl: catalogWebhook,
+      supabaseUrl: (form.supabaseUrl || '').trim(),
+      supabaseAnonKey: (form.supabaseAnonKey || '').trim(),
     });
     setSaved(true);
     toast.success('✅ Settings saved securely!');
@@ -2413,6 +2476,90 @@ function SettingsManager() {
         <p className={`text-[11px] mt-2 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
           Configure bulk pack quantity selectors and their discount percentages displayed on the product details page. (Pack 1 size is always 1 with 0% discount).
         </p>
+      </div>
+
+      <div className={card}>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
+          <div className="flex items-center gap-2">
+            <span className="text-xl">⚡</span>
+            <div>
+              <h3 className={`font-black text-base ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                Supabase Backend & Cloud Storage
+              </h3>
+              <p className={`text-[11px] ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                High-performance PostgreSQL database, real-time sync, and direct CDN image storage
+              </p>
+            </div>
+          </div>
+          <span className={`text-xs px-2.5 py-1 rounded-full font-bold w-fit ${
+            isSupabaseConfigured()
+              ? 'bg-green-100 text-green-700 dark:bg-green-950/30 dark:text-green-400 border border-green-300 dark:border-green-800'
+              : 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300'
+          }`}>
+            {isSupabaseConfigured() ? '🟢 Connected to Supabase' : '⚪ Not Configured'}
+          </span>
+        </div>
+
+        <div className="space-y-4">
+          <div>
+            {lbl('Supabase Project URL')}
+            <input 
+              className={inp} 
+              value={form.supabaseUrl || ''} 
+              onChange={e => setForm(f => ({...f, supabaseUrl: e.target.value}))} 
+              placeholder="https://your-project-id.supabase.co" 
+            />
+            <p className={`text-[11px] mt-1 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+              Found in your Supabase Dashboard &gt; Project Settings &gt; API &gt; Project URL.
+            </p>
+          </div>
+          <div>
+            {lbl('Supabase Anon Public API Key')}
+            <input 
+              className={inp} 
+              type="text"
+              value={form.supabaseAnonKey || ''} 
+              onChange={e => setForm(f => ({...f, supabaseAnonKey: e.target.value}))} 
+              placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." 
+            />
+            <p className={`text-[11px] mt-1 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+              Found in Supabase Dashboard &gt; Project Settings &gt; API &gt; Project API keys &gt; 'anon' 'public'.
+            </p>
+          </div>
+
+          <div className="flex flex-wrap gap-2 pt-2">
+            <button
+              type="button"
+              onClick={handleTestSupabase}
+              disabled={testingSupabase}
+              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-sm cursor-pointer"
+            >
+              {testingSupabase ? 'Testing Connection...' : '🧪 Test Connection'}
+            </button>
+
+            <button
+              type="button"
+              onClick={handleMigrateSupabase}
+              disabled={migratingToSupabase}
+              className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-sm cursor-pointer"
+            >
+              {migratingToSupabase ? 'Migrating Products & Data...' : '🚀 Migrate All Catalog Data to Supabase'}
+            </button>
+          </div>
+
+          <div className={`mt-3 p-3.5 rounded-xl border text-xs ${
+            darkMode ? 'bg-gray-800/60 border-gray-700 text-gray-300' : 'bg-blue-50/50 border-blue-200 text-blue-900'
+          }`}>
+            <p className="font-bold mb-1">📋 Quick Setup (1-Click SQL):</p>
+            <ol className="list-decimal list-inside space-y-1 text-[11px]">
+              <li>Create a free project at <a href="https://supabase.com" target="_blank" rel="noreferrer" className="underline font-bold text-green-600 dark:text-green-400">supabase.com</a></li>
+              <li>Go to <strong>SQL Editor</strong> in your Supabase dashboard.</li>
+              <li>Open <code>supabase_schema.sql</code> from your project root, paste it into the editor, and click <strong>Run</strong>.</li>
+              <li>Copy your <strong>Project URL</strong> &amp; <strong>Anon Key</strong>, paste them in the boxes above, and click <strong>Save Settings</strong>.</li>
+              <li>Click <strong>Migrate All Catalog Data to Supabase</strong> to instantly upload all your products, images, and settings!</li>
+            </ol>
+          </div>
+        </div>
       </div>
 
       <div className={card}>
