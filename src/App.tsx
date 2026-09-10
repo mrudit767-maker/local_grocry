@@ -222,8 +222,16 @@ export default function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  useEffect(() => {
+    if (darkMode) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  }, [darkMode]);
+
   return (
-    <div className={`${darkMode ? 'dark bg-gray-950' : 'bg-gray-50'} min-h-screen`}>
+    <div className={`${darkMode ? 'dark bg-gray-950 text-white' : 'bg-gray-50 text-gray-800'} min-h-screen transition-colors duration-200`}>
       <Toaster
         position="top-right"
         toastOptions={{
