@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
-import { ShoppingCart, Search, Moon, Sun, X, MapPin, Phone, Shield, MessageCircle, Heart, Sparkles, Home, LayoutGrid, RefreshCw, ShoppingBag, User, Bell, Flame, TrendingUp, Clock, Truck, Package } from 'lucide-react';
+import { ShoppingCart, Search, Moon, Sun, X, MapPin, Phone, Shield, MessageCircle, Heart, Sparkles, Home, LayoutGrid, RefreshCw, ShoppingBag, User, Bell, Flame, TrendingUp, Clock, Truck, Package, Zap } from 'lucide-react';
 import { useStore } from '../store/useStore';
 import toast from 'react-hot-toast';
 import AIQueryAssistant from './AIQueryAssistant';
@@ -9,7 +9,7 @@ const DELIVERY_AREAS = ['Bhopal (All)', 'Bhanpur', 'Kalyan Nagar', 'Vidisha Road
 export default function Header() {
   const {
     darkMode, toggleDarkMode, searchQuery, setSearchQuery,
-    getCartItemCount, toggleCart, setCurrentPage, currentPage, storeSettings,
+    getCartItemCount, getCartTotal, toggleCart, setCurrentPage, currentPage, storeSettings,
     currentCustomer, customerLogout, products, addToCart,
     adminLoggedIn, stockRequests, customerNotifications,
     dismissNotification, markAllNotificationsRead, clearAllNotifications,
@@ -23,6 +23,7 @@ export default function Header() {
   const [notifOpen, setNotifOpen] = useState(false);
   const notifRef = useRef<HTMLDivElement>(null);
   const cartCount = getCartItemCount();
+  const cartTotal = getCartTotal();
   const searchInputRef = useRef<HTMLInputElement>(null);
   const [frequentSearches, setFrequentSearches] = useState<string[]>([]);
 
@@ -596,14 +597,18 @@ export default function Header() {
             {/* Cart Button */}
             <button
               onClick={toggleCart}
-              className="relative flex items-center gap-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white px-4 py-2.5 rounded-xl font-black transition-all duration-300 shadow-md hover:shadow-lg hover:scale-[1.02] cursor-pointer"
+              className="relative flex items-center gap-2.5 bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2.5 rounded-xl font-black transition-all duration-300 shadow-md hover:shadow-emerald-600/30 hover:scale-[1.02] cursor-pointer"
             >
-              <ShoppingCart size={16} />
-              <span className="text-xs">Cart</span>
-              {cartCount > 0 && (
-                <span className="absolute -top-1.5 -right-1.5 bg-orange-500 text-white text-[9px] font-black rounded-full w-5 h-5 flex items-center justify-center border border-white dark:border-gray-955 animate-pulse">
-                  {cartCount > 99 ? '99+' : cartCount}
-                </span>
+              <ShoppingCart size={17} />
+              {cartCount > 0 ? (
+                <div className="flex flex-col text-left leading-tight">
+                  <span className="text-[10px] uppercase font-extrabold text-emerald-100">
+                    {cartCount} {cartCount === 1 ? 'item' : 'items'}
+                  </span>
+                  <span className="text-xs font-black">₹{cartTotal}</span>
+                </div>
+              ) : (
+                <span className="text-xs font-black">My Cart</span>
               )}
             </button>
           </div>
@@ -829,18 +834,20 @@ export default function Header() {
         <button
           onClick={toggleCart}
           className={`relative flex flex-col items-center gap-0.5 transition-all duration-200 cursor-pointer ${
-            getCartItemCount() > 0 ? 'text-emerald-600 dark:text-emerald-400' : 'hover:text-emerald-500'
+            cartCount > 0 ? 'text-emerald-600 dark:text-emerald-400' : 'hover:text-emerald-500'
           }`}
         >
           <div className="relative">
             <ShoppingBag size={18} className="stroke-[1.8px]" />
-            {getCartItemCount() > 0 && (
+            {cartCount > 0 && (
               <span className="absolute -top-1.5 -right-2 bg-orange-500 text-white text-[8px] font-black rounded-full h-4 w-4 flex items-center justify-center border border-white dark:border-gray-900 animate-pulse">
-                {getCartItemCount()}
+                {cartCount}
               </span>
             )}
           </div>
-          <span className="text-[9px] font-bold">Cart</span>
+          <span className="text-[9px] font-bold">
+            {cartCount > 0 ? `₹${cartTotal}` : 'Cart'}
+          </span>
         </button>
 
         <button

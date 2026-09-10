@@ -153,55 +153,83 @@ export default function HomePage() {
     <div className={`min-h-screen ${darkMode ? 'bg-gray-950 text-white font-poppins' : 'bg-white text-gray-800 font-poppins'}`}>
       
       {/* 2. HERO SECTION */}
-      <section className="relative bg-gradient-to-br from-[#1b4332] via-[#2d6a4f] to-[#081c15] text-white overflow-hidden py-14 sm:py-18 md:py-24 animate-fade-up">
-        {/* Subtle pattern or glows */}
-        <div className="absolute top-0 right-0 w-96 h-96 bg-[#2ECC71]/10 rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute -bottom-20 -left-20 w-80 h-80 bg-[#FF6B35]/10 rounded-full blur-3xl pointer-events-none" />
+      <section className="relative bg-gradient-to-br from-[#0c2a1e] via-[#1b4332] to-[#081c15] text-white overflow-hidden py-12 sm:py-16 md:py-20 animate-fade-up">
+        {/* Subtle decorative ambient glows */}
+        <div className="absolute top-0 right-10 w-[500px] h-[500px] bg-emerald-500/15 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute -bottom-20 -left-10 w-96 h-96 bg-orange-500/10 rounded-full blur-3xl pointer-events-none" />
         
-        <div className="max-w-7xl mx-auto px-6 sm:px-8 relative z-10 grid md:grid-cols-2 gap-8 items-center">
-          <div className="space-y-6">
-            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#FF6B35]/20 text-[#FF8E53] border border-[#FF6B35]/30 text-xs font-bold uppercase tracking-wider">
-              <Truck size={13} className="text-[#FF8E53]" /> Free delivery on orders above ₹{storeSettings.freeDeliveryAbove}
-            </span>
-            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black text-white leading-tight">
-              Order Online & <br/>
-              <span className="bg-gradient-to-r from-[#FF8E53] to-[#FF6B35] bg-clip-text text-transparent">Save Big Today</span>
+        <div className="max-w-7xl mx-auto px-4 sm:px-8 relative z-10 grid md:grid-cols-2 gap-8 lg:gap-12 items-center">
+          <div className="space-y-5 sm:space-y-6">
+            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-xs font-black uppercase tracking-wider backdrop-blur-md">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+              <span>Instant Local Delivery in Bhopal</span>
+            </div>
+            
+            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black text-white leading-tight tracking-tight">
+              Fresh Groceries <br/>
+              <span className="bg-gradient-to-r from-emerald-400 via-teal-300 to-emerald-200 bg-clip-text text-transparent">
+                Delivered in 15 Mins
+              </span>
             </h1>
-            <p className="text-emerald-100 text-sm sm:text-base font-semibold max-w-md">
-              Fresh groceries delivered to your doorstep. Hand-checked daily essentials at the absolute best prices.
+
+            <p className="text-emerald-100/90 text-sm sm:text-base font-medium max-w-lg leading-relaxed">
+              Order farm-fresh vegetables, dairy, pulses, spices, and household essentials at genuine local mandi rates. Free delivery on orders above ₹{storeSettings.freeDeliveryAbove}!
             </p>
-            <div className="flex flex-wrap gap-3 pt-2">
+
+            <div className="flex flex-wrap items-center gap-3 pt-2">
               <button
                 onClick={() => { 
-                  console.log('Order Now hero button clicked');
                   setSelectedCategory('all'); 
                   setCurrentPage('products'); 
                 }}
-                className="bg-[#FF6B35] hover:bg-[#e85d04] text-white font-extrabold px-7 py-3.5 rounded-xl hover:shadow-[0_4px_20px_rgba(255,107,53,0.35)] hover:scale-102 transition-all flex items-center gap-2 cursor-pointer text-sm shadow-md border-none outline-none"
+                className="bg-emerald-500 hover:bg-emerald-400 text-gray-950 font-black px-7 py-3.5 rounded-2xl hover:shadow-[0_8px_30px_rgba(16,185,129,0.35)] hover:scale-102 transition-all flex items-center gap-2 cursor-pointer text-sm shadow-md border-none"
               >
-                Order Now <ArrowRight size={16} />
+                <span>Shop Catalog</span>
+                <ArrowRight size={16} />
               </button>
+
               <button
                 onClick={() => setCurrentPage('subscriptions')}
-                className="bg-transparent hover:bg-white/5 text-white border border-white/20 hover:border-white/40 font-bold px-6 py-3.5 rounded-xl transition-all text-sm cursor-pointer"
+                className="bg-white/10 hover:bg-white/20 text-white border border-white/20 font-bold px-6 py-3.5 rounded-2xl transition-all text-sm cursor-pointer backdrop-blur-md"
               >
-                View Subscription Packs
+                Daily Milk & Packs
               </button>
+            </div>
+
+            {/* Quick stats / trust strip */}
+            <div className="pt-2 flex items-center gap-6 text-xs text-emerald-200/80 font-bold">
+              <div className="flex items-center gap-1.5">
+                <Truck size={14} className="text-emerald-400" />
+                <span>Free Delivery Above ₹{storeSettings.freeDeliveryAbove}</span>
+              </div>
+              <span className="opacity-40">•</span>
+              <div className="flex items-center gap-1.5">
+                <Shield size={14} className="text-emerald-400" />
+                <span>Cash / UPI on Delivery</span>
+              </div>
             </div>
           </div>
           
-          <div className="relative aspect-video md:aspect-auto md:h-[320px] w-full max-w-md mx-auto md:ml-auto rounded-3xl overflow-hidden shadow-2xl border border-white/10 hidden md:block">
+          <div className="relative aspect-video md:aspect-auto md:h-[340px] w-full max-w-md mx-auto md:ml-auto rounded-3xl overflow-hidden shadow-2xl border border-white/15 hidden md:block group">
             <img 
               src="/kirana_hero.png" 
               alt="Krishna Kirana Grocery Store" 
-              className="w-full h-full object-cover" 
+              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" 
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
-            <div className="absolute bottom-4 left-4 right-4">
-              <span className="text-[10px] bg-[#2ECC71] text-white font-bold px-2 py-0.5 rounded-full uppercase inline-flex items-center gap-1">
-                <Zap size={10} /> Bhopal Delivery
-              </span>
-              <p className="text-white text-xs font-bold mt-1">Premium staples, pure oils & daily kitchen essentials delivered instantly.</p>
+            <div className="absolute inset-0 bg-gradient-to-t from-gray-950/80 via-transparent to-black/20" />
+            
+            {/* Floating Top Badge */}
+            <div className="absolute top-4 left-4 bg-white/90 dark:bg-gray-900/90 backdrop-blur-md px-3 py-1.5 rounded-full shadow-lg border border-white/30 flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+              <span className="text-xs font-black text-gray-900 dark:text-white">⚡ Bhopal Fast Delivery Hub</span>
+            </div>
+
+            {/* Bottom info banner */}
+            <div className="absolute bottom-4 left-4 right-4 bg-gray-950/60 backdrop-blur-md p-3.5 rounded-2xl border border-white/10">
+              <div className="flex items-center justify-between text-xs text-white font-bold">
+                <span>Direct from Mandi</span>
+                <span className="text-emerald-400 font-extrabold">100% Quality Checked</span>
+              </div>
             </div>
           </div>
         </div>
@@ -211,24 +239,24 @@ export default function HomePage() {
       <div className="space-y-0">
         
         {/* 3. FEATURE SECTION (4 Cards) */}
-        <section className={`py-12 ${darkMode ? 'bg-gray-950' : 'bg-white'}`}>
+        <section className={`py-10 border-b ${darkMode ? 'bg-gray-950 border-gray-850' : 'bg-white border-gray-100'}`}>
           <div className="max-w-7xl mx-auto px-4">
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5">
               {[
-                { icon: Zap, label: 'Express Delivery', desc: '30-45 mins at your doorstep', color: 'text-yellow-500 bg-yellow-50 dark:bg-yellow-950/20' },
-                { icon: Shield, label: 'Cash on Delivery', desc: 'Pay after checking products', color: 'text-[#2ECC71] bg-green-50 dark:bg-green-950/20' },
-                { icon: Truck, label: 'Fresh Products', desc: 'Pure & quality certified', color: 'text-blue-500 bg-blue-50 dark:bg-blue-950/20' },
-                { icon: Clock, label: 'Delivery in Bhopal', desc: 'Express routing across city', color: 'text-purple-500 bg-purple-50 dark:bg-purple-950/20' },
+                { icon: Zap, label: '10–15 Min Delivery', desc: 'Direct from nearest Bhopal store', color: 'text-amber-500 bg-amber-50 dark:bg-amber-950/30' },
+                { icon: Shield, label: 'Quality Assured', desc: 'Handpicked fresh staples & dairy', color: 'text-emerald-600 bg-emerald-50 dark:bg-emerald-950/30' },
+                { icon: Truck, label: 'Best Local Price', desc: 'Guaranteed savings over MRP', color: 'text-blue-500 bg-blue-50 dark:bg-blue-950/30' },
+                { icon: Clock, label: 'Easy Pay (COD/UPI)', desc: 'Inspect goods first, pay after', color: 'text-purple-500 bg-purple-50 dark:bg-purple-950/30' },
               ].map((f, idx) => (
-                <div key={idx} className={`flex flex-col sm:flex-row items-center sm:items-start text-center sm:text-left gap-4 p-5 rounded-3xl border shadow-premium hover:shadow-md transition-all hover:scale-[1.01] ${
-                  darkMode ? 'bg-gray-900 border-gray-800' : 'bg-[#FFF8F0]/30 border-gray-150/70'
+                <div key={idx} className={`flex flex-col sm:flex-row items-center sm:items-start text-center sm:text-left gap-3.5 p-4 sm:p-4.5 rounded-2xl border transition-all duration-300 hover:shadow-md hover:-translate-y-0.5 ${
+                  darkMode ? 'bg-gray-900/80 border-gray-800' : 'bg-gray-50/70 border-gray-150/80 hover:bg-white hover:border-emerald-200'
                 }`}>
-                  <div className={`p-3 rounded-2xl ${f.color} flex items-center justify-center shrink-0`}>
-                    <f.icon size={22} className="stroke-[2.5px]" />
+                  <div className={`p-2.5 rounded-xl ${f.color} flex items-center justify-center shrink-0 shadow-xs`}>
+                    <f.icon size={20} className="stroke-[2.5px]" />
                   </div>
-                  <div className="space-y-1">
-                    <p className={`font-bold text-sm leading-snug ${darkMode ? 'text-white' : 'text-gray-900'}`}>{f.label}</p>
-                    <p className="text-gray-400 text-xs font-semibold leading-normal">{f.desc}</p>
+                  <div className="space-y-0.5">
+                    <p className={`font-black text-xs sm:text-sm leading-snug ${darkMode ? 'text-white' : 'text-gray-900'}`}>{f.label}</p>
+                    <p className="text-gray-500 dark:text-gray-400 text-[11px] font-medium leading-normal">{f.desc}</p>
                   </div>
                 </div>
               ))}
