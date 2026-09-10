@@ -159,10 +159,14 @@ export default function ProductCard({ product }: Props) {
           {/* Price & Action Row */}
           <div className="mt-auto pt-2.5 flex items-center justify-between gap-2 border-t border-gray-100 dark:border-gray-800">
             <div className="flex flex-col">
-              <div className="flex items-baseline gap-1">
-                <span className="text-gray-900 dark:text-white font-black text-sm sm:text-base">₹{product.price}</span>
+              <div className="flex items-baseline gap-1.5">
+                <span className="text-emerald-600 dark:text-emerald-400 font-black text-base sm:text-lg tracking-tight">
+                  ₹{product.price}
+                </span>
                 {product.mrp > product.price && (
-                  <span className="text-gray-400 text-[10px] line-through font-medium">₹{product.mrp}</span>
+                  <span className="text-gray-400 dark:text-gray-500 text-[11px] line-through font-bold">
+                    ₹{product.mrp}
+                  </span>
                 )}
               </div>
             </div>
