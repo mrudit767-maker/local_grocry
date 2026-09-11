@@ -3,7 +3,7 @@ import { Mail, User, Phone, MapPin, Navigation, ArrowRight, LogIn, ChevronLeft, 
 import { useStore } from '../store/useStore';
 import { saveCustomerToSheet, fetchCustomerFromSheet } from '../utils/googleSheets';
 import { isSupabaseConfigured } from '../lib/supabase';
-import { fetchCustomerFromSupabase, saveCustomerToSupabase } from '../utils/supabaseApi';
+import { fetchCustomerFromSupabase, saveCustomerToSupabase, sendSupabaseEmailOtp, verifySupabaseEmailOtp } from '../utils/supabaseApi';
 import toast from 'react-hot-toast';
 
 export default function CustomerLoginPage() {
@@ -11,13 +11,16 @@ export default function CustomerLoginPage() {
   const [activeTab, setActiveTab] = useState<'login' | 'register'>('login');
   const [loading, setLoading] = useState(false);
 
-  // Demo mode = webhook not configured at all
-  const isDemoWebhook = !storeSettings.googleSheetWebhookUrl ||
-    storeSettings.googleSheetWebhookUrl.trim() === '';
+  // Check if Supabase is active
+  const hasSupabase = isSupabaseConfigured();
 
-  // Email delivery possible = webhook URL is a real Apps Script URL
-  const canSendRealEmail = !isDemoWebhook &&
-    storeSettings.googleSheetWebhookUrl.startsWith('https://script.google.com');
+  // Demo mode = neither Supabase nor Google Sheet webhook is available
+  const isDemoWebhook = !hasSupabase && (!storeSettings.googleSheetWebhookUrl ||
+    storeSettings.googleSheetWebhookUrl.trim() === '');
+
+  // Email delivery possible = Supabase configured OR webhook URL is a real Apps Script URL
+  const canSendRealEmail = hasSupabase || (!isDemoWebhook &&
+    storeSettings.googleSheetWebhookUrl.startsWith('https://script.google.com'));
 
   // Login form state
   const [loginEmail, setLoginEmail] = useState('');
@@ -84,29 +87,31 @@ export default function CustomerLoginPage() {
     const cleanPhone = phone ? phone.replace(/[\s-+]/g, '').slice(-10) : '';
 
     if (canSendRealEmail && email) {
-      // Send real OTP email via Google Apps Script (GmailApp - completely free)
-      try {
-        fetch(storeSettings.googleSheetWebhookUrl, {
-          method: 'POST',
-          mode: 'no-cors',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            action: 'sendSMS',
-            gateway: storeSettings.smsGateway || 'simulated',
-            fast2smsApiKey: storeSettings.fast2smsApiKey || '',
-            twilioAccountSid: storeSettings.twilioAccountSid || '',
-            twilioAuthToken: storeSettings.twilioAuthToken || '',
-            twilioFromNumber: storeSettings.twilioFromNumber || '',
-            androidSmsToken: storeSettings.androidSmsToken || '',
-            androidSmsDeviceId: storeSettings.androidSmsDeviceId || '',
-            shopName: storeSettings.shopName,
-            phone: cleanPhone,
-            email: email,
-            otp: code,
-          }),
-        }).catch(() => {});
-      } catch (e) {
-        console.error('Failed to dispatch OTP email via Apps Script:', e);
+      // Send real OTP email via Google Apps Script if configured
+      if (storeSettings.googleSheetWebhookUrl?.startsWith('https://script.google.com')) {
+        try {
+          fetch(storeSettings.googleSheetWebhookUrl, {
+            method: 'POST',
+            mode: 'no-cors',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              action: 'sendSMS',
+              gateway: storeSettings.smsGateway || 'simulated',
+              fast2smsApiKey: storeSettings.fast2smsApiKey || '',
+              twilioAccountSid: storeSettings.twilioAccountSid || '',
+              twilioAuthToken: storeSettings.twilioAuthToken || '',
+              twilioFromNumber: storeSettings.twilioFromNumber || '',
+              androidSmsToken: storeSettings.androidSmsToken || '',
+              androidSmsDeviceId: storeSettings.androidSmsDeviceId || '',
+              shopName: storeSettings.shopName,
+              phone: cleanPhone,
+              email: email,
+              otp: code,
+            }),
+          }).catch(() => {});
+        } catch (e) {
+          console.error('Failed to dispatch OTP email via Apps Script:', e);
+        }
       }
 
       // Don't show OTP on screen - user will check their email inbox
@@ -143,7 +148,7 @@ export default function CustomerLoginPage() {
     }
   };
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     const input = loginEmail.trim();
     if (!input || !input.includes('@')) {
@@ -153,18 +158,12 @@ export default function CustomerLoginPage() {
 
     setLoading(true);
     setFetchedCustomerProfile(null);
-
-    const code = Math.floor(100000 + Math.random() * 900000).toString(); // 6-digit OTP
-    setGeneratedOtp(code);
-
     setPendingLoginPhone('');
     setPendingLoginEmail(input);
     setPendingAction('login');
-    setOtpMode(true);
-    setResendTimer(60);
     setOtpVal('');
 
-    // Pre-fetch customer profile from Supabase or Google Sheets in background
+    // Pre-fetch customer profile in background
     if (isSupabaseConfigured()) {
       const promise = fetchCustomerFromSupabase(input)
         .then(profile => {
@@ -184,32 +183,53 @@ export default function CustomerLoginPage() {
         })
         .catch(() => null);
       setProfilePromise(promise);
-    } else if (storeSettings.googleSheetWebhookUrl) {
-      const promise = fetchCustomerFromSheet(storeSettings.googleSheetWebhookUrl, input)
-        .then(profile => {
-          if (profile) {
-            const data = {
-              name: profile.customerName,
-              phone: profile.phone,
-              email: profile.email,
-              address: profile.address,
-              city: profile.city,
-              pincode: profile.pincode,
-            };
-            setFetchedCustomerProfile(data);
-            return data;
-          }
-          return null;
-        })
-        .catch(() => null);
-      setProfilePromise(promise);
-    }
 
-    setLoading(false);
-    sendOtpEmail(input, '', code);
+      // Send real-time OTP via Supabase Auth directly to inbox
+      const res = await sendSupabaseEmailOtp(input);
+      setLoading(false);
+
+      if (res.success) {
+        setOtpMode(true);
+        setResendTimer(60);
+        toast.success(`Verification code sent in real-time to ${input}!\nPlease check your Inbox and Spam/Junk folder.`, {
+          duration: 6000,
+        });
+      } else {
+        toast.error(res.error || 'Failed to send OTP to email. Please try again.');
+      }
+    } else {
+      const code = Math.floor(100000 + Math.random() * 900000).toString(); // 6-digit OTP
+      setGeneratedOtp(code);
+
+      if (storeSettings.googleSheetWebhookUrl) {
+        const promise = fetchCustomerFromSheet(storeSettings.googleSheetWebhookUrl, input)
+          .then(profile => {
+            if (profile) {
+              const data = {
+                name: profile.customerName,
+                phone: profile.phone,
+                email: profile.email,
+                address: profile.address,
+                city: profile.city,
+                pincode: profile.pincode,
+              };
+              setFetchedCustomerProfile(data);
+              return data;
+            }
+            return null;
+          })
+          .catch(() => null);
+        setProfilePromise(promise);
+      }
+
+      setLoading(false);
+      setOtpMode(true);
+      setResendTimer(60);
+      sendOtpEmail(input, '', code);
+    }
   };
 
-  const handleRegister = (e: React.FormEvent) => {
+  const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!regName.trim()) return toast.error('Name is required');
     if (!regPhone || regPhone.replace(/\D/g, '').length < 10) return toast.error('Please enter a valid 10-digit phone number');
@@ -217,35 +237,71 @@ export default function CustomerLoginPage() {
     if (!regAddress.trim()) return toast.error('Address is required');
     if (!regPincode || regPincode.replace(/\D/g, '').length < 6) return toast.error('Please enter a valid 6-digit pincode');
 
-    setLoading(true);
-    const code = Math.floor(100000 + Math.random() * 900000).toString(); // 6-digit OTP
     const formattedPhone = regPhone.startsWith('+91') ? regPhone : `+91 ${regPhone.trim()}`;
-    setGeneratedOtp(code);
+    const cleanEmail = regEmail.trim();
+
+    setLoading(true);
     setPendingRegData({
       name: regName.trim(),
       phone: formattedPhone,
-      email: regEmail.trim(),
+      email: cleanEmail,
       address: regAddress.trim(),
       city: regCity.trim(),
       pincode: regPincode.trim(),
     });
     setPendingAction('register');
-    setOtpMode(true);
-    setResendTimer(60);
     setOtpVal('');
-    setLoading(false);
 
-    sendOtpEmail(regEmail.trim(), formattedPhone, code);
+    if (isSupabaseConfigured()) {
+      // Send real-time OTP via Supabase Auth
+      const res = await sendSupabaseEmailOtp(cleanEmail);
+      setLoading(false);
+
+      if (res.success) {
+        setOtpMode(true);
+        setResendTimer(60);
+        toast.success(`Verification code sent in real-time to ${cleanEmail}!\nPlease check your Inbox and Spam/Junk folder.`, {
+          duration: 6000,
+        });
+      } else {
+        toast.error(res.error || 'Failed to send OTP to email. Please try again.');
+      }
+    } else {
+      const code = Math.floor(100000 + Math.random() * 900000).toString(); // 6-digit OTP
+      setGeneratedOtp(code);
+      setOtpMode(true);
+      setResendTimer(60);
+      setLoading(false);
+      sendOtpEmail(cleanEmail, formattedPhone, code);
+    }
   };
 
   const handleVerifyOtp = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (otpVal.trim() !== generatedOtp) {
-      toast.error('Invalid OTP. Please check the 6-digit code from your email.');
+    const token = otpVal.trim();
+    if (token.length !== 6) {
+      toast.error('Please enter the complete 6-digit OTP code.');
       return;
     }
 
     setLoading(true);
+    const targetEmail = pendingAction === 'login' ? pendingLoginEmail : pendingRegData?.email || '';
+
+    // Verify OTP with Supabase Auth or fallback
+    if (isSupabaseConfigured()) {
+      const verifyRes = await verifySupabaseEmailOtp(targetEmail, token);
+      if (!verifyRes.success) {
+        setLoading(false);
+        toast.error(verifyRes.error || 'Invalid or expired OTP code. Please check and try again.');
+        return;
+      }
+    } else {
+      if (token !== generatedOtp) {
+        setLoading(false);
+        toast.error('Invalid OTP. Please check the 6-digit code from your email.');
+        return;
+      }
+    }
     
     if (pendingAction === 'login') {
       let profile = fetchedCustomerProfile;
@@ -258,7 +314,26 @@ export default function CustomerLoginPage() {
         }
       }
 
-      // 1. Try to use fetched customer profile details from Google Sheets
+      // If still no profile and Supabase is configured, try fetchCustomerFromSupabase once more directly
+      if (!profile && isSupabaseConfigured() && targetEmail) {
+        try {
+          const spProfile = await fetchCustomerFromSupabase(targetEmail);
+          if (spProfile) {
+            profile = {
+              name: spProfile.name,
+              phone: spProfile.phone,
+              email: spProfile.email,
+              address: spProfile.address,
+              city: spProfile.city,
+              pincode: spProfile.pincode,
+            };
+          }
+        } catch (e) {
+          console.error('Direct customer fetch error:', e);
+        }
+      }
+
+      // 1. Try to use fetched customer profile details
       if (profile) {
         customerLogin(profile);
         toast.success(`OTP Verified! Welcome back, ${profile.name}!`);
@@ -266,7 +341,7 @@ export default function CustomerLoginPage() {
         // 2. Fallback: Try to find past orders matching email or phone
         const cleanPendingPhone = pendingLoginPhone.replace(/[\s-+]/g, '').slice(-10);
         const pastOrder = orders.find(o => {
-          const matchEmail = pendingLoginEmail && o.customer.email?.trim().toLowerCase() === pendingLoginEmail.trim().toLowerCase();
+          const matchEmail = targetEmail && o.customer.email?.trim().toLowerCase() === targetEmail.trim().toLowerCase();
           const oPhoneClean = o.customer.phone ? o.customer.phone.replace(/[\s-+]/g, '').slice(-10) : '';
           const matchPhone = cleanPendingPhone && oPhoneClean === cleanPendingPhone;
           return matchEmail || matchPhone;
@@ -276,18 +351,19 @@ export default function CustomerLoginPage() {
           customerLogin({
             name: pastOrder.customer.name,
             phone: pastOrder.customer.phone || pendingLoginPhone || '',
-            email: pendingLoginEmail || pastOrder.customer.email || '',
+            email: targetEmail || pastOrder.customer.email || '',
             address: pastOrder.customer.address,
             city: pastOrder.customer.city,
             pincode: pastOrder.customer.pincode,
           });
           toast.success(`OTP Verified! Welcome back, ${pastOrder.customer.name}!`);
         } else {
-          // 3. Last fallback: Log in as default customer
+          // 3. Last fallback: Log in with email as user identifier
+          const defaultName = targetEmail.split('@')[0] || 'Customer';
           customerLogin({
-            name: 'Valued Customer',
+            name: defaultName.charAt(0).toUpperCase() + defaultName.slice(1),
             phone: pendingLoginPhone || '',
-            email: pendingLoginEmail || '',
+            email: targetEmail,
             address: '',
             city: 'Bhopal',
             pincode: '',
@@ -332,19 +408,30 @@ export default function CustomerLoginPage() {
     setLoading(false);
   };
 
-  const handleResendOtp = () => {
+  const handleResendOtp = async () => {
     if (resendTimer > 0) return;
-    const code = Math.floor(100000 + Math.random() * 900000).toString();
-    setGeneratedOtp(code);
     setResendTimer(60);
     setOtpVal('');
 
     const targetEmail = pendingAction === 'login' ? pendingLoginEmail : pendingRegData?.email || '';
     const targetPhone = pendingAction === 'login' ? pendingLoginPhone : pendingRegData?.phone || '';
 
-    setTimeout(() => {
-      sendOtpEmail(targetEmail, targetPhone, code);
-    }, 500);
+    if (isSupabaseConfigured() && targetEmail) {
+      setLoading(true);
+      const res = await sendSupabaseEmailOtp(targetEmail);
+      setLoading(false);
+      if (res.success) {
+        toast.success(`New verification code sent in real-time to ${targetEmail}!\nPlease check your inbox.`);
+      } else {
+        toast.error(res.error || 'Failed to resend verification code. Please try again.');
+      }
+    } else {
+      const code = Math.floor(100000 + Math.random() * 900000).toString();
+      setGeneratedOtp(code);
+      setTimeout(() => {
+        sendOtpEmail(targetEmail, targetPhone, code);
+      }, 300);
+    }
   };
 
   return (
@@ -405,7 +492,7 @@ export default function CustomerLoginPage() {
                 </div>
                 <h3 className={`text-base font-black ${darkMode ? 'text-white' : 'text-gray-900'}`}>Check Your Email</h3>
                 <p className={`text-xs mt-1 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                  {isDemoWebhook ? 'Demo: OTP shown above in notification' : 'We sent a 6-digit code to'}
+                  {isDemoWebhook ? 'Demo: OTP shown above in notification' : 'We sent a 6-digit verification code to'}
                 </p>
                 {!isDemoWebhook && (
                   <p className="font-extrabold text-green-600 text-sm mt-0.5">
@@ -437,12 +524,12 @@ export default function CustomerLoginPage() {
               {isDemoWebhook ? (
                 <div className={`p-3.5 rounded-xl text-[11px] leading-relaxed border flex items-start gap-2 ${darkMode ? 'bg-amber-950/20 border-amber-800/40 text-amber-300' : 'bg-amber-50 border-amber-200 text-amber-800'}`}>
                   <Info size={14} className="shrink-0 mt-0.5 text-amber-600" />
-                  <span><b>Demo Mode:</b> OTP code is shown in the notification at the top. Configure your Google Sheet Webhook URL in Admin Settings to enable real email delivery.</span>
+                  <span><b>Demo Mode:</b> OTP code is shown in the notification at the top.</span>
                 </div>
               ) : (
                 <div className={`p-3.5 rounded-xl text-[11px] leading-relaxed border flex items-start gap-2 ${darkMode ? 'bg-emerald-950/20 border-emerald-800/40 text-emerald-300' : 'bg-emerald-50 border-emerald-200 text-emerald-800'}`}>
                   <Mail size={14} className="shrink-0 mt-0.5 text-emerald-600" />
-                  <span><b>Email Sent!</b> Check your <b>Inbox</b> and <b>Spam/Junk</b> folder. Code expires in 5 minutes. Sent from your Google account via Apps Script.</span>
+                  <span><b>Email Sent in Real-Time!</b> Check your <b>Inbox</b> and <b>Spam/Junk</b> folder. Code expires in 5 minutes. Enter the 6-digit code above to login.</span>
                 </div>
               )}
 

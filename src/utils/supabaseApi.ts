@@ -592,3 +592,66 @@ export async function bulkUpsertBannersToSupabase(banners: HomeBanner[]): Promis
     return false;
   }
 }
+
+// ==========================================
+// 8. CUSTOMER AUTH VIA EMAIL OTP
+// ==========================================
+
+export async function sendSupabaseEmailOtp(email: string): Promise<{ success: boolean; error?: string }> {
+  const supabase = getSupabase();
+  if (!supabase) {
+    return { success: false, error: 'Supabase is not configured' };
+  }
+
+  try {
+    const cleanEmail = email.trim().toLowerCase();
+    const { error } = await supabase.auth.signInWithOtp({
+      email: cleanEmail,
+      options: {
+        shouldCreateUser: true,
+      },
+    });
+
+    if (error) {
+      console.error('Supabase signInWithOtp error:', error);
+      return { success: false, error: error.message };
+    }
+
+    return { success: true };
+  } catch (err: any) {
+    console.error('Failed to dispatch Email OTP via Supabase:', err);
+    return { success: false, error: err?.message || 'Failed to send OTP' };
+  }
+}
+
+export async function verifySupabaseEmailOtp(
+  email: string,
+  token: string
+): Promise<{ success: boolean; user?: any; error?: string }> {
+  const supabase = getSupabase();
+  if (!supabase) {
+    return { success: false, error: 'Supabase is not configured' };
+  }
+
+  try {
+    const cleanEmail = email.trim().toLowerCase();
+    const cleanToken = token.trim();
+
+    const { data, error } = await supabase.auth.verifyOtp({
+      email: cleanEmail,
+      token: cleanToken,
+      type: 'email',
+    });
+
+    if (error) {
+      console.error('Supabase verifyOtp error:', error);
+      return { success: false, error: error.message };
+    }
+
+    return { success: true, user: data.user };
+  } catch (err: any) {
+    console.error('Failed to verify OTP via Supabase:', err);
+    return { success: false, error: err?.message || 'Invalid or expired OTP' };
+  }
+}
+
