@@ -130,7 +130,7 @@ export default function ProductCard({ product }: Props) {
         </div>
 
         {/* Content Body */}
-        <div className="p-3.5 flex flex-col gap-1.5 flex-1">
+        <div className="p-2.5 sm:p-3.5 flex flex-col gap-1.5 flex-1">
           {/* Subcategory & Seller */}
           <div className="flex items-center justify-between text-[10px] text-gray-400 font-bold uppercase tracking-wide gap-1">
             <span className="truncate">{product.subcategory || product.category}</span>
@@ -157,31 +157,31 @@ export default function ProductCard({ product }: Props) {
           </div>
 
           {/* Price & Action Row */}
-          <div className="mt-auto pt-2.5 flex items-center justify-between gap-2 border-t border-gray-100 dark:border-gray-800">
+          <div className="mt-auto pt-2 flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 sm:gap-2 border-t border-gray-100 dark:border-gray-800">
             <div className="flex flex-col">
-              <div className="flex items-baseline gap-1.5">
-                <span className="text-emerald-600 dark:text-emerald-400 font-black text-base sm:text-lg tracking-tight">
+              <div className="flex items-baseline gap-1 sm:gap-1.5">
+                <span className="text-emerald-600 dark:text-emerald-400 font-black text-sm sm:text-base tracking-tight">
                   ₹{product.price}
                 </span>
                 {product.mrp > product.price && (
-                  <span className="text-gray-400 dark:text-gray-500 text-[11px] line-through font-bold">
+                  <span className="text-gray-400 dark:text-gray-500 text-[10px] sm:text-[11px] line-through font-bold">
                     ₹{product.mrp}
                   </span>
                 )}
               </div>
             </div>
 
-            <div className="w-22 shrink-0">
+            <div className="w-full sm:w-20 md:w-22 shrink-0">
               {!product.inStock ? (
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
                     setShowNotifyModal(true);
                   }}
-                  className="w-full flex items-center justify-center gap-1 py-1.5 rounded-xl font-black text-[10px] transition-all cursor-pointer bg-orange-50 dark:bg-orange-950/20 text-orange-600 border border-orange-200 dark:border-orange-900/50 hover:bg-orange-600 hover:text-white"
+                  className="w-full flex items-center justify-center gap-1 py-1 sm:py-1.5 rounded-lg sm:rounded-xl font-black text-[10px] sm:text-xs transition-all cursor-pointer bg-orange-50 dark:bg-orange-950/20 text-orange-600 border border-orange-200 dark:border-orange-900/50 hover:bg-orange-600 hover:text-white whitespace-nowrap"
                 >
                   <Bell size={10} />
-                  Notify
+                  <span>Notify</span>
                 </button>
               ) : !cartItem ? (
                 <button
@@ -189,30 +189,30 @@ export default function ProductCard({ product }: Props) {
                     e.stopPropagation();
                     addToCart(product);
                   }}
-                  className="w-full flex items-center justify-center gap-1 py-1.5 rounded-xl font-black text-xs transition-all cursor-pointer bg-white dark:bg-gray-800 text-emerald-600 dark:text-emerald-400 border-2 border-emerald-600/80 hover:bg-emerald-600 hover:text-white hover:shadow-sm active:scale-95"
+                  className="w-full flex items-center justify-center gap-1 py-1.5 rounded-lg sm:rounded-xl font-black text-xs transition-all cursor-pointer bg-white dark:bg-gray-800 text-emerald-600 dark:text-emerald-400 border-2 border-emerald-600/80 hover:bg-emerald-600 hover:text-white hover:shadow-sm active:scale-95 whitespace-nowrap"
                 >
                   <Plus size={12} strokeWidth={3} />
-                  ADD
+                  <span>ADD</span>
                 </button>
               ) : (
-                <div className="flex items-center justify-between bg-emerald-600 text-white rounded-xl overflow-hidden font-black text-xs border border-emerald-600 shadow-sm">
+                <div className="flex items-center justify-between bg-emerald-600 text-white rounded-lg sm:rounded-xl overflow-hidden font-black text-xs border border-emerald-600 shadow-sm">
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
                       updateQuantity(product.id, cartItem.quantity - 1);
                     }}
-                    className="px-2 py-1.5 hover:bg-emerald-700 transition-colors cursor-pointer text-center"
+                    className="flex-1 py-1.5 hover:bg-emerald-700 transition-colors cursor-pointer flex items-center justify-center"
                     aria-label="Decrease quantity"
                   >
                     <Minus size={11} strokeWidth={3} />
                   </button>
-                  <span className="px-1 font-black">{cartItem.quantity}</span>
+                  <span className="px-1.5 font-black">{cartItem.quantity}</span>
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
                       updateQuantity(product.id, cartItem.quantity + 1);
                     }}
-                    className="px-2 py-1.5 hover:bg-emerald-700 transition-colors cursor-pointer text-center"
+                    className="flex-1 py-1.5 hover:bg-emerald-700 transition-colors cursor-pointer flex items-center justify-center"
                     aria-label="Increase quantity"
                   >
                     <Plus size={11} strokeWidth={3} />

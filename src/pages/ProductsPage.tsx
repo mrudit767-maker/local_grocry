@@ -106,10 +106,10 @@ export default function ProductsPage() {
 
   return (
     <div className={`min-h-screen ${darkMode ? 'bg-gray-950 text-white' : 'bg-gray-50 text-gray-800'}`}>
-      <div className="max-w-7xl mx-auto px-4 py-6">
+      <div className="max-w-7xl mx-auto px-2 sm:px-4 py-4 sm:py-6">
         
         {/* Breadcrumb / Top Info */}
-        <div className="flex flex-wrap items-center gap-2 mb-4 text-xs font-semibold text-gray-400">
+        <div className="flex flex-wrap items-center gap-2 mb-3 sm:mb-4 text-xs font-semibold text-gray-400">
           <span onClick={() => setCurrentPage('home')} className="hover:text-green-600 cursor-pointer">Home</span>
           <span>/</span>
           <span className="text-gray-500">All Products</span>
@@ -121,10 +121,10 @@ export default function ProductsPage() {
           )}
         </div>
 
-        <div className="flex flex-row gap-3 md:gap-6 items-start">
+        <div className="flex flex-row gap-2 sm:gap-3 md:gap-6 items-start">
           
           {/* LEFT SIDEBAR: Sticky Category List (Visible on both Mobile & Desktop) */}
-          <aside className="w-20 md:w-64 shrink-0 sticky top-20 md:top-28 space-y-4">
+          <aside className="w-[70px] sm:w-20 md:w-64 shrink-0 sticky top-20 md:top-28 space-y-4">
             <div className={`p-1 md:p-4 rounded-2xl md:rounded-3xl border shadow-premium ${
               darkMode ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-200/60'
             }`}>
@@ -339,7 +339,7 @@ export default function ProductsPage() {
               </div>
             ) : (
               <div className="space-y-8">
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-3 md:gap-4">
                   {paginated.map(p => <ProductCard key={p.id} product={p} />)}
                 </div>
 
