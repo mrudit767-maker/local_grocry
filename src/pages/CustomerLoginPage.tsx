@@ -39,7 +39,6 @@ export default function CustomerLoginPage() {
   const [generatedOtp, setGeneratedOtp] = useState('');
   const [resendTimer, setResendTimer] = useState(0);
   const [pendingAction, setPendingAction] = useState<'login' | 'register' | null>(null);
-  const [showBackupCode, setShowBackupCode] = useState(false);
   
   // Pending registration details
   const [pendingRegData, setPendingRegData] = useState<{
@@ -158,7 +157,6 @@ export default function CustomerLoginPage() {
     setPendingLoginEmail(input);
     setPendingAction('login');
     setOtpVal('');
-    setShowBackupCode(false);
 
     // Generate real 6-digit OTP
     const code = Math.floor(100000 + Math.random() * 900000).toString();
@@ -249,7 +247,6 @@ export default function CustomerLoginPage() {
     });
     setPendingAction('register');
     setOtpVal('');
-    setShowBackupCode(false);
 
     if (isSupabaseConfigured()) {
       // Primary: Send OTP via Supabase Auth SMTP
@@ -418,7 +415,6 @@ export default function CustomerLoginPage() {
     if (resendTimer > 0) return;
     setResendTimer(60);
     setOtpVal('');
-    setShowBackupCode(false);
 
     const targetEmail = pendingAction === 'login' ? pendingLoginEmail : pendingRegData?.email || '';
     const targetPhone = pendingAction === 'login' ? pendingLoginPhone : pendingRegData?.phone || '';
@@ -519,31 +515,14 @@ export default function CustomerLoginPage() {
                 />
               </div>
 
-              {/* Prominent Verification Code Card with Instant Auto Fill */}
-              <div className={`p-4 rounded-2xl border text-center ${
-                darkMode ? 'bg-emerald-950/30 border-emerald-800/60 text-emerald-300' : 'bg-emerald-50 border-emerald-200 text-emerald-900'
+              {/* Email Sent Verification Banner */}
+              <div className={`p-3.5 rounded-xl text-[11px] leading-relaxed border flex items-start gap-2.5 ${
+                darkMode ? 'bg-emerald-950/20 border-emerald-800/40 text-emerald-300' : 'bg-emerald-50 border-emerald-200 text-emerald-800'
               }`}>
-                <p className="text-xs font-bold text-gray-500 dark:text-gray-400 mb-1">
-                  Your 6-Digit Verification Code:
-                </p>
-                <div className="flex items-center justify-center gap-2.5 my-2">
-                  <span className="font-mono text-2xl font-black tracking-widest text-emerald-600 dark:text-emerald-400 px-4 py-1.5 bg-white dark:bg-gray-900 rounded-xl border border-emerald-300 dark:border-emerald-700 shadow-sm select-all">
-                    {generatedOtp}
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setOtpVal(generatedOtp);
-                      toast.success('Code filled! Click Verify & Continue.');
-                    }}
-                    className="px-3.5 py-2 text-xs font-bold bg-green-600 hover:bg-green-700 active:scale-95 text-white rounded-xl shadow transition-all cursor-pointer flex items-center gap-1"
-                  >
-                    Auto Fill ✨
-                  </button>
-                </div>
-                <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-1">
-                  Dispatched to {pendingAction === 'login' ? pendingLoginEmail : pendingRegData?.email}. Click Auto Fill to login instantly!
-                </p>
+                <Mail size={16} className="shrink-0 mt-0.5 text-emerald-600" />
+                <span>
+                  <b>Verification code sent to your email inbox!</b> Please check your <b>Inbox</b> and <b>Spam/Junk</b> folder. Enter the 6-digit code above to verify.
+                </span>
               </div>
 
               <div className="flex flex-col gap-2.5">
