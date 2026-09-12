@@ -12,15 +12,8 @@ export default function CustomerLoginPage() {
   const [loading, setLoading] = useState(false);
 
   // Check if Supabase is active
+  // Check if Supabase is active
   const hasSupabase = isSupabaseConfigured();
-
-  // Demo mode = neither Supabase nor Google Sheet webhook is available
-  const isDemoWebhook = !hasSupabase && (!storeSettings.googleSheetWebhookUrl ||
-    storeSettings.googleSheetWebhookUrl.trim() === '');
-
-  // Email delivery possible = Supabase configured OR webhook URL is a real Apps Script URL
-  const canSendRealEmail = hasSupabase || (!isDemoWebhook &&
-    storeSettings.googleSheetWebhookUrl.startsWith('https://script.google.com'));
 
   // Login form state
   const [loginEmail, setLoginEmail] = useState('');
@@ -36,7 +29,6 @@ export default function CustomerLoginPage() {
   // OTP Verification state
   const [otpMode, setOtpMode] = useState(false);
   const [otpVal, setOtpVal] = useState('');
-  const [generatedOtp, setGeneratedOtp] = useState('');
   const [resendTimer, setResendTimer] = useState(0);
   const [pendingAction, setPendingAction] = useState<'login' | 'register' | null>(null);
   
@@ -54,7 +46,7 @@ export default function CustomerLoginPage() {
   const [pendingLoginPhone, setPendingLoginPhone] = useState('');
   const [pendingLoginEmail, setPendingLoginEmail] = useState('');
 
-  // Fetched profile from Google Sheets
+  // Fetched profile from database
   const [fetchedCustomerProfile, setFetchedCustomerProfile] = useState<{
     name: string;
     phone: string;
@@ -83,71 +75,16 @@ export default function CustomerLoginPage() {
     return () => clearInterval(interval);
   }, [resendTimer]);
 
-  const sendOtpEmail = async (email: string, phone: string, code: string) => {
-    const cleanPhone = phone ? phone.replace(/[\s-+]/g, '').slice(-10) : '';
-
-    const webhookUrl = (storeSettings.googleSheetWebhookUrl && storeSettings.googleSheetWebhookUrl.startsWith('https://script.google.com'))
-      ? storeSettings.googleSheetWebhookUrl
-      : 'https://script.google.com/macros/s/AKfycbzKMXP4_DT32ePA9rc2YOd9-n2AKOvYi0ID0rcl1aLKAETYjL8eJc33_EacweDFmOELCQ/exec';
-
-    if (email) {
-      try {
-        // Send real OTP email via Google Apps Script (GmailApp)
-        fetch(webhookUrl, {
-          method: 'POST',
-          mode: 'no-cors',
-          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-          body: JSON.stringify({
-            action: 'sendSMS',
-            gateway: storeSettings.smsGateway || 'simulated',
-            fast2smsApiKey: storeSettings.fast2smsApiKey || '',
-            twilioAccountSid: storeSettings.twilioAccountSid || '',
-            twilioAuthToken: storeSettings.twilioAuthToken || '',
-            twilioFromNumber: storeSettings.twilioFromNumber || '',
-            androidSmsToken: storeSettings.androidSmsToken || '',
-            androidSmsDeviceId: storeSettings.androidSmsDeviceId || '',
-            shopName: storeSettings.shopName || 'Krishna Kirana',
-            phone: cleanPhone,
-            email: email,
-            otp: code,
-          }),
-        }).catch((err) => {
-          console.error('Webhook fetch error:', err);
-        });
-      } catch (e) {
-        console.error('Failed to dispatch OTP email via Apps Script:', e);
-      }
-
-      // Store in session for reload resilience
-      try {
-        sessionStorage.setItem('pending_otp_' + email.trim().toLowerCase(), code);
-      } catch (_) {}
-
-      // Confirmation toast
-      toast.success(`Verification code sent to ${email}!\nPlease check your Inbox & Spam folder.`, {
-        duration: 7000,
-        style: { fontWeight: 'bold' },
-      });
-    }
-
-    // Also send SMS if configured (phone provided and smsGateway not simulated)
-    if (cleanPhone && storeSettings.smsGateway && storeSettings.smsGateway !== 'simulated') {
-      if (storeSettings.smsGateway === 'fast2sms' && storeSettings.fast2smsApiKey) {
-        try {
-          const url = `https://www.fast2sms.com/dev/bulkV2?authorization=${encodeURIComponent(storeSettings.fast2smsApiKey)}&route=otp&variables_values=${encodeURIComponent(code)}&numbers=${encodeURIComponent(cleanPhone)}`;
-          fetch(url, { method: 'GET', mode: 'no-cors' }).catch(() => {});
-        } catch (err) {
-          console.error('Fast2SMS error:', err);
-        }
-      }
-    }
-  };
-
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    const input = loginEmail.trim();
+    const input = loginEmail.trim().toLowerCase();
     if (!input || !input.includes('@')) {
       toast.error('Please enter a valid email address to receive OTP');
+      return;
+    }
+
+    if (!isSupabaseConfigured()) {
+      toast.error('Supabase is not configured. Please check your Supabase credentials.');
       return;
     }
 
@@ -158,69 +95,39 @@ export default function CustomerLoginPage() {
     setPendingAction('login');
     setOtpVal('');
 
-    // Generate real 6-digit OTP
-    const code = Math.floor(100000 + Math.random() * 900000).toString();
-    setGeneratedOtp(code);
+    // Pre-fetch customer profile in background from Supabase
+    const promise = fetchCustomerFromSupabase(input)
+      .then(profile => {
+        if (profile) {
+          const data = {
+            name: profile.name,
+            phone: profile.phone,
+            email: profile.email,
+            address: profile.address,
+            city: profile.city,
+            pincode: profile.pincode,
+          };
+          setFetchedCustomerProfile(data);
+          return data;
+        }
+        return null;
+      })
+      .catch(() => null);
+    setProfilePromise(promise);
 
-    // Pre-fetch customer profile in background from Supabase or Google Sheet
-    if (isSupabaseConfigured()) {
-      const promise = fetchCustomerFromSupabase(input)
-        .then(profile => {
-          if (profile) {
-            const data = {
-              name: profile.name,
-              phone: profile.phone,
-              email: profile.email,
-              address: profile.address,
-              city: profile.city,
-              pincode: profile.pincode,
-            };
-            setFetchedCustomerProfile(data);
-            return data;
-          }
-          return null;
-        })
-        .catch(() => null);
-      setProfilePromise(promise);
-
-      // Primary: Send OTP via Supabase Auth SMTP
-      const res = await sendSupabaseEmailOtp(input);
-      if (res.success) {
-        toast.success(`Verification code sent to ${input}!`, {
-          duration: 5000,
-        });
-      } else {
-        console.warn('Supabase SMTP issue (fallback to local dispatch):', res.error);
-        // Fallback dispatch silently
-        sendOtpEmail(input, '', code);
-      }
-    } else if (storeSettings.googleSheetWebhookUrl) {
-      const promise = fetchCustomerFromSheet(storeSettings.googleSheetWebhookUrl, input)
-        .then(profile => {
-          if (profile) {
-            const data = {
-              name: profile.customerName,
-              phone: profile.phone,
-              email: profile.email,
-              address: profile.address,
-              city: profile.city,
-              pincode: profile.pincode,
-            };
-            setFetchedCustomerProfile(data);
-            return data;
-          }
-          return null;
-        })
-        .catch(() => null);
-      setProfilePromise(promise);
-      await sendOtpEmail(input, '', code);
-    } else {
-      await sendOtpEmail(input, '', code);
-    }
-
+    // Send OTP exclusively via Supabase Auth
+    const res = await sendSupabaseEmailOtp(input);
     setLoading(false);
-    setOtpMode(true);
-    setResendTimer(60);
+
+    if (res.success) {
+      toast.success(`Verification code sent to ${input}!\nPlease check your Inbox & Spam folder.`, {
+        duration: 6000,
+      });
+      setOtpMode(true);
+      setResendTimer(60);
+    } else {
+      toast.error(res.error || 'Failed to send OTP to your email. Please try again.');
+    }
   };
 
   const handleRegister = async (e: React.FormEvent) => {
@@ -231,12 +138,15 @@ export default function CustomerLoginPage() {
     if (!regAddress.trim()) return toast.error('Address is required');
     if (!regPincode || regPincode.replace(/\D/g, '').length < 6) return toast.error('Please enter a valid 6-digit pincode');
 
+    if (!isSupabaseConfigured()) {
+      toast.error('Supabase is not configured. Please check your Supabase credentials.');
+      return;
+    }
+
     const formattedPhone = regPhone.startsWith('+91') ? regPhone : `+91 ${regPhone.trim()}`;
-    const cleanEmail = regEmail.trim();
+    const cleanEmail = regEmail.trim().toLowerCase();
 
     setLoading(true);
-    const code = Math.floor(100000 + Math.random() * 900000).toString();
-    setGeneratedOtp(code);
     setPendingRegData({
       name: regName.trim(),
       phone: formattedPhone,
@@ -248,24 +158,19 @@ export default function CustomerLoginPage() {
     setPendingAction('register');
     setOtpVal('');
 
-    if (isSupabaseConfigured()) {
-      // Primary: Send OTP via Supabase Auth SMTP
-      const res = await sendSupabaseEmailOtp(cleanEmail);
-      if (res.success) {
-        toast.success(`Verification code sent to ${cleanEmail}!`, {
-          duration: 5000,
-        });
-      } else {
-        console.warn('Supabase SMTP issue (fallback to local dispatch):', res.error);
-        sendOtpEmail(cleanEmail, formattedPhone, code);
-      }
-    } else {
-      await sendOtpEmail(cleanEmail, formattedPhone, code);
-    }
-
+    // Send OTP exclusively via Supabase Auth
+    const res = await sendSupabaseEmailOtp(cleanEmail);
     setLoading(false);
-    setOtpMode(true);
-    setResendTimer(60);
+
+    if (res.success) {
+      toast.success(`Verification code sent to ${cleanEmail}!\nPlease check your Inbox & Spam folder.`, {
+        duration: 6000,
+      });
+      setOtpMode(true);
+      setResendTimer(60);
+    } else {
+      toast.error(res.error || 'Failed to send OTP to your email. Please try again.');
+    }
   };
 
   const handleVerifyOtp = async (e: React.FormEvent) => {
@@ -279,30 +184,11 @@ export default function CustomerLoginPage() {
     setLoading(true);
     const targetEmail = pendingAction === 'login' ? pendingLoginEmail : pendingRegData?.email || '';
 
-    // 1. Primary: Verify with Supabase Auth OTP
-    let isVerified = false;
-    if (isSupabaseConfigured()) {
-      const verifyRes = await verifySupabaseEmailOtp(targetEmail, token);
-      if (verifyRes.success) {
-        isVerified = true;
-      }
-    }
-
-    // 2. Secondary: Verify with generated code from email / session
-    if (!isVerified) {
-      let savedSessionOtp = '';
-      try {
-        savedSessionOtp = sessionStorage.getItem('pending_otp_' + targetEmail.trim().toLowerCase()) || '';
-      } catch (_) {}
-
-      if ((generatedOtp && token === generatedOtp) || (savedSessionOtp && token === savedSessionOtp)) {
-        isVerified = true;
-      }
-    }
-
-    if (!isVerified) {
+    // Verify OTP exclusively via Supabase Auth
+    const verifyRes = await verifySupabaseEmailOtp(targetEmail, token);
+    if (!verifyRes.success) {
       setLoading(false);
-      toast.error('Invalid OTP. Please check the 6-digit code from your email.');
+      toast.error(verifyRes.error || 'Invalid or expired OTP. Please check your email.');
       return;
     }
     
@@ -413,20 +299,20 @@ export default function CustomerLoginPage() {
 
   const handleResendOtp = async () => {
     if (resendTimer > 0) return;
-    setResendTimer(60);
-    setOtpVal('');
-
     const targetEmail = pendingAction === 'login' ? pendingLoginEmail : pendingRegData?.email || '';
-    const targetPhone = pendingAction === 'login' ? pendingLoginPhone : pendingRegData?.phone || '';
+    if (!targetEmail) return;
 
-    const code = Math.floor(100000 + Math.random() * 900000).toString();
-    setGeneratedOtp(code);
+    setLoading(true);
+    const res = await sendSupabaseEmailOtp(targetEmail);
+    setLoading(false);
 
-    if (isSupabaseConfigured() && targetEmail) {
-      sendSupabaseEmailOtp(targetEmail).catch(() => {});
+    if (res.success) {
+      setResendTimer(60);
+      setOtpVal('');
+      toast.success(`New verification code sent to ${targetEmail}!\nPlease check your email inbox.`);
+    } else {
+      toast.error(res.error || 'Failed to resend OTP. Please try again.');
     }
-
-    await sendOtpEmail(targetEmail, targetPhone, code);
   };
 
   return (
@@ -487,13 +373,11 @@ export default function CustomerLoginPage() {
                 </div>
                 <h3 className={`text-base font-black ${darkMode ? 'text-white' : 'text-gray-900'}`}>Check Your Email</h3>
                 <p className={`text-xs mt-1 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                  {isDemoWebhook ? 'Demo: OTP shown above in notification' : 'We sent a 6-digit verification code to'}
+                  We sent a 6-digit verification code to
                 </p>
-                {!isDemoWebhook && (
-                  <p className="font-extrabold text-green-600 text-sm mt-0.5">
-                    {pendingAction === 'login' ? pendingLoginEmail : pendingRegData?.email}
-                  </p>
-                )}
+                <p className="font-extrabold text-green-600 text-sm mt-0.5">
+                  {pendingAction === 'login' ? pendingLoginEmail : pendingRegData?.email}
+                </p>
               </div>
 
               <div>
@@ -748,7 +632,7 @@ export default function CustomerLoginPage() {
               >
                 {loading ? 'Sending OTP...' : (
                   <>
-                    Verify Phone & Register <ArrowRight size={18} />
+                    Verify Email & Register <ArrowRight size={18} />
                   </>
                 )}
               </button>
@@ -767,7 +651,7 @@ export default function CustomerLoginPage() {
           {/* Secure indicator */}
           <div className="flex items-center justify-center gap-1.5 mt-6 text-[10px] text-gray-400">
             <ShieldCheck size={12} className="text-green-500" />
-            <span>Secured details stored via Google Sheets backend</span>
+            <span>Secured with Supabase Authentication & Database</span>
           </div>
         </div>
       </div>
