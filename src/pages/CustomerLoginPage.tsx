@@ -185,8 +185,24 @@ export default function CustomerLoginPage() {
         .catch(() => null);
       setProfilePromise(promise);
 
-      // Attempt Supabase OTP in background silently (don't block or error out if built-in SMTP isn't configured)
-      sendSupabaseEmailOtp(input).catch(() => {});
+      // Primary: Send OTP via Supabase Auth SMTP
+      const res = await sendSupabaseEmailOtp(input);
+      if (res.success) {
+        toast.success(`Verification code sent to ${input} via Supabase Auth! Please check your Inbox.`, {
+          duration: 6000,
+        });
+      } else {
+        console.warn('Supabase SMTP issue:', res.error);
+        if (res.error?.toLowerCase().includes('confirmation email') || res.error?.toLowerCase().includes('smtp')) {
+          toast.error('Supabase SMTP notice: Enable Custom SMTP in Supabase Settings to send via your domain. Dispatching backup code...', {
+            duration: 6000,
+          });
+        } else {
+          toast.error(res.error || 'Failed to send OTP via Supabase');
+        }
+        // Fallback dispatch
+        sendOtpEmail(input, '', code);
+      }
     } else if (storeSettings.googleSheetWebhookUrl) {
       const promise = fetchCustomerFromSheet(storeSettings.googleSheetWebhookUrl, input)
         .then(profile => {
@@ -206,10 +222,10 @@ export default function CustomerLoginPage() {
         })
         .catch(() => null);
       setProfilePromise(promise);
+      await sendOtpEmail(input, '', code);
+    } else {
+      await sendOtpEmail(input, '', code);
     }
-
-    // Dispatch real email via Google Apps Script (GmailApp)
-    await sendOtpEmail(input, '', code);
 
     setLoading(false);
     setOtpMode(true);
@@ -243,12 +259,26 @@ export default function CustomerLoginPage() {
     setShowBackupCode(false);
 
     if (isSupabaseConfigured()) {
-      // Attempt Supabase OTP in background silently
-      sendSupabaseEmailOtp(cleanEmail).catch(() => {});
+      // Primary: Send OTP via Supabase Auth SMTP
+      const res = await sendSupabaseEmailOtp(cleanEmail);
+      if (res.success) {
+        toast.success(`Verification code sent to ${cleanEmail} via Supabase Auth! Please check your Inbox.`, {
+          duration: 6000,
+        });
+      } else {
+        console.warn('Supabase SMTP issue:', res.error);
+        if (res.error?.toLowerCase().includes('confirmation email') || res.error?.toLowerCase().includes('smtp')) {
+          toast.error('Supabase SMTP notice: Enable Custom SMTP in Supabase Settings to send via your domain. Dispatching backup code...', {
+            duration: 6000,
+          });
+        } else {
+          toast.error(res.error || 'Failed to send OTP via Supabase');
+        }
+        sendOtpEmail(cleanEmail, formattedPhone, code);
+      }
+    } else {
+      await sendOtpEmail(cleanEmail, formattedPhone, code);
     }
-
-    // Dispatch real email via Google Apps Script (GmailApp)
-    await sendOtpEmail(cleanEmail, formattedPhone, code);
 
     setLoading(false);
     setOtpMode(true);
@@ -266,25 +296,30 @@ export default function CustomerLoginPage() {
     setLoading(true);
     const targetEmail = pendingAction === 'login' ? pendingLoginEmail : pendingRegData?.email || '';
 
-    // Verify OTP: Check generated code from email (or session storage fallback)
-    let savedSessionOtp = '';
-    try {
-      savedSessionOtp = sessionStorage.getItem('pending_otp_' + targetEmail.trim().toLowerCase()) || '';
-    } catch (_) {}
-
-    let isVerified = (generatedOtp && token === generatedOtp) || (savedSessionOtp && token === savedSessionOtp);
-
-    // If still not verified and Supabase is configured, try Supabase verifyOtp as backup
-    if (!isVerified && isSupabaseConfigured()) {
+    // 1. Primary: Verify with Supabase Auth OTP
+    let isVerified = false;
+    if (isSupabaseConfigured()) {
       const verifyRes = await verifySupabaseEmailOtp(targetEmail, token);
       if (verifyRes.success) {
         isVerified = true;
       }
     }
 
+    // 2. Secondary: Verify with generated code from email / session
+    if (!isVerified) {
+      let savedSessionOtp = '';
+      try {
+        savedSessionOtp = sessionStorage.getItem('pending_otp_' + targetEmail.trim().toLowerCase()) || '';
+      } catch (_) {}
+
+      if ((generatedOtp && token === generatedOtp) || (savedSessionOtp && token === savedSessionOtp)) {
+        isVerified = true;
+      }
+    }
+
     if (!isVerified) {
       setLoading(false);
-      toast.error('Invalid OTP. Please check the 6-digit code sent to your email.');
+      toast.error('Invalid OTP. Please check the 6-digit code from your email.');
       return;
     }
     
