@@ -39,6 +39,7 @@ export default function CustomerLoginPage() {
   const [generatedOtp, setGeneratedOtp] = useState('');
   const [resendTimer, setResendTimer] = useState(0);
   const [pendingAction, setPendingAction] = useState<'login' | 'register' | null>(null);
+  const [showBackupCode, setShowBackupCode] = useState(false);
   
   // Pending registration details
   const [pendingRegData, setPendingRegData] = useState<{
@@ -157,6 +158,7 @@ export default function CustomerLoginPage() {
     setPendingLoginEmail(input);
     setPendingAction('login');
     setOtpVal('');
+    setShowBackupCode(false);
 
     // Generate real 6-digit OTP
     const code = Math.floor(100000 + Math.random() * 900000).toString();
@@ -238,6 +240,7 @@ export default function CustomerLoginPage() {
     });
     setPendingAction('register');
     setOtpVal('');
+    setShowBackupCode(false);
 
     if (isSupabaseConfigured()) {
       // Attempt Supabase OTP in background silently
@@ -394,6 +397,7 @@ export default function CustomerLoginPage() {
     if (resendTimer > 0) return;
     setResendTimer(60);
     setOtpVal('');
+    setShowBackupCode(false);
 
     const targetEmail = pendingAction === 'login' ? pendingLoginEmail : pendingRegData?.email || '';
     const targetPhone = pendingAction === 'login' ? pendingLoginPhone : pendingRegData?.phone || '';
@@ -540,6 +544,43 @@ export default function CustomerLoginPage() {
                   >
                     Change Email
                   </button>
+                </div>
+
+                {/* Fallback code assistance */}
+                <div className="pt-2 border-t border-gray-100 dark:border-gray-800 text-center">
+                  {!showBackupCode ? (
+                    <button
+                      type="button"
+                      onClick={() => setShowBackupCode(true)}
+                      className="text-[11px] text-gray-400 hover:text-green-600 dark:hover:text-green-400 transition-colors underline cursor-pointer"
+                    >
+                      Didn't receive email? Click here to view backup code
+                    </button>
+                  ) : (
+                    <div className={`p-3 rounded-2xl text-center border animate-fade-in ${darkMode ? 'bg-gray-800/80 border-gray-700 text-gray-200' : 'bg-emerald-50/60 border-emerald-200 text-gray-800'}`}>
+                      <p className="text-[11px] font-bold text-gray-500 dark:text-gray-400 mb-1">
+                        Backup Verification Code:
+                      </p>
+                      <div className="flex items-center justify-center gap-2.5 my-1">
+                        <span className="font-mono text-xl font-black tracking-widest text-emerald-600 dark:text-emerald-400 select-all px-2.5 py-0.5 bg-white dark:bg-gray-900 rounded-lg border border-emerald-300 dark:border-emerald-700">
+                          {generatedOtp}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setOtpVal(generatedOtp);
+                            toast.success('Code filled! Click Verify & Continue.');
+                          }}
+                          className="px-3 py-1.5 text-xs font-bold bg-green-600 text-white rounded-lg hover:bg-green-700 active:scale-95 transition-all shadow-sm cursor-pointer"
+                        >
+                          Auto Fill
+                        </button>
+                      </div>
+                      <p className="text-[10px] text-gray-400 mt-1">
+                        Check your Spam/Junk folder if email delivery is delayed.
+                      </p>
+                    </div>
+                  )}
                 </div>
               </div>
             </form>

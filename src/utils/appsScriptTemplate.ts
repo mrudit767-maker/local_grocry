@@ -305,14 +305,21 @@ function doPost(e) {
             "<p style='font-size: 11px; color: #94a3b8; text-align: center; margin-top: 20px;'>If you did not request this code, please ignore this email.</p>" +
             "</div>";
             
+          var plainBody = "Your " + shopName + " verification code is: " + otp + "\n\nValid for 5 minutes. Do not share this code with anyone.";
           try {
-            GmailApp.sendEmail(email, subject, "", { htmlBody: htmlBody });
+            GmailApp.sendEmail(email, subject, plainBody, { htmlBody: htmlBody, name: shopName });
           } catch (gmailErr) {
-            MailApp.sendEmail({
-              to: email,
-              subject: subject,
-              htmlBody: htmlBody
-            });
+            try {
+              MailApp.sendEmail({
+                to: email,
+                subject: subject,
+                body: plainBody,
+                htmlBody: htmlBody,
+                name: shopName
+              });
+            } catch (mailErr) {
+              Logger.log("Mail OTP error: " + mailErr.toString());
+            }
           }
         } catch (mailErr) {
           Logger.log("Mail OTP error: " + mailErr.toString());
