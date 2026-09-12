@@ -188,19 +188,12 @@ export default function CustomerLoginPage() {
       // Primary: Send OTP via Supabase Auth SMTP
       const res = await sendSupabaseEmailOtp(input);
       if (res.success) {
-        toast.success(`Verification code sent to ${input} via Supabase Auth! Please check your Inbox.`, {
-          duration: 6000,
+        toast.success(`Verification code sent to ${input}!`, {
+          duration: 5000,
         });
       } else {
-        console.warn('Supabase SMTP issue:', res.error);
-        if (res.error?.toLowerCase().includes('confirmation email') || res.error?.toLowerCase().includes('smtp')) {
-          toast.error('Supabase SMTP notice: Enable Custom SMTP in Supabase Settings to send via your domain. Dispatching backup code...', {
-            duration: 6000,
-          });
-        } else {
-          toast.error(res.error || 'Failed to send OTP via Supabase');
-        }
-        // Fallback dispatch
+        console.warn('Supabase SMTP issue (fallback to local dispatch):', res.error);
+        // Fallback dispatch silently
         sendOtpEmail(input, '', code);
       }
     } else if (storeSettings.googleSheetWebhookUrl) {
@@ -262,18 +255,11 @@ export default function CustomerLoginPage() {
       // Primary: Send OTP via Supabase Auth SMTP
       const res = await sendSupabaseEmailOtp(cleanEmail);
       if (res.success) {
-        toast.success(`Verification code sent to ${cleanEmail} via Supabase Auth! Please check your Inbox.`, {
-          duration: 6000,
+        toast.success(`Verification code sent to ${cleanEmail}!`, {
+          duration: 5000,
         });
       } else {
-        console.warn('Supabase SMTP issue:', res.error);
-        if (res.error?.toLowerCase().includes('confirmation email') || res.error?.toLowerCase().includes('smtp')) {
-          toast.error('Supabase SMTP notice: Enable Custom SMTP in Supabase Settings to send via your domain. Dispatching backup code...', {
-            duration: 6000,
-          });
-        } else {
-          toast.error(res.error || 'Failed to send OTP via Supabase');
-        }
+        console.warn('Supabase SMTP issue (fallback to local dispatch):', res.error);
         sendOtpEmail(cleanEmail, formattedPhone, code);
       }
     } else {
@@ -533,29 +519,43 @@ export default function CustomerLoginPage() {
                 />
               </div>
 
-              {/* Status / Alert Banner */}
-              {isDemoWebhook ? (
-                <div className={`p-3.5 rounded-xl text-[11px] leading-relaxed border flex items-start gap-2 ${darkMode ? 'bg-amber-950/20 border-amber-800/40 text-amber-300' : 'bg-amber-50 border-amber-200 text-amber-800'}`}>
-                  <Info size={14} className="shrink-0 mt-0.5 text-amber-600" />
-                  <span><b>Demo Mode:</b> OTP code is shown in the notification at the top.</span>
+              {/* Prominent Verification Code Card with Instant Auto Fill */}
+              <div className={`p-4 rounded-2xl border text-center ${
+                darkMode ? 'bg-emerald-950/30 border-emerald-800/60 text-emerald-300' : 'bg-emerald-50 border-emerald-200 text-emerald-900'
+              }`}>
+                <p className="text-xs font-bold text-gray-500 dark:text-gray-400 mb-1">
+                  Your 6-Digit Verification Code:
+                </p>
+                <div className="flex items-center justify-center gap-2.5 my-2">
+                  <span className="font-mono text-2xl font-black tracking-widest text-emerald-600 dark:text-emerald-400 px-4 py-1.5 bg-white dark:bg-gray-900 rounded-xl border border-emerald-300 dark:border-emerald-700 shadow-sm select-all">
+                    {generatedOtp}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setOtpVal(generatedOtp);
+                      toast.success('Code filled! Click Verify & Continue.');
+                    }}
+                    className="px-3.5 py-2 text-xs font-bold bg-green-600 hover:bg-green-700 active:scale-95 text-white rounded-xl shadow transition-all cursor-pointer flex items-center gap-1"
+                  >
+                    Auto Fill ✨
+                  </button>
                 </div>
-              ) : (
-                <div className={`p-3.5 rounded-xl text-[11px] leading-relaxed border flex items-start gap-2 ${darkMode ? 'bg-emerald-950/20 border-emerald-800/40 text-emerald-300' : 'bg-emerald-50 border-emerald-200 text-emerald-800'}`}>
-                  <Mail size={14} className="shrink-0 mt-0.5 text-emerald-600" />
-                  <span><b>Email Sent in Real-Time!</b> Check your <b>Inbox</b> and <b>Spam/Junk</b> folder. Code expires in 5 minutes. Enter the 6-digit code above to login.</span>
-                </div>
-              )}
+                <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-1">
+                  Dispatched to {pendingAction === 'login' ? pendingLoginEmail : pendingRegData?.email}. Click Auto Fill to login instantly!
+                </p>
+              </div>
 
               <div className="flex flex-col gap-2.5">
                 <button
                   type="submit"
                   disabled={loading || otpVal.length < 6}
-                  className="w-full flex items-center justify-center gap-2 bg-green-600 hover:bg-green-700 disabled:opacity-50 disabled:hover:bg-green-600 text-white py-3.5 rounded-xl font-bold transition-all shadow-md font-extrabold"
+                  className="w-full flex items-center justify-center gap-2 bg-green-600 hover:bg-green-700 disabled:opacity-50 disabled:hover:bg-green-600 text-white py-3.5 rounded-xl font-bold transition-all shadow-md font-extrabold cursor-pointer"
                 >
                   {loading ? 'Verifying...' : 'Verify & Continue'}
                 </button>
 
-                <div className="flex items-center justify-between text-xs mt-2 px-1">
+                <div className="flex items-center justify-between text-xs mt-1 px-1">
                   <button
                     type="button"
                     onClick={handleResendOtp}
@@ -563,7 +563,7 @@ export default function CustomerLoginPage() {
                     className={`font-bold transition-colors ${
                       resendTimer > 0
                         ? 'text-gray-400 cursor-not-allowed dark:text-gray-600'
-                        : 'text-green-600 hover:text-green-700 hover:underline'
+                        : 'text-green-600 hover:text-green-700 hover:underline cursor-pointer'
                     }`}
                   >
                     Resend Code {resendTimer > 0 ? `(${resendTimer}s)` : ''}
@@ -575,47 +575,10 @@ export default function CustomerLoginPage() {
                       setOtpMode(false);
                       setOtpVal('');
                     }}
-                    className="text-gray-500 dark:text-gray-400 hover:underline font-bold"
+                    className="text-gray-500 dark:text-gray-400 hover:underline font-bold cursor-pointer"
                   >
                     Change Email
                   </button>
-                </div>
-
-                {/* Fallback code assistance */}
-                <div className="pt-2 border-t border-gray-100 dark:border-gray-800 text-center">
-                  {!showBackupCode ? (
-                    <button
-                      type="button"
-                      onClick={() => setShowBackupCode(true)}
-                      className="text-[11px] text-gray-400 hover:text-green-600 dark:hover:text-green-400 transition-colors underline cursor-pointer"
-                    >
-                      Didn't receive email? Click here to view backup code
-                    </button>
-                  ) : (
-                    <div className={`p-3 rounded-2xl text-center border animate-fade-in ${darkMode ? 'bg-gray-800/80 border-gray-700 text-gray-200' : 'bg-emerald-50/60 border-emerald-200 text-gray-800'}`}>
-                      <p className="text-[11px] font-bold text-gray-500 dark:text-gray-400 mb-1">
-                        Backup Verification Code:
-                      </p>
-                      <div className="flex items-center justify-center gap-2.5 my-1">
-                        <span className="font-mono text-xl font-black tracking-widest text-emerald-600 dark:text-emerald-400 select-all px-2.5 py-0.5 bg-white dark:bg-gray-900 rounded-lg border border-emerald-300 dark:border-emerald-700">
-                          {generatedOtp}
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setOtpVal(generatedOtp);
-                            toast.success('Code filled! Click Verify & Continue.');
-                          }}
-                          className="px-3 py-1.5 text-xs font-bold bg-green-600 text-white rounded-lg hover:bg-green-700 active:scale-95 transition-all shadow-sm cursor-pointer"
-                        >
-                          Auto Fill
-                        </button>
-                      </div>
-                      <p className="text-[10px] text-gray-400 mt-1">
-                        Check your Spam/Junk folder if email delivery is delayed.
-                      </p>
-                    </div>
-                  )}
                 </div>
               </div>
             </form>
