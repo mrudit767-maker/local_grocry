@@ -83,6 +83,13 @@ export default function CustomerLoginPage() {
       return;
     }
 
+    const domain = input.split('@')[1];
+    const commonTypoDomains = ['gaiml.com', 'gamil.com', 'gmial.com', 'gmai.com', 'gmaill.com', 'gmal.com', 'gmaik.com', 'yaho.com', 'hotmial.com'];
+    if (commonTypoDomains.includes(domain)) {
+      toast.error(`Typo in email domain (@${domain}). Did you mean @gmail.com?`, { duration: 6000 });
+      return;
+    }
+
     if (!isSupabaseConfigured()) {
       toast.error('Supabase is not configured. Please check your Supabase credentials.');
       return;
@@ -126,7 +133,13 @@ export default function CustomerLoginPage() {
       setOtpMode(true);
       setResendTimer(60);
     } else {
-      toast.error(res.error || 'Failed to send OTP to your email. Please try again.');
+      if (res.error?.includes('confirmation email') || res.error?.includes('unexpected_failure')) {
+        toast.error('Supabase SMTP Error: Please verify your Gmail 16-digit App Password in Supabase Dashboard SMTP settings.', {
+          duration: 8000,
+        });
+      } else {
+        toast.error(res.error || 'Failed to send OTP to your email. Please try again.');
+      }
     }
   };
 
@@ -145,6 +158,13 @@ export default function CustomerLoginPage() {
 
     const formattedPhone = regPhone.startsWith('+91') ? regPhone : `+91 ${regPhone.trim()}`;
     const cleanEmail = regEmail.trim().toLowerCase();
+
+    const regDomain = cleanEmail.split('@')[1];
+    const commonTypoDomains = ['gaiml.com', 'gamil.com', 'gmial.com', 'gmai.com', 'gmaill.com', 'gmal.com', 'gmaik.com', 'yaho.com', 'hotmial.com'];
+    if (commonTypoDomains.includes(regDomain)) {
+      toast.error(`Typo in email domain (@${regDomain}). Did you mean @gmail.com?`, { duration: 6000 });
+      return;
+    }
 
     setLoading(true);
     setPendingRegData({
@@ -169,7 +189,13 @@ export default function CustomerLoginPage() {
       setOtpMode(true);
       setResendTimer(60);
     } else {
-      toast.error(res.error || 'Failed to send OTP to your email. Please try again.');
+      if (res.error?.includes('confirmation email') || res.error?.includes('unexpected_failure')) {
+        toast.error('Supabase SMTP Error: Please verify your Gmail 16-digit App Password in Supabase Dashboard SMTP settings.', {
+          duration: 8000,
+        });
+      } else {
+        toast.error(res.error || 'Failed to send OTP to your email. Please try again.');
+      }
     }
   };
 
