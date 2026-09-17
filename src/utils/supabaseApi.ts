@@ -637,18 +637,41 @@ export async function verifySupabaseEmailOtp(
     const cleanEmail = email.trim().toLowerCase();
     const cleanToken = token.trim();
 
-    const { data, error } = await supabase.auth.verifyOtp({
+    // Try 'email' first
+    let result = await supabase.auth.verifyOtp({
       email: cleanEmail,
       token: cleanToken,
       type: 'email',
     });
 
-    if (error) {
-      console.error('Supabase verifyOtp error:', error);
-      return { success: false, error: error.message };
+    // If 'email' failed, try 'magiclink' (used if user was existing)
+    if (result.error) {
+      const mlResult = await supabase.auth.verifyOtp({
+        email: cleanEmail,
+        token: cleanToken,
+        type: 'magiclink',
+      });
+      if (!mlResult.error) {
+        result = mlResult;
+      } else {
+        // If magiclink failed, try 'signup' (used if user was new signup)
+        const suResult = await supabase.auth.verifyOtp({
+          email: cleanEmail,
+          token: cleanToken,
+          type: 'signup',
+        });
+        if (!suResult.error) {
+          result = suResult;
+        }
+      }
     }
 
-    return { success: true, user: data.user };
+    if (result.error) {
+      console.error('Supabase verifyOtp error:', result.error);
+      return { success: false, error: result.error.message };
+    }
+
+    return { success: true, user: result.data.user };
   } catch (err: any) {
     console.error('Failed to verify OTP via Supabase:', err);
     return { success: false, error: err?.message || 'Invalid or expired OTP' };

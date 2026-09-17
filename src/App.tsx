@@ -18,12 +18,15 @@ import SubscriptionPage from './pages/SubscriptionPage';
 import PWAInstallBanner from './components/PWAInstallBanner';
 import PolicyModal from './components/PolicyModal';
 import ProductDetailsModal from './components/ProductDetailsModal';
+import { getSupabase } from './lib/supabase';
+import { fetchCustomerFromSupabase } from './utils/supabaseApi';
 
 export default function App() {
   const {
     currentPage, darkMode, storeSettings, setCurrentPage, fetchProducts, fetchSettings,
     fetchOrders, categories, addCategory, products, bulkAddProducts, selectedProductId,
-    setSelectedProductId, setSelectedCategory, updateStoreSettings, adminLoggedIn
+    setSelectedProductId, setSelectedCategory, updateStoreSettings, adminLoggedIn,
+    currentCustomer, customerLogin
   } = useStore();
 
   const [activePolicy, setActivePolicy] = useState<'privacy' | 'terms' | 'refund' | null>(null);
@@ -229,6 +232,50 @@ export default function App() {
       document.documentElement.classList.remove('dark');
     }
   }, [darkMode]);
+
+  // Auto-login if customer confirms via email magic link
+  useEffect(() => {
+    const supabase = getSupabase();
+    if (!supabase) return;
+
+    const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (event === 'SIGNED_IN' && session?.user?.email && !currentCustomer) {
+        const email = session.user.email.toLowerCase();
+        try {
+          const profile = await fetchCustomerFromSupabase(email);
+          if (profile) {
+            customerLogin({
+              name: profile.name,
+              phone: profile.phone,
+              email: profile.email,
+              address: profile.address,
+              city: profile.city,
+              pincode: profile.pincode,
+            });
+            toast.success(`Welcome back, ${profile.name}!`);
+          } else {
+            const defaultName = email.split('@')[0] || 'Customer';
+            customerLogin({
+              name: defaultName.charAt(0).toUpperCase() + defaultName.slice(1),
+              phone: '',
+              email: email,
+              address: '',
+              city: 'Bhopal',
+              pincode: '',
+            });
+            toast.success('Logged in successfully via email!');
+          }
+          setCurrentPage('home');
+        } catch (e) {
+          console.error('Email auto-login error:', e);
+        }
+      }
+    });
+
+    return () => {
+      authListener?.subscription?.unsubscribe();
+    };
+  }, [currentCustomer, customerLogin, setCurrentPage]);
 
   return (
     <div className={`${darkMode ? 'dark bg-gray-950 text-white' : 'bg-gray-50 text-gray-800'} min-h-screen transition-colors duration-200`}>

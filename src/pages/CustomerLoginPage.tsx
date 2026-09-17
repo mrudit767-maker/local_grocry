@@ -431,7 +431,7 @@ export default function CustomerLoginPage() {
               }`}>
                 <Mail size={16} className="shrink-0 mt-0.5 text-emerald-600" />
                 <span>
-                  <b>Verification code sent to your email inbox!</b> Please check your <b>Inbox</b> and <b>Spam/Junk</b> folder. Enter the 6-digit code above to verify.
+                  <b>Verification email sent!</b> Check your <b>Inbox</b> or <b>Spam folder</b>. You can enter the 6-digit code above <b>or click the login link in your email</b> to log in instantly.
                 </span>
               </div>
 
