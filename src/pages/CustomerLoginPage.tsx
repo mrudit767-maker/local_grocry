@@ -202,8 +202,8 @@ export default function CustomerLoginPage() {
   const handleVerifyOtp = async (e: React.FormEvent) => {
     e.preventDefault();
     const token = otpVal.trim();
-    if (token.length !== 6) {
-      toast.error('Please enter the complete 6-digit OTP code.');
+    if (token.length < 6 || token.length > 8) {
+      toast.error('Please enter the complete verification code (6 to 8 digits) from your email.');
       return;
     }
 
@@ -399,7 +399,7 @@ export default function CustomerLoginPage() {
                 </div>
                 <h3 className={`text-base font-black ${darkMode ? 'text-white' : 'text-gray-900'}`}>Check Your Email</h3>
                 <p className={`text-xs mt-1 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                  We sent a 6-digit verification code to
+                  We sent a verification code to
                 </p>
                 <p className="font-extrabold text-green-600 text-sm mt-0.5">
                   {pendingAction === 'login' ? pendingLoginEmail : pendingRegData?.email}
@@ -408,15 +408,15 @@ export default function CustomerLoginPage() {
 
               <div>
                 <label className={`block text-xs font-bold uppercase tracking-wider mb-2 text-center ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                  Enter 6-Digit Code from Email
+                  Enter Verification Code from Email
                 </label>
                 <input
-                  type="tel"
-                  maxLength={6}
+                  type="text"
+                  maxLength={8}
                   value={otpVal}
-                  onChange={e => setOtpVal(e.target.value.replace(/\D/g, ''))}
-                  placeholder="e.g. 582461"
-                  className={`w-full tracking-[0.8em] text-center font-black text-xl py-3.5 rounded-2xl border outline-none focus:ring-2 focus:ring-green-500 transition-all ${
+                  onChange={e => setOtpVal(e.target.value.replace(/\s/g, ''))}
+                  placeholder="Enter 6 to 8 digit code"
+                  className={`w-full tracking-[0.4em] text-center font-black text-xl py-3.5 rounded-2xl border outline-none focus:ring-2 focus:ring-green-500 transition-all ${
                     darkMode
                       ? 'bg-gray-800 border-gray-700 text-white placeholder-gray-600'
                       : 'bg-gray-50 border-gray-200 text-gray-850 placeholder-gray-300'
@@ -431,14 +431,14 @@ export default function CustomerLoginPage() {
               }`}>
                 <Mail size={16} className="shrink-0 mt-0.5 text-emerald-600" />
                 <span>
-                  <b>Verification email sent!</b> Check your <b>Inbox</b> or <b>Spam folder</b>. You can enter the 6-digit code above <b>or click the login link in your email</b> to log in instantly.
+                  <b>Verification email sent!</b> Check your <b>Inbox</b> or <b>Spam folder</b>. You can enter the code above <b>or click the login link in your email</b> to log in instantly.
                 </span>
               </div>
 
               <div className="flex flex-col gap-2.5">
                 <button
                   type="submit"
-                  disabled={loading || otpVal.length < 6}
+                  disabled={loading || otpVal.trim().length < 6}
                   className="w-full flex items-center justify-center gap-2 bg-green-600 hover:bg-green-700 disabled:opacity-50 disabled:hover:bg-green-600 text-white py-3.5 rounded-xl font-bold transition-all shadow-md font-extrabold cursor-pointer"
                 >
                   {loading ? 'Verifying...' : 'Verify & Continue'}
