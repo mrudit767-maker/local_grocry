@@ -1120,30 +1120,58 @@ export const useStore = create<StoreState>()(
       }),
       onRehydrateStorage: () => (state) => {
         if (!state) return;
+        // 1. Sanitize categories: ensure all have id and name
         if (!Array.isArray(state.categories) || state.categories.length === 0) {
           state.categories = CATEGORIES;
+        } else {
+          state.categories = state.categories.filter(c => c && c.id && c.name);
+          if (state.categories.length === 0) state.categories = CATEGORIES;
         }
+
+        // 2. Sanitize products: ensure all have id and name
         if (!Array.isArray(state.products) || state.products.length === 0) {
           state.products = PRODUCTS;
+        } else {
+          state.products = state.products.filter(p => p && p.id && p.name);
+          if (state.products.length === 0) state.products = PRODUCTS;
         }
+
+        // 3. Sanitize banners
         if (!Array.isArray(state.banners) || state.banners.length === 0) {
           state.banners = DEFAULT_BANNERS;
+        } else {
+          state.banners = state.banners.filter(b => b && b.id && b.title);
+          if (state.banners.length === 0) state.banners = DEFAULT_BANNERS;
         }
-        if (!Array.isArray(state.orders)) {
-          state.orders = [];
-        }
+
+        // 4. Sanitize cart items: ensure product exists and has name
         if (!Array.isArray(state.cart)) {
           state.cart = [];
+        } else {
+          state.cart = state.cart.filter(item => item && item.product && item.product.id && item.product.name);
         }
-        if (!Array.isArray(state.stockRequests)) {
-          state.stockRequests = [];
+
+        // 5. Sanitize branches
+        if (!Array.isArray(state.branches)) {
+          state.branches = [];
+        } else {
+          state.branches = state.branches.filter(b => b && b.id && b.name);
         }
-        if (!Array.isArray(state.customerNotifications)) {
-          state.customerNotifications = [];
+
+        // 6. Sanitize orders
+        if (!Array.isArray(state.orders)) {
+          state.orders = [];
+        } else {
+          state.orders = state.orders.filter(o => o && o.id);
         }
-        if (!state.storeSettings) {
-          state.storeSettings = DEFAULT_SETTINGS;
-        }
+
+        // 7. Sanitize other arrays & objects
+        if (!Array.isArray(state.stockRequests)) state.stockRequests = [];
+        if (!Array.isArray(state.customerNotifications)) state.customerNotifications = [];
+        if (!Array.isArray(state.wishlistIds)) state.wishlistIds = [];
+        if (!Array.isArray(state.recentlyViewedIds)) state.recentlyViewedIds = [];
+        if (!Array.isArray(state.subscriptions)) state.subscriptions = [];
+        if (!state.storeSettings) state.storeSettings = DEFAULT_SETTINGS;
       },
     }
   )

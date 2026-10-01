@@ -118,7 +118,7 @@ export default function CartSidebar() {
               </button>
             </div>
           ) : (
-            cart.map(item => (
+            (cart || []).filter(item => item && item.product && item.product.id).map(item => (
               <div
                 key={item.product.id}
                 className={`flex items-center gap-3 p-3 rounded-2xl border transition-all ${
@@ -127,19 +127,19 @@ export default function CartSidebar() {
               >
                 <div className="w-14 h-14 rounded-xl overflow-hidden shrink-0 bg-white dark:bg-gray-800 border border-gray-200/60 dark:border-gray-700/60 p-1 flex items-center justify-center">
                   <img
-                    src={item.product.image}
-                    alt={item.product.name}
+                    src={item.product.image || `https://placehold.co/64x64/16a34a/ffffff?text=${encodeURIComponent((item.product.name || 'P').slice(0, 2).toUpperCase())}`}
+                    alt={item.product.name || 'Product'}
                     className="w-full h-full object-contain"
-                    onError={e => { (e.target as HTMLImageElement).src = `https://placehold.co/64x64/16a34a/ffffff?text=${item.product.name[0]}`; }}
+                    onError={e => { (e.target as HTMLImageElement).src = `https://placehold.co/64x64/16a34a/ffffff?text=${encodeURIComponent((item.product.name || 'P')[0] || 'P')}`; }}
                   />
                 </div>
 
                 <div className="flex-1 min-w-0">
-                  <p className="font-bold text-xs leading-snug line-clamp-2">{item.product.name}</p>
-                  <p className="text-gray-400 text-[10px] font-medium mt-0.5">{item.product.unit}</p>
+                  <p className="font-bold text-xs leading-snug line-clamp-2">{item.product.name || 'Product'}</p>
+                  <p className="text-gray-400 text-[10px] font-medium mt-0.5">{item.product.unit || '1 pc'}</p>
                   <div className="flex items-center gap-1.5 mt-1">
-                    <span className="text-emerald-600 font-black text-xs">₹{item.product.price}</span>
-                    {item.product.mrp > item.product.price && (
+                    <span className="text-emerald-600 font-black text-xs">₹{item.product.price || 0}</span>
+                    {item.product.mrp && item.product.price && item.product.mrp > item.product.price && (
                       <span className="text-gray-400 text-[10px] line-through">₹{item.product.mrp}</span>
                     )}
                   </div>

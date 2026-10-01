@@ -41,20 +41,20 @@ function OrderCard({ order, onViewInvoice, onGiveFeedback }: { order: Order; onV
 
         <div className="mt-3 flex items-center gap-3">
           <div className="flex -space-x-2">
-            {order.items.slice(0, 3).map(item => (
-              <img key={item.product.id} src={item.product.image} alt={item.product.name} className="w-10 h-10 rounded-full border-2 border-white object-cover bg-gray-100" onError={e => { (e.target as HTMLImageElement).src = `https://placehold.co/40x40/16a34a/ffffff?text=${item.product.name[0]}`; }} />
+            {(order.items || []).filter(i => i?.product).slice(0, 3).map(item => (
+              <img key={item.product?.id || Math.random()} src={item.product?.image} alt={item.product?.name || 'Product'} className="w-10 h-10 rounded-full border-2 border-white object-cover bg-gray-100" onError={e => { (e.target as HTMLImageElement).src = `https://placehold.co/40x40/16a34a/ffffff?text=${encodeURIComponent((item.product?.name || 'P')[0] || 'P')}`; }} />
             ))}
-            {order.items.length > 3 && (
+            {(order.items || []).length > 3 && (
               <div className="w-10 h-10 rounded-full border-2 border-white bg-gray-200 flex items-center justify-center text-xs font-bold text-gray-600">
-                +{order.items.length - 3}
+                +{(order.items || []).length - 3}
               </div>
             )}
           </div>
           <div className="flex-1">
             <p className={`text-sm font-medium ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
-              {order.items.length} item{order.items.length > 1 ? 's' : ''}
+              {(order.items || []).length} item{(order.items || []).length > 1 ? 's' : ''}
             </p>
-            <p className="text-green-600 font-bold">₹{order.total}</p>
+            <p className="text-green-600 font-bold">₹{order.total || 0}</p>
           </div>
           <button onClick={() => setExpanded(!expanded)} className={`p-2 rounded-lg ${darkMode ? 'hover:bg-gray-700 text-gray-400' : 'hover:bg-gray-100 text-gray-500'} cursor-pointer`}>
             {expanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
@@ -68,11 +68,11 @@ function OrderCard({ order, onViewInvoice, onGiveFeedback }: { order: Order; onV
           <div>
             <p className={`text-xs font-bold mb-2 uppercase tracking-wide ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Items Ordered</p>
             <div className="space-y-2">
-              {order.items.map(item => (
-                <div key={item.product.id} className="flex items-center gap-2">
-                  <img src={item.product.image} alt={item.product.name} className="w-8 h-8 rounded-lg object-cover bg-white" onError={e => { (e.target as HTMLImageElement).src = `https://placehold.co/32x32/16a34a/ffffff?text=${item.product.name[0]}`; }} />
-                  <span className={`flex-1 text-xs ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>{item.product.name} ({item.product.unit}) × {item.quantity}</span>
-                  <span className={`text-xs font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>₹{item.product.price * item.quantity}</span>
+              {(order.items || []).filter(i => i?.product).map(item => (
+                <div key={item.product?.id || Math.random()} className="flex items-center gap-2">
+                  <img src={item.product?.image} alt={item.product?.name || 'Product'} className="w-8 h-8 rounded-lg object-cover bg-white" onError={e => { (e.target as HTMLImageElement).src = `https://placehold.co/32x32/16a34a/ffffff?text=${encodeURIComponent((item.product?.name || 'P')[0] || 'P')}`; }} />
+                  <span className={`flex-1 text-xs ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>{item.product?.name || 'Product'} ({item.product?.unit || '1 pc'}) × {item.quantity}</span>
+                  <span className={`text-xs font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>₹{(item.product?.price || 0) * item.quantity}</span>
                 </div>
               ))}
             </div>
@@ -81,8 +81,8 @@ function OrderCard({ order, onViewInvoice, onGiveFeedback }: { order: Order; onV
           {/* Delivery Address */}
           <div>
             <p className={`text-xs font-bold mb-1 uppercase tracking-wide ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Delivery Address</p>
-            <p className={`text-xs ${darkMode ? 'text-gray-300' : 'text-gray-650'}`}>{order.customer.name} • {order.customer.phone}</p>
-            <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-550'}`}>{order.customer.address}, {order.customer.pincode}</p>
+            <p className={`text-xs ${darkMode ? 'text-gray-300' : 'text-gray-650'}`}>{order.customer?.name || 'Customer'} • {order.customer?.phone || ''}</p>
+            <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-550'}`}>{order.customer?.address || ''}, {order.customer?.pincode || ''}</p>
           </div>
 
           {/* Payment */}

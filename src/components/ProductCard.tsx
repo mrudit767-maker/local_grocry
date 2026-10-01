@@ -9,13 +9,16 @@ interface Props {
 }
 
 export default function ProductCard({ product }: Props) {
+  if (!product || !product.id) return null;
+
   const [showNotifyModal, setShowNotifyModal] = useState(false);
   const { 
     cart = [], addToCart, updateQuantity, darkMode, branches = [], storeSettings,
     wishlistIds = [], toggleWishlist, addToRecentlyViewed, setSelectedProductId
   } = useStore();
 
-  const activeBranches = branches.length > 0 ? branches : [
+  const safeBranches = Array.isArray(branches) ? branches.filter(Boolean) : [];
+  const activeBranches = safeBranches.length > 0 ? safeBranches : [
     {
       id: 'main',
       name: storeSettings?.shopName || 'Krishna Kirana (Main Branch)',
@@ -27,10 +30,13 @@ export default function ProductCard({ product }: Props) {
     }
   ];
 
-  const seller = activeBranches.find(b => b.id === product.storeId) || activeBranches.find(b => b.id === 'main') || { name: storeSettings?.shopName || 'Krishna Kirana' };
-  const cartItem = cart.find(i => i.product.id === product.id);
-  const discount = Math.round(((product.mrp - product.price) / product.mrp) * 100);
-  const isWishlisted = wishlistIds.includes(product.id);
+  const seller = activeBranches.find(b => b && b.id === product.storeId) || 
+                 activeBranches.find(b => b && b.id === 'main') || 
+                 { name: storeSettings?.shopName || 'Krishna Kirana' };
+  const sellerDisplayName = (seller?.name || storeSettings?.shopName || 'Krishna Kirana').replace(' (Main Branch)', '');
+  const cartItem = (cart || []).find(i => i?.product?.id === product.id);
+  const discount = product.mrp && product.price ? Math.round(((product.mrp - product.price) / product.mrp) * 100) : 0;
+  const isWishlisted = (wishlistIds || []).includes(product.id);
 
   const badgeColors: Record<string, string> = {
     'Best Seller': 'bg-amber-500 text-white',
@@ -101,13 +107,13 @@ export default function ProductCard({ product }: Props) {
           darkMode ? 'bg-gray-900/60' : 'bg-gradient-to-b from-gray-50/90 to-gray-100/30'
         }`}>
           <img
-            src={product.image}
-            alt={product.name}
+            src={product.image || `https://placehold.co/200x200/2ecc71/ffffff?text=${encodeURIComponent((product.name || 'P').slice(0, 2).toUpperCase())}`}
+            alt={product.name || 'Product'}
             className="w-full h-full object-contain p-1 group-hover:scale-108 transition-transform duration-300"
             loading="lazy"
             onError={e => {
               const target = e.target as HTMLImageElement;
-              const initials = product.name.split(' ').slice(0, 2).map(w => w[0]).join('').toUpperCase();
+              const initials = (product.name || 'P').split(' ').slice(0, 2).map(w => w[0] || '').join('').toUpperCase() || 'P';
               target.src = `https://placehold.co/200x200/2ecc71/ffffff?text=${encodeURIComponent(initials)}`;
             }}
           />
@@ -133,9 +139,9 @@ export default function ProductCard({ product }: Props) {
         <div className="p-2.5 sm:p-3.5 flex flex-col gap-1.5 flex-1">
           {/* Subcategory & Seller */}
           <div className="flex items-center justify-between text-[10px] text-gray-400 font-bold uppercase tracking-wide gap-1">
-            <span className="truncate">{product.subcategory || product.category}</span>
-            <span className="text-[9px] normal-case bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 px-1.5 py-0.2 rounded font-semibold truncate max-w-[50%]" title={`Seller: ${seller.name}`}>
-              {seller.name.replace(' (Main Branch)', '')}
+            <span className="truncate">{product.subcategory || product.category || 'Grocery'}</span>
+            <span className="text-[9px] normal-case bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 px-1.5 py-0.2 rounded font-semibold truncate max-w-[50%]" title={`Seller: ${sellerDisplayName}`}>
+              {sellerDisplayName}
             </span>
           </div>
 
@@ -143,7 +149,7 @@ export default function ProductCard({ product }: Props) {
           <h3 className={`font-bold text-xs leading-snug line-clamp-2 h-8 transition-colors ${
             darkMode ? 'text-gray-100 group-hover:text-emerald-400' : 'text-gray-900 group-hover:text-emerald-600'
           }`}>
-            {product.name}
+            {product.name || 'Product'}
           </h3>
 
           {/* Unit & Rating Row */}

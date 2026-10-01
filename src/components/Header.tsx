@@ -73,10 +73,12 @@ export default function Header() {
   const matchingProducts = useMemo(() => {
     if (!searchQuery.trim()) return [];
     const q = searchQuery.toLowerCase();
-    return [...products]
+    return (products || [])
       .filter(p =>
-        p.name.toLowerCase().includes(q) ||
-        (p.subcategory || '').toLowerCase().includes(q)
+        p && p.name && (
+          p.name.toLowerCase().includes(q) ||
+          (p.subcategory || '').toLowerCase().includes(q)
+        )
       )
       .sort((a, b) => (b.inStock ? 1 : 0) - (a.inStock ? 1 : 0))
       .slice(0, 5);

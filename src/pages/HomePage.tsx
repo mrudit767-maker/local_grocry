@@ -88,6 +88,8 @@ export default function HomePage() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  const safeProducts = (products || []).filter(p => p && p.id && p.name);
+
   // Find exact Trending Now products matching prompt requirements
   const trendingTargetNames = [
     'Basmati Rice',
@@ -97,8 +99,8 @@ export default function HomePage() {
     'Amul Butter',
     'Brooke Bond Tea'
   ];
-  const trendingProducts = [...products]
-    .filter(p => trendingTargetNames.some(name => p.name === name))
+  const trendingProducts = safeProducts
+    .filter(p => p && p.name && trendingTargetNames.some(name => p.name === name))
     .slice(0, 6);
 
   // Find exact Buy Again / Recently Viewed items matching prompt requirements
@@ -108,39 +110,39 @@ export default function HomePage() {
     'Britannia Biscuits',
     'Red Label Tea'
   ];
-  const defaultRecentlyViewed = [...products]
-    .filter(p => recentlyViewedTargetNames.some(name => p.name === name))
+  const defaultRecentlyViewed = safeProducts
+    .filter(p => p && p.name && recentlyViewedTargetNames.some(name => p.name === name))
     .slice(0, 4);
 
   // Fallback to defaultRecentlyViewed if customer has no recentlyViewed history
-  const activeRecentlyViewed = recentlyViewedIds.length > 0
-    ? [...products].filter(p => recentlyViewedIds.includes(p.id)).slice(0, 8)
+  const activeRecentlyViewed = (recentlyViewedIds || []).length > 0
+    ? safeProducts.filter(p => p && (recentlyViewedIds || []).includes(p.id)).slice(0, 8)
     : defaultRecentlyViewed;
 
-  const bestSellers = [...products]
-    .filter(p => p.badge === 'Best Seller' || p.badge === 'Popular')
+  const bestSellers = safeProducts
+    .filter(p => p && (p.badge === 'Best Seller' || p.badge === 'Popular'))
     .sort((a, b) => (b.inStock ? 1 : 0) - (a.inStock ? 1 : 0))
     .slice(0, 8);
 
-  const organicPack = [...products]
-    .filter(p => p.badge === 'Organic' || p.badge === 'Healthy' || p.category === 'fruits-veggies')
+  const organicPack = safeProducts
+    .filter(p => p && (p.badge === 'Organic' || p.badge === 'Healthy' || p.category === 'fruits-veggies'))
     .sort((a, b) => (b.inStock ? 1 : 0) - (a.inStock ? 1 : 0))
     .slice(0, 4);
 
-  const stationeryProducts = [...products]
-    .filter(p => p.category?.toLowerCase() === 'stationery' || p.category?.toLowerCase() === 'stationary')
+  const stationeryProducts = safeProducts
+    .filter(p => p && (p.category?.toLowerCase() === 'stationery' || p.category?.toLowerCase() === 'stationary'))
     .slice(0, 15);
 
-  const vegetableProducts = [...products]
-    .filter(p => p.category?.toLowerCase() === 'fruits-veggies' && (p.subcategory?.toLowerCase() === 'vegetables' || p.subcategory?.toLowerCase() === 'leafy veggies'))
+  const vegetableProducts = safeProducts
+    .filter(p => p && p.category?.toLowerCase() === 'fruits-veggies' && (p.subcategory?.toLowerCase() === 'vegetables' || p.subcategory?.toLowerCase() === 'leafy veggies'))
     .slice(0, 15);
 
-  const fruitProducts = [...products]
-    .filter(p => p.category?.toLowerCase() === 'fruits-veggies' && p.subcategory?.toLowerCase() === 'fruits')
+  const fruitProducts = safeProducts
+    .filter(p => p && p.category?.toLowerCase() === 'fruits-veggies' && p.subcategory?.toLowerCase() === 'fruits')
     .slice(0, 15);
 
-  const iceCreamProducts = [...products]
-    .filter(p => p.category?.toLowerCase() === 'frozen' || p.subcategory?.toLowerCase() === 'ice cream')
+  const iceCreamProducts = safeProducts
+    .filter(p => p && (p.category?.toLowerCase() === 'frozen' || p.subcategory?.toLowerCase() === 'ice cream'))
     .slice(0, 15);
 
   const handleCategoryClick = (catId: string) => {
@@ -400,7 +402,7 @@ export default function HomePage() {
                 ref={categoriesScrollRef}
                 className="flex gap-4.5 overflow-x-auto scrollbar-hide py-2 scroll-smooth px-1"
               >
-                {categories.filter(c => c.id !== 'all').map(cat => (
+                {(categories || []).filter(c => c && c.id && c.id !== 'all').map(cat => (
                   <button
                     key={cat.id}
                     onClick={() => handleCategoryClick(cat.id)}
@@ -410,13 +412,13 @@ export default function HomePage() {
                   >
                     <div className={`w-14 h-14 rounded-full overflow-hidden flex items-center justify-center shadow-inner border border-gray-150/40 dark:border-gray-805 shrink-0`}>
                       <img
-                        src={cat.image || CATEGORY_IMAGES[cat.id] || `https://placehold.co/80x80/2ecc71/ffffff?text=${encodeURIComponent(cat.name[0])}`}
-                        alt={cat.name}
+                        src={cat.image || CATEGORY_IMAGES[cat.id] || `https://placehold.co/80x80/2ecc71/ffffff?text=${encodeURIComponent((cat.name || 'C')[0])}`}
+                        alt={cat.name || 'Category'}
                         className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
                       />
                     </div>
                     <span className={`text-[10px] font-bold text-center leading-tight tracking-wide ${darkMode ? 'text-gray-350' : 'text-gray-755'}`}>
-                      {cat.name}
+                      {cat.name || 'Category'}
                     </span>
                   </button>
                 ))}

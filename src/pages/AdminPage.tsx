@@ -369,19 +369,19 @@ function Dashboard() {
                       <span className={`font-mono text-xs font-bold ${darkMode ? 'text-green-400' : 'text-green-700'}`}>{order.id}</span>
                     </td>
                     <td className="px-4 py-3">
-                      <p className={`font-semibold text-xs ${darkMode ? 'text-white' : 'text-gray-900'}`}>{order.customer.name}</p>
-                      <p className="text-gray-500 text-xs">{order.customer.phone}</p>
+                      <p className={`font-semibold text-xs ${darkMode ? 'text-white' : 'text-gray-900'}`}>{order.customer?.name || 'Customer'}</p>
+                      <p className="text-gray-500 text-xs">{order.customer?.phone || ''}</p>
                     </td>
-                    <td className={`px-4 py-3 text-xs ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>{order.items.length} items</td>
-                    <td className="px-4 py-3 font-bold text-green-600 text-xs">₹{order.total}</td>
+                    <td className={`px-4 py-3 text-xs ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>{(order.items || []).length} items</td>
+                    <td className="px-4 py-3 font-bold text-green-600 text-xs">₹{order.total || 0}</td>
                     <td className="px-4 py-3">
                       <span className={`text-xs px-2 py-0.5 rounded-full ${order.paymentStatus === 'paid' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}`}>
                         {order.paymentStatus === 'paid' ? 'Paid' : 'Pending'}
                       </span>
                     </td>
                     <td className="px-4 py-3">
-                      <span className={`text-xs px-2 py-0.5 rounded-full capitalize font-medium ${STATUS_COLORS[order.status]}`}>
-                        {order.status.replace('_', ' ')}
+                      <span className={`text-xs px-2 py-0.5 rounded-full capitalize font-medium ${STATUS_COLORS[order.status] || 'bg-gray-100 text-gray-700'}`}>
+                        {(order.status || 'pending').replace('_', ' ')}
                       </span>
                     </td>
                   </tr>
@@ -398,8 +398,9 @@ function Dashboard() {
           <h3 className={`font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>Products by Category</h3>
         </div>
         <div className="p-5 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-          {categories.filter(c => c.id !== 'all').map(cat => {
-            const count = products.filter(p => {
+          {(categories || []).filter(c => c && c.id && c.id !== 'all').map(cat => {
+            const count = (products || []).filter(p => {
+              if (!p) return false;
               if (cat.id === 'stationery' || cat.id === 'stationary') {
                 return p.category === 'stationery' || p.category === 'stationary';
               }
@@ -407,9 +408,9 @@ function Dashboard() {
             }).length;
             return ( 
               <div key={cat.id} className={`p-3 rounded-xl ${darkMode ? 'bg-gray-700' : 'bg-gray-50'} flex items-center gap-2`}>
-                <span className="text-xl">{cat.emoji}</span>
+                <span className="text-xl">{cat.emoji || '📦'}</span>
                 <div>
-                  <p className={`text-xs font-semibold ${darkMode ? 'text-white' : 'text-gray-900'}`}>{cat.name}</p>
+                  <p className={`text-xs font-semibold ${darkMode ? 'text-white' : 'text-gray-900'}`}>{cat.name || 'Category'}</p>
                   <p className="text-gray-500 text-xs">{count} items</p>
                 </div>
               </div>
@@ -1589,9 +1590,9 @@ function OrdersManager() {
                 <div className={`p-3 rounded-xl ${darkMode ? 'bg-gray-700' : 'bg-gray-55'} flex flex-col justify-between`}>
                   <div>
                     <p className={`text-xs font-bold mb-1 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Customer</p>
-                    <p className={`text-sm font-semibold ${darkMode ? 'text-white' : 'text-gray-900'}`}>{order.customer.name}</p>
-                    <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-650'}`}>{order.customer.phone}</p>
-                    <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-655'}`}>{order.customer.address}</p>
+                    <p className={`text-sm font-semibold ${darkMode ? 'text-white' : 'text-gray-900'}`}>{order.customer?.name || 'Customer'}</p>
+                    <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-650'}`}>{order.customer?.phone || ''}</p>
+                    <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-655'}`}>{order.customer?.address || ''}</p>
                   </div>
                   {order.locationUrl && (
                     <a
@@ -1607,7 +1608,7 @@ function OrdersManager() {
                 <div className={`p-3 rounded-xl ${darkMode ? 'bg-gray-700' : 'bg-gray-55'}`}>
                   <p className={`text-xs font-bold mb-1 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Payment</p>
                   <p className={`text-sm font-semibold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
-                    {order.paymentMethod.toUpperCase()} {order.upiRefNo ? `(UTR: ${order.upiRefNo})` : ''}
+                    {(order.paymentMethod || 'COD').toUpperCase()} {order.upiRefNo ? `(UTR: ${order.upiRefNo})` : ''}
                   </p>
                   <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-650'}`}>Delivery: {order.deliveryFee === 0 ? 'Free' : `₹${order.deliveryFee}`}</p>
                 </div>
@@ -1617,15 +1618,15 @@ function OrdersManager() {
               <div className={`mb-4 p-4 rounded-xl border ${darkMode ? 'bg-gray-800/40 border-gray-700' : 'bg-gray-50 border-gray-200'}`}>
                 <p className={`text-xs font-bold uppercase tracking-wider mb-2 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>🛒 Ordered Items</p>
                 <div className="divide-y divide-gray-200/50 dark:divide-gray-700/50 space-y-1.5">
-                  {order.items.map(item => (
-                    <div key={item.product.id} className="flex justify-between items-center py-1.5 first:pt-0 last:pb-0 text-sm">
+                  {(order.items || []).filter(i => i?.product).map(item => (
+                    <div key={item.product?.id || Math.random()} className="flex justify-between items-center py-1.5 first:pt-0 last:pb-0 text-sm">
                       <div className="flex-1 min-w-0 pr-4">
-                        <span className={`font-semibold ${darkMode ? 'text-white' : 'text-gray-900'}`}>{item.product.name}</span>
-                        <span className="text-gray-500 text-xs ml-2">({item.product.unit} × {item.quantity})</span>
+                        <span className={`font-semibold ${darkMode ? 'text-white' : 'text-gray-900'}`}>{item.product?.name || 'Product'}</span>
+                        <span className="text-gray-500 text-xs ml-2">({item.product?.unit || '1 pc'} × {item.quantity})</span>
                       </div>
                       <div className="flex items-center gap-6">
-                        <span className="text-gray-500 text-xs">₹{item.product.price} each</span>
-                        <span className={`font-bold ${darkMode ? 'text-green-600' : 'text-green-500'}`}>₹{item.product.price * item.quantity}</span>
+                        <span className="text-gray-500 text-xs">₹{item.product?.price || 0} each</span>
+                        <span className={`font-bold ${darkMode ? 'text-green-600' : 'text-green-500'}`}>₹{(item.product?.price || 0) * item.quantity}</span>
                       </div>
                     </div>
                   ))}
@@ -1735,12 +1736,15 @@ function OrdersManager() {
 function CustomersManager() {
   const { orders, darkMode } = useStore();
   const customerMap = new Map<string, { name: string; phone: string; orders: typeof orders; totalSpent: number }>();
-  orders.forEach(o => {
-    const key = o.customer.phone;
-    if (!customerMap.has(key)) customerMap.set(key, { name: o.customer.name, phone: o.customer.phone, orders: [], totalSpent: 0 });
+  (orders || []).forEach(o => {
+    if (!o) return;
+    const phone = o.customer?.phone || '';
+    const name = o.customer?.name || 'Customer';
+    const key = phone || name;
+    if (!customerMap.has(key)) customerMap.set(key, { name, phone, orders: [], totalSpent: 0 });
     const c = customerMap.get(key)!;
     c.orders.push(o);
-    if (o.status !== 'cancelled') c.totalSpent += o.total;
+    if (o.status !== 'cancelled') c.totalSpent += (o.total || 0);
   });
   const customers = Array.from(customerMap.values()).sort((a, b) => b.totalSpent - a.totalSpent);
 

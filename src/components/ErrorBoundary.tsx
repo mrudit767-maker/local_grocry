@@ -97,8 +97,9 @@ export default class ErrorBoundary extends Component<Props, State> {
                 <summary className="text-xs text-gray-400 cursor-pointer font-mono hover:text-gray-600 select-none">
                   Error Details (Click to view)
                 </summary>
-                <div className="mt-2 p-3 bg-gray-950 text-emerald-400 rounded-xl font-mono text-[11px] overflow-auto max-h-36 leading-relaxed whitespace-pre-wrap">
+                <div className="mt-2 p-3 bg-gray-950 text-emerald-400 rounded-xl font-mono text-[11px] overflow-auto max-h-48 leading-relaxed whitespace-pre-wrap">
                   {this.state.error.toString()}
+                  {this.state.errorInfo?.componentStack && `\n\nComponent Stack:${this.state.errorInfo.componentStack}`}
                 </div>
               </details>
             )}

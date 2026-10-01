@@ -173,10 +173,10 @@ const findProductForIngredient = (ing: string, products: Product[], checkStockFi
     for (const [keyword, searchTerms] of Object.entries(INGREDIENT_KEYWORDS)) {
       if (ingLower.includes(keyword) || keyword.includes(ingLower)) {
         for (const term of searchTerms) {
-          const match = products.find(p =>
-            (!onlyInStock || p.inStock) && (
+          const match = (products || []).find(p =>
+            p && p.name && (!onlyInStock || p.inStock) && (
               p.name.toLowerCase().includes(term) ||
-              p.subcategory.toLowerCase().includes(term)
+              (p.subcategory || '').toLowerCase().includes(term)
             )
           );
           if (match) return match;
@@ -187,11 +187,11 @@ const findProductForIngredient = (ing: string, products: Product[], checkStockFi
     // 2. Try all words in ingredient name individually
     const words = ingLower.split(/[\s/,]+/).filter(w => w.length > 2);
     for (const word of words) {
-      const match = products.find(p =>
-        (!onlyInStock || p.inStock) && (
+      const match = (products || []).find(p =>
+        p && p.name && (!onlyInStock || p.inStock) && (
           p.name.toLowerCase().includes(word) ||
-          p.subcategory.toLowerCase().includes(word) ||
-          p.category.toLowerCase().includes(word)
+          (p.subcategory || '').toLowerCase().includes(word) ||
+          (p.category || '').toLowerCase().includes(word)
         )
       );
       if (match) return match;
