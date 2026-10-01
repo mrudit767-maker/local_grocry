@@ -1118,6 +1118,33 @@ export const useStore = create<StoreState>()(
           images: Array.isArray(p.images) ? p.images.filter(img => img && !img.startsWith('data:')) : [],
         })),
       }),
+      onRehydrateStorage: () => (state) => {
+        if (!state) return;
+        if (!Array.isArray(state.categories) || state.categories.length === 0) {
+          state.categories = CATEGORIES;
+        }
+        if (!Array.isArray(state.products) || state.products.length === 0) {
+          state.products = PRODUCTS;
+        }
+        if (!Array.isArray(state.banners) || state.banners.length === 0) {
+          state.banners = DEFAULT_BANNERS;
+        }
+        if (!Array.isArray(state.orders)) {
+          state.orders = [];
+        }
+        if (!Array.isArray(state.cart)) {
+          state.cart = [];
+        }
+        if (!Array.isArray(state.stockRequests)) {
+          state.stockRequests = [];
+        }
+        if (!Array.isArray(state.customerNotifications)) {
+          state.customerNotifications = [];
+        }
+        if (!state.storeSettings) {
+          state.storeSettings = DEFAULT_SETTINGS;
+        }
+      },
     }
   )
 );

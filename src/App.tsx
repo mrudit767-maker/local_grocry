@@ -33,7 +33,8 @@ export default function App() {
 
   useEffect(() => {
     // 1. Sync category if missing in state (which can happen due to localStorage hydration)
-    const hasStationeryCat = categories.some(c => c.id === 'stationery' || c.id === 'stationary');
+    const safeCategories = Array.isArray(categories) ? categories : [];
+    const hasStationeryCat = safeCategories.some(c => c && (c.id === 'stationery' || c.id === 'stationary'));
     if (!hasStationeryCat) {
       addCategory({
         name: 'Stationery',
@@ -43,7 +44,8 @@ export default function App() {
     }
 
     // 2. Sync default products if stationery category has 0 items
-    const hasStationeryProd = products.some(p => p.category === 'stationery' || p.category === 'stationary');
+    const safeProducts = Array.isArray(products) ? products : [];
+    const hasStationeryProd = safeProducts.some(p => p && (p.category === 'stationery' || p.category === 'stationary'));
     if (!hasStationeryProd) {
       const initialStationery = [
         {
@@ -277,25 +279,30 @@ export default function App() {
     };
   }, [currentCustomer, customerLogin, setCurrentPage]);
 
-  // URL Hash and Direct Navigation Listener (e.g. #admin, ?admin, /#admin)
+  // URL Hash and Direct Navigation Listener (e.g. #admin, #orders, #products)
   useEffect(() => {
     const handleUrlRoute = () => {
-      const hash = (window.location.hash || '').toLowerCase();
-      const search = (window.location.search || '').toLowerCase();
-      const pathname = (window.location.pathname || '').toLowerCase();
+      try {
+        const rawHash = (window.location.hash || '').toLowerCase();
+        const hash = rawHash.replace(/^#/, '').trim();
+        const search = (window.location.search || '').toLowerCase();
+        const pathname = (window.location.pathname || '').toLowerCase();
 
-      if (hash === '#admin' || search.includes('admin') || pathname.endsWith('/admin')) {
-        setCurrentPage('admin');
-      } else if (hash === '#orders' || search.includes('orders')) {
-        setCurrentPage('orders');
-      } else if (hash === '#products' || search.includes('products')) {
-        setCurrentPage('products');
-      } else if (hash === '#cart' || search.includes('cart')) {
-        setCurrentPage('cart');
-      } else if (hash === '#checkout' || search.includes('checkout')) {
-        setCurrentPage('checkout');
-      } else if (hash === '#customer-login' || search.includes('login')) {
-        setCurrentPage('customer-login');
+        if (hash === 'admin' || pathname.endsWith('/admin') || (search.startsWith('?') && search.includes('view=admin'))) {
+          setCurrentPage('admin');
+        } else if (hash === 'orders' || (search.startsWith('?') && search.includes('view=orders'))) {
+          setCurrentPage('orders');
+        } else if (hash === 'products' || (search.startsWith('?') && search.includes('view=products'))) {
+          setCurrentPage('products');
+        } else if (hash === 'cart' || (search.startsWith('?') && search.includes('view=cart'))) {
+          setCurrentPage('cart');
+        } else if (hash === 'checkout' || (search.startsWith('?') && search.includes('view=checkout'))) {
+          setCurrentPage('checkout');
+        } else if (hash === 'customer-login' || hash === 'login' || (search.startsWith('?') && search.includes('view=login'))) {
+          setCurrentPage('customer-login');
+        }
+      } catch (err) {
+        console.warn('URL route parse error:', err);
       }
     };
 
@@ -306,12 +313,21 @@ export default function App() {
 
   // Sync current page to URL hash for easy bookmarking and sharing
   useEffect(() => {
-    if (currentPage === 'admin') {
-      if (window.location.hash !== '#admin') {
-        window.history.replaceState(null, '', '#admin');
+    try {
+      if (currentPage === 'admin') {
+        if (window.location.hash !== '#admin') {
+          window.location.hash = 'admin';
+        }
+      } else if (window.location.hash === '#admin') {
+        // Clear admin hash safely when user switches away to store pages
+        if (window.history && window.history.replaceState) {
+          window.history.replaceState(null, '', window.location.pathname + window.location.search);
+        } else {
+          window.location.hash = '';
+        }
       }
-    } else if (window.location.hash === '#admin') {
-      window.history.replaceState(null, '', window.location.pathname);
+    } catch (e) {
+      // Ignore history/hash permission exceptions
     }
   }, [currentPage]);
 
