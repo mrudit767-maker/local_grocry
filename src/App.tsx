@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Toaster, toast } from 'react-hot-toast';
 import { useStore } from './store/useStore';
-import { MessageCircle, MapPin, Phone, Mail, Clock, Home, ShoppingBag, Package, Truck, ChevronRight } from 'lucide-react';
+import { MessageCircle, MapPin, Phone, Mail, Clock, Home, ShoppingBag, Package, Truck, ChevronRight, Shield } from 'lucide-react';
 import Header from './components/Header';
 import CartSidebar from './components/CartSidebar';
 import HomePage from './pages/HomePage';
@@ -277,6 +277,44 @@ export default function App() {
     };
   }, [currentCustomer, customerLogin, setCurrentPage]);
 
+  // URL Hash and Direct Navigation Listener (e.g. #admin, ?admin, /#admin)
+  useEffect(() => {
+    const handleUrlRoute = () => {
+      const hash = (window.location.hash || '').toLowerCase();
+      const search = (window.location.search || '').toLowerCase();
+      const pathname = (window.location.pathname || '').toLowerCase();
+
+      if (hash === '#admin' || search.includes('admin') || pathname.endsWith('/admin')) {
+        setCurrentPage('admin');
+      } else if (hash === '#orders' || search.includes('orders')) {
+        setCurrentPage('orders');
+      } else if (hash === '#products' || search.includes('products')) {
+        setCurrentPage('products');
+      } else if (hash === '#cart' || search.includes('cart')) {
+        setCurrentPage('cart');
+      } else if (hash === '#checkout' || search.includes('checkout')) {
+        setCurrentPage('checkout');
+      } else if (hash === '#customer-login' || search.includes('login')) {
+        setCurrentPage('customer-login');
+      }
+    };
+
+    handleUrlRoute();
+    window.addEventListener('hashchange', handleUrlRoute);
+    return () => window.removeEventListener('hashchange', handleUrlRoute);
+  }, [setCurrentPage]);
+
+  // Sync current page to URL hash for easy bookmarking and sharing
+  useEffect(() => {
+    if (currentPage === 'admin') {
+      if (window.location.hash !== '#admin') {
+        window.history.replaceState(null, '', '#admin');
+      }
+    } else if (window.location.hash === '#admin') {
+      window.history.replaceState(null, '', window.location.pathname);
+    }
+  }, [currentPage]);
+
   return (
     <div className={`${darkMode ? 'dark bg-gray-950 text-white' : 'bg-gray-50 text-gray-800'} min-h-screen transition-colors duration-200`}>
       <Toaster
@@ -389,6 +427,7 @@ export default function App() {
                     { label: 'My Orders', page: 'orders', icon: Package },
                     { label: 'Our Location', page: 'location', icon: MapPin },
                     { label: 'Track Order', page: 'track-order', icon: Truck },
+                    { label: 'Admin Panel', page: 'admin', icon: Shield },
                   ].map(link => (
                     <li key={link.label}>
                       <button
@@ -486,6 +525,12 @@ export default function App() {
                   className="hover:text-green-600 transition-colors focus:outline-none cursor-pointer bg-transparent border-none p-0 text-xs text-gray-400 font-semibold"
                 >
                   Refund Policy
+                </button>
+                <button
+                  onClick={() => setCurrentPage('admin')}
+                  className="hover:text-emerald-600 transition-colors focus:outline-none cursor-pointer bg-transparent border-none p-0 text-xs text-gray-400 font-semibold flex items-center gap-1"
+                >
+                  <Shield size={12} className="text-emerald-500" /> Admin Portal
                 </button>
               </div>
               <div className="flex items-center gap-2 text-xs text-gray-400">

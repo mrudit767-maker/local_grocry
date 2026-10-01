@@ -556,14 +556,15 @@ export default function Header() {
             {/* Admin Panel */}
             <button
               onClick={() => setCurrentPage('admin')}
-              className={`p-2.5 rounded-xl border transition-all duration-300 cursor-pointer ${
+              className={`flex items-center gap-1.5 px-3 py-2.5 rounded-xl border transition-all duration-300 cursor-pointer ${
                 currentPage === 'admin'
                   ? 'bg-emerald-600 border-emerald-600 text-white font-bold'
-                  : darkMode ? 'bg-gray-900 border-gray-800 text-gray-405 hover:text-white hover:border-gray-700' : 'bg-gray-50 border-gray-200 text-gray-650 hover:text-emerald-600 hover:border-gray-300'
+                  : darkMode ? 'bg-gray-900 border-gray-800 text-gray-300 hover:text-white hover:border-gray-700' : 'bg-gray-50 border-gray-200 text-gray-700 hover:text-emerald-600 hover:border-gray-300'
               }`}
               title="Admin Panel"
             >
-              <Shield size={16} />
+              <Shield size={15} className={currentPage === 'admin' ? 'text-white' : 'text-emerald-500'} />
+              <span className="text-xs font-bold hidden xl:inline">Admin</span>
             </button>
 
             {/* Customer Login / Profile */}
@@ -672,11 +673,11 @@ export default function Header() {
               className={`p-2 rounded-xl border transition-all duration-300 cursor-pointer ${
                 currentPage === 'admin'
                   ? 'bg-emerald-600 border-emerald-600 text-white'
-                  : darkMode ? 'bg-gray-900 border-gray-800 text-gray-400 hover:text-white' : 'bg-gray-50 border-gray-200 text-gray-650 hover:text-emerald-600'
+                  : darkMode ? 'bg-gray-900 border-gray-800 text-emerald-400 hover:text-white' : 'bg-emerald-50 border-emerald-200 text-emerald-700 hover:bg-emerald-100'
               }`}
               title="Admin Panel"
             >
-              <Shield size={13} />
+              <Shield size={14} className={currentPage === 'admin' ? 'text-white' : 'text-emerald-600 dark:text-emerald-400'} />
             </button>
             {/* Mobile Notification Bell */}
             <div className="relative">

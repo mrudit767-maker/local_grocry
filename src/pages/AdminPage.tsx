@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react';
 import {
   LogOut, Package, ShoppingBag, DollarSign, TrendingUp,
   Plus, Edit2, Trash2, X, ChevronLeft, Download, Search,
-  Image as ImageIcon, Link, Star, ToggleLeft, ToggleRight, Save, Store, RefreshCw, Upload, Bell
+  Image as ImageIcon, Link, Star, ToggleLeft, ToggleRight, Save, Store, RefreshCw, Upload, Bell,
+  Eye, EyeOff
 } from 'lucide-react';
 import { useStore } from '../store/useStore';
 import { Product, CATEGORIES } from '../data/products';
@@ -235,20 +236,32 @@ const handleMultipleImagesUpload = async (
 };
 
 function LoginForm() {
-  const { adminLogin, darkMode } = useStore();
+  const { adminLogin, darkMode, setCurrentPage } = useStore();
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
 
   const handleLogin = () => {
-    if (!adminLogin(password)) {
-      setError('Invalid password. Try: admin123');
+    const clean = password.trim();
+    if (!adminLogin(clean)) {
+      setError('Invalid password. Default password is: admin123');
     }
   };
 
   return (
-    <div className={`min-h-screen flex items-center justify-center px-4 ${darkMode ? 'bg-gray-950' : 'bg-gray-50'}`}>
-      <div className={`w-full max-w-sm p-8 rounded-3xl border shadow-xl ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
-        <div className="text-center mb-8">
+    <div className={`min-h-screen flex items-center justify-center px-4 py-8 ${darkMode ? 'bg-gray-950' : 'bg-gray-50'}`}>
+      <div className={`w-full max-w-sm p-8 rounded-3xl border shadow-xl relative ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
+        <button
+          onClick={() => setCurrentPage('home')}
+          className={`absolute top-4 left-4 p-2 rounded-xl border text-xs flex items-center gap-1 font-semibold transition-all cursor-pointer ${
+            darkMode ? 'bg-gray-700 border-gray-600 text-gray-300 hover:text-white' : 'bg-gray-100 border-gray-200 text-gray-600 hover:text-gray-900'
+          }`}
+          title="Return to store"
+        >
+          <ChevronLeft size={16} /> Store
+        </button>
+
+        <div className="text-center mb-8 mt-2">
           <div className="flex justify-center mb-4">
             <img
               src="/logo.png"
@@ -262,24 +275,36 @@ function LoginForm() {
         <div className="space-y-4">
           <div>
             <label className={`block text-sm font-semibold mb-1.5 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Password</label>
-            <input
-              type="password"
-              value={password}
-              onChange={e => { setPassword(e.target.value); setError(''); }}
-              onKeyDown={e => e.key === 'Enter' && handleLogin()}
-              placeholder="Enter admin password"
-              className={`w-full px-4 py-3 rounded-xl border text-sm outline-none focus:ring-2 focus:ring-green-500 ${
-                error ? 'border-red-400' : darkMode ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' : 'bg-gray-50 border-gray-300'
-              }`}
-            />
-            {error && <p className="text-red-500 text-xs mt-1">{error}</p>}
-            <div className="flex justify-between items-center mt-1.5">
-              <span className="text-[10px] text-gray-400">Default Access Credential: <code className="bg-gray-100 dark:bg-gray-700 px-1 py-0.5 rounded font-mono font-bold text-gray-600 dark:text-gray-300">admin123</code></span>
+            <div className="relative">
+              <input
+                type={showPassword ? 'text' : 'password'}
+                value={password}
+                onChange={e => { setPassword(e.target.value); setError(''); }}
+                onKeyDown={e => e.key === 'Enter' && handleLogin()}
+                placeholder="Enter admin password"
+                autoFocus
+                className={`w-full pl-4 pr-10 py-3 rounded-xl border text-sm outline-none focus:ring-2 focus:ring-green-500 ${
+                  error ? 'border-red-400' : darkMode ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' : 'bg-gray-50 border-gray-300'
+                }`}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-3.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 cursor-pointer"
+              >
+                {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+              </button>
+            </div>
+            {error && <p className="text-red-500 text-xs mt-1 font-bold">{error}</p>}
+            <div className="flex justify-between items-center mt-2">
+              <span className="text-[11px] text-gray-500 dark:text-gray-400">
+                Default Access Password: <button type="button" onClick={() => setPassword('admin123')} className="bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700 px-1.5 py-0.5 rounded font-mono font-bold hover:underline cursor-pointer">admin123</button>
+              </span>
             </div>
           </div>
           <button
             onClick={handleLogin}
-            className="w-full bg-green-600 hover:bg-green-700 text-white py-3.5 rounded-xl font-bold transition-all"
+            className="w-full bg-green-600 hover:bg-green-700 text-white py-3.5 rounded-xl font-bold transition-all shadow-md cursor-pointer"
           >
             Login to Admin Panel
           </button>
@@ -290,13 +315,15 @@ function LoginForm() {
 }
 
 function Dashboard() {
-  const { products, orders, darkMode, categories } = useStore();
-  const totalRevenue = orders.filter(o => o.status !== 'cancelled').reduce((s, o) => s + o.total, 0);
-  const pendingOrders = orders.filter(o => o.status === 'pending' || o.status === 'confirmed').length;
+  const { products = [], orders = [], darkMode, categories = [] } = useStore();
+  const safeOrders = orders || [];
+  const safeProducts = products || [];
+  const totalRevenue = safeOrders.filter(o => o.status !== 'cancelled').reduce((s, o) => s + (o.total || 0), 0);
+  const pendingOrders = safeOrders.filter(o => o.status === 'pending' || o.status === 'confirmed').length;
 
   const stats = [
-    { label: 'Total Products', value: products.length.toLocaleString(), icon: Package, color: 'text-blue-600', bg: darkMode ? 'bg-blue-900/30' : 'bg-blue-50', border: 'border-blue-200' },
-    { label: 'Total Orders', value: orders.length.toString(), icon: ShoppingBag, color: 'text-green-600', bg: darkMode ? 'bg-green-900/30' : 'bg-green-50', border: 'border-green-200' },
+    { label: 'Total Products', value: safeProducts.length.toLocaleString(), icon: Package, color: 'text-blue-600', bg: darkMode ? 'bg-blue-900/30' : 'bg-blue-50', border: 'border-blue-200' },
+    { label: 'Total Orders', value: safeOrders.length.toString(), icon: ShoppingBag, color: 'text-green-600', bg: darkMode ? 'bg-green-900/30' : 'bg-green-50', border: 'border-green-200' },
     { label: 'Total Revenue', value: `₹${totalRevenue.toLocaleString()}`, icon: DollarSign, color: 'text-purple-600', bg: darkMode ? 'bg-purple-900/30' : 'bg-purple-50', border: 'border-purple-200' },
     { label: 'Pending Orders', value: pendingOrders.toString(), icon: TrendingUp, color: 'text-orange-600', bg: darkMode ? 'bg-orange-900/30' : 'bg-orange-50', border: 'border-orange-200' },
   ];
@@ -3875,14 +3902,14 @@ export default function AdminPage() {
             >
               <v.icon size={15} />
               <span className="hidden sm:block">{v.label}</span>
-              {v.id === 'orders' && orders.filter(o => o.status === 'pending').length > 0 && (
+              {v.id === 'orders' && (orders || []).filter(o => o.status === 'pending').length > 0 && (
                 <span className="bg-orange-500 text-white text-[10px] font-black rounded-full w-4 h-4 flex items-center justify-center">
-                  {orders.filter(o => o.status === 'pending').length}
+                  {(orders || []).filter(o => o.status === 'pending').length}
                 </span>
               )}
-              {v.id === 'stock-requests' && stockRequests.filter(r => r.status === 'pending').length > 0 && (
+              {v.id === 'stock-requests' && (stockRequests || []).filter(r => r.status === 'pending').length > 0 && (
                 <span className="bg-orange-500 text-white text-[10px] font-black rounded-full w-4 h-4 flex items-center justify-center">
-                  {stockRequests.filter(r => r.status === 'pending').length}
+                  {(stockRequests || []).filter(r => r.status === 'pending').length}
                 </span>
               )}
             </button>
